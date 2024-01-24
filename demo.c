@@ -217,7 +217,29 @@ int main(int argc, char** argv) {
             printf("Load file: %s fail!\n ", szfile);
         }
         startTime = now();
-        ocularBoxBlurFilter(inputImage, outputImg, Width, Height, Width * Channels, 3);
+        float arrRho[100];
+        float arrTheta[100];
+        int nTNum = 200;
+        int nTVal = 100;
+        float Theta = 1.0f;
+        ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
+        ocularSobelEdge(outputImg, outputImg, Width, Height);
+        int nLine = ocularHoughLines(outputImg, Width, Height, nTNum, nTVal, Theta, 100, arrRho, arrTheta);
+        memcpy(outputImg, inputImage, Width * Channels * Height);
+        for (int i = 0; i < nLine; i++) {
+            if (arrTheta[i] == 90) {
+                ocularDrawLine(outputImg, Width, Height, Width * Channels, (int)arrRho[i], 0,
+                               (int)arrRho[i], Height - 1, 255, 0, 0);
+            } else {
+                int x1 = 0;
+                int y1 = (int)(arrRho[i] / fastCos(arrTheta[i] * M_PI / 180.0f) + 0.5f);
+                int x2 = Width - 1;
+                int y2 = (int)((arrRho[i] - x2 * fastSin(arrTheta[i] * M_PI / 180.0f)) /
+                               fastCos(arrTheta[i] * M_PI / 180.0f) +
+                               0.5f);
+                ocularDrawLine(outputImg, Width, Height, Width * Channels, x1, y1, x2, y2, 255, 0, 0);
+            }
+        }
 
         // Processing algorithm
         double nProcessTime = now();
