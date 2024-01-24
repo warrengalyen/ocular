@@ -2,9 +2,18 @@
 #define OCULAR_H
 
 #include <math.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include "fastmath.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
+
 
 typedef struct {
     // color level minimum
@@ -147,4 +156,7 @@ void ocularCropFilter(const unsigned char* Input, int Width, int Height, int src
                       int cropX, int cropY, int dstWidth, int dstHeight, int dstStride);
 //--------------------------Image processing--------------------------
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* OCULAR_H */

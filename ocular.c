@@ -105,7 +105,7 @@ void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Widt
     int Channels = Stride / Width;
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Width);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = ((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
             pInput += Channels;
@@ -134,7 +134,7 @@ void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = AdjustMapR[pInput[0]];
             pOutput[1] = AdjustMapG[pInput[1]];
@@ -152,10 +152,10 @@ void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int
 void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width,
                                            int Height, int Stride, float thresholdMultiplier) {
 
-    int Channels            = Stride / Width;
+    int Channels = Stride / Width;
     unsigned char Luminance = 0;
     if (Channels == 1) {
-        unsigned int numberOfPixels     = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramGray[256] = { 0 };
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
@@ -172,7 +172,7 @@ void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* 
 
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 pOutput[0] = step(Luminance, pInput[0]);
                 pInput++;
@@ -181,7 +181,7 @@ void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* 
         }
     } else if (Channels == 3 || Channels == 4) {
 
-        unsigned int numberOfPixels    = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramLum[256] = { 0 };
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
@@ -200,7 +200,7 @@ void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* 
         Luminance = (unsigned char)((Sum / numberOfPixels) * thresholdMultiplier);
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 unsigned char luminance = ((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
                 pOutput[2] = pOutput[1] = pOutput[0] = step(Luminance, luminance);
@@ -217,7 +217,7 @@ void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride,
 
     int Channels = Stride / Width;
     if (Channels == 1) {
-        unsigned int numberOfPixels     = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramGray[256] = { 0 };
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
@@ -236,11 +236,11 @@ void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride,
         *AverageA = *AverageR;
     } else if (Channels == 3) {
 
-        unsigned int numberOfPixels    = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramRGB[768] = { 0 };
-        unsigned int* histogramR       = &histogramRGB[0];
-        unsigned int* histogramG       = &histogramRGB[256];
-        unsigned int* histogramB       = &histogramRGB[512];
+        unsigned int* histogramR = &histogramRGB[0];
+        unsigned int* histogramG = &histogramRGB[256];
+        unsigned int* histogramB = &histogramRGB[512];
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
@@ -265,12 +265,12 @@ void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride,
         *AverageA = 255;
     } else if (Channels == 4) {
 
-        unsigned int numberOfPixels          = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramRGB[768 + 256] = { 0 };
-        unsigned int* histogramR             = &histogramRGB[0];
-        unsigned int* histogramG             = &histogramRGB[256];
-        unsigned int* histogramB             = &histogramRGB[512];
-        unsigned int* histogramA             = &histogramRGB[768];
+        unsigned int* histogramR = &histogramRGB[0];
+        unsigned int* histogramG = &histogramRGB[256];
+        unsigned int* histogramB = &histogramRGB[512];
+        unsigned int* histogramA = &histogramRGB[768];
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
@@ -309,7 +309,7 @@ void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, u
 
     int Channels = Stride / Width;
     if (Channels == 1) {
-        unsigned int numberOfPixels     = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramGray[256] = { 0 };
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
@@ -325,7 +325,7 @@ void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, u
         *Luminance = (unsigned char)(Sum / numberOfPixels);
     } else if (Channels == 3 || Channels == 4) {
 
-        unsigned int numberOfPixels    = Width * Height;
+        unsigned int numberOfPixels = Width * Height;
         unsigned int histogramLum[256] = { 0 };
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
@@ -363,33 +363,33 @@ void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Wi
         }
     }
     unsigned char colorMatrixMap[256 * 16] = { 0 };
-    unsigned char* colorMatrix0            = &colorMatrixMap[0];
-    unsigned char* colorMatrix1            = &colorMatrixMap[256];
-    unsigned char* colorMatrix2            = &colorMatrixMap[256 * 2];
-    unsigned char* colorMatrix3            = &colorMatrixMap[256 * 3];
-    unsigned char* colorMatrix4            = &colorMatrixMap[256 * 4];
-    unsigned char* colorMatrix5            = &colorMatrixMap[256 * 5];
-    unsigned char* colorMatrix6            = &colorMatrixMap[256 * 6];
-    unsigned char* colorMatrix7            = &colorMatrixMap[256 * 7];
-    unsigned char* colorMatrix8            = &colorMatrixMap[256 * 8];
-    unsigned char* colorMatrix9            = &colorMatrixMap[256 * 9];
-    unsigned char* colorMatrix10           = &colorMatrixMap[256 * 10];
-    unsigned char* colorMatrix11           = &colorMatrixMap[256 * 11];
-    unsigned char* colorMatrix12           = &colorMatrixMap[256 * 12];
-    unsigned char* colorMatrix13           = &colorMatrixMap[256 * 13];
-    unsigned char* colorMatrix14           = &colorMatrixMap[256 * 14];
-    unsigned char* colorMatrix15           = &colorMatrixMap[256 * 15];
+    unsigned char* colorMatrix0 = &colorMatrixMap[0];
+    unsigned char* colorMatrix1 = &colorMatrixMap[256];
+    unsigned char* colorMatrix2 = &colorMatrixMap[256 * 2];
+    unsigned char* colorMatrix3 = &colorMatrixMap[256 * 3];
+    unsigned char* colorMatrix4 = &colorMatrixMap[256 * 4];
+    unsigned char* colorMatrix5 = &colorMatrixMap[256 * 5];
+    unsigned char* colorMatrix6 = &colorMatrixMap[256 * 6];
+    unsigned char* colorMatrix7 = &colorMatrixMap[256 * 7];
+    unsigned char* colorMatrix8 = &colorMatrixMap[256 * 8];
+    unsigned char* colorMatrix9 = &colorMatrixMap[256 * 9];
+    unsigned char* colorMatrix10 = &colorMatrixMap[256 * 10];
+    unsigned char* colorMatrix11 = &colorMatrixMap[256 * 11];
+    unsigned char* colorMatrix12 = &colorMatrixMap[256 * 12];
+    unsigned char* colorMatrix13 = &colorMatrixMap[256 * 13];
+    unsigned char* colorMatrix14 = &colorMatrixMap[256 * 14];
+    unsigned char* colorMatrix15 = &colorMatrixMap[256 * 15];
     for (int pixel = 0; pixel < 256; pixel++) {
-        colorMatrix0[pixel]  = ClampToByte(pixel * colorMatrix[0]);
-        colorMatrix1[pixel]  = ClampToByte(pixel * colorMatrix[1]);
-        colorMatrix2[pixel]  = ClampToByte(pixel * colorMatrix[2]);
-        colorMatrix3[pixel]  = ClampToByte(pixel * colorMatrix[3]);
-        colorMatrix4[pixel]  = ClampToByte(pixel * colorMatrix[4]);
-        colorMatrix5[pixel]  = ClampToByte(pixel * colorMatrix[5]);
-        colorMatrix6[pixel]  = ClampToByte(pixel * colorMatrix[6]);
-        colorMatrix7[pixel]  = ClampToByte(pixel * colorMatrix[7]);
-        colorMatrix8[pixel]  = ClampToByte(pixel * colorMatrix[8]);
-        colorMatrix9[pixel]  = ClampToByte(pixel * colorMatrix[9]);
+        colorMatrix0[pixel] = ClampToByte(pixel * colorMatrix[0]);
+        colorMatrix1[pixel] = ClampToByte(pixel * colorMatrix[1]);
+        colorMatrix2[pixel] = ClampToByte(pixel * colorMatrix[2]);
+        colorMatrix3[pixel] = ClampToByte(pixel * colorMatrix[3]);
+        colorMatrix4[pixel] = ClampToByte(pixel * colorMatrix[4]);
+        colorMatrix5[pixel] = ClampToByte(pixel * colorMatrix[5]);
+        colorMatrix6[pixel] = ClampToByte(pixel * colorMatrix[6]);
+        colorMatrix7[pixel] = ClampToByte(pixel * colorMatrix[7]);
+        colorMatrix8[pixel] = ClampToByte(pixel * colorMatrix[8]);
+        colorMatrix9[pixel] = ClampToByte(pixel * colorMatrix[9]);
         colorMatrix10[pixel] = ClampToByte(pixel * colorMatrix[10]);
         colorMatrix11[pixel] = ClampToByte(pixel * colorMatrix[11]);
         colorMatrix12[pixel] = ClampToByte(pixel * colorMatrix[12]);
@@ -402,7 +402,7 @@ void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Wi
         int WidthStep = Width * Channels;
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * WidthStep);
-            unsigned char* pInput  = Input + (Y * WidthStep);
+            unsigned char* pInput = Input + (Y * WidthStep);
             for (int X = 0; X < Width; X++) {
                 const unsigned char r = pInput[0];
                 const unsigned char g = pInput[1];
@@ -410,17 +410,17 @@ void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Wi
                 const unsigned char a = pInput[3];
                 outR = ClampToByte(colorMatrix0[r] + colorMatrix1[g] + colorMatrix2[b] + colorMatrix3[a]);
                 unsigned char* pDegreeMapR = degreeMap + (r << 8);
-                pOutput[0]                 = pDegreeMapR[outR];
+                pOutput[0] = pDegreeMapR[outR];
                 outG = ClampToByte(colorMatrix4[r] + colorMatrix5[g] + colorMatrix6[b] + colorMatrix7[a]);
                 unsigned char* pDegreeMapG = degreeMap + (g << 8);
-                pOutput[1]                 = pDegreeMapG[outG];
+                pOutput[1] = pDegreeMapG[outG];
                 outB = ClampToByte(colorMatrix8[r] + colorMatrix9[g] + colorMatrix10[b] + colorMatrix11[a]);
                 unsigned char* pDegreeMapB = degreeMap + (b << 8);
-                pOutput[2]                 = pDegreeMapB[outB];
+                pOutput[2] = pDegreeMapB[outB];
                 outA =
                 ClampToByte(colorMatrix12[r] + colorMatrix13[g] + colorMatrix14[b] + colorMatrix15[a]);
                 unsigned char* pDegreeMapA = degreeMap + (a << 8);
-                pOutput[3]                 = pDegreeMapA[outA];
+                pOutput[3] = pDegreeMapA[outA];
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -431,20 +431,20 @@ void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Wi
         int WidthStep = Width * Channels;
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * WidthStep);
-            unsigned char* pInput  = Input + (Y * WidthStep);
+            unsigned char* pInput = Input + (Y * WidthStep);
             for (int X = 0; X < Width; X++) {
                 const unsigned char r = pInput[0];
                 const unsigned char g = pInput[1];
                 const unsigned char b = pInput[2];
                 outR = ClampToByte(colorMatrix0[r] + colorMatrix1[g] + colorMatrix2[b]);
                 unsigned char* pDegreeMapR = degreeMap + (r << 8);
-                pOutput[0]                 = pDegreeMapR[outR];
+                pOutput[0] = pDegreeMapR[outR];
                 outG = ClampToByte(colorMatrix4[r] + colorMatrix5[g] + colorMatrix6[b]);
                 unsigned char* pDegreeMapG = degreeMap + (g << 8);
-                pOutput[1]                 = pDegreeMapG[outG];
+                pOutput[1] = pDegreeMapG[outG];
                 outB = ClampToByte(colorMatrix8[r] + colorMatrix9[g] + colorMatrix10[b]);
                 unsigned char* pDegreeMapB = degreeMap + (b << 8);
-                pOutput[2]                 = pDegreeMapB[outB];
+                pOutput[2] = pDegreeMapB[outB];
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -486,9 +486,9 @@ void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Widt
 
     unsigned char maskCr = (46740 * (colorToReplaceR - maskY) >> 16) + 128;
 
-    unsigned char maskCb      = (37008 * (colorToReplaceB - maskY) >> 16) + 128;
+    unsigned char maskCb = (37008 * (colorToReplaceB - maskY) >> 16) + 128;
     int iThresholdSensitivity = (int)(thresholdSensitivity * 255.0f);
-    int iSmoothing            = (int)(smoothing * 256);
+    int iSmoothing = (int)(smoothing * 256);
     if (Channels == 3) {
         short blendMap[256 * 256] = { 0 };
         for (int Cr = 0; Cr < 256; Cr++) {
@@ -502,20 +502,20 @@ void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Widt
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 const unsigned char R = pInput[0];
                 const unsigned char G = pInput[1];
                 const unsigned char B = pInput[2];
-                unsigned char Y       = (19589 * R + 38443 * G + 7504 * B) >> 16;
-                unsigned char Cr      = (46740 * (R - Y) >> 16) + 128;
-                unsigned char Cb      = (37008 * (B - Y) >> 16) + 128;
+                unsigned char Y = (19589 * R + 38443 * G + 7504 * B) >> 16;
+                unsigned char Cr = (46740 * (R - Y) >> 16) + 128;
+                unsigned char Cb = (37008 * (B - Y) >> 16) + 128;
                 // Multiply by 255 to obtain the mask. If not multiplied by 255, the mask will be eliminated.
-                short* pBlendMap       = blendMap + (Cr << 8);
+                short* pBlendMap = blendMap + (Cr << 8);
                 const short blendValue = pBlendMap[Cb];
-                pOutput[0]             = 255 - (R * blendValue);
-                pOutput[1]             = 255 - (G * blendValue);
-                pOutput[2]             = 255 - (B * blendValue);
+                pOutput[0] = 255 - (R * blendValue);
+                pOutput[1] = 255 - (G * blendValue);
+                pOutput[2] = 255 - (B * blendValue);
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -533,19 +533,19 @@ void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Widt
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 const unsigned char R = pInput[0];
                 const unsigned char G = pInput[1];
                 const unsigned char B = pInput[2];
                 const unsigned char A = pInput[3];
-                unsigned char Y       = (19589 * R + 38443 * G + 7504 * B) >> 16;
-                unsigned char Cr      = (46740 * (R - Y) >> 16) + 128;
-                unsigned char Cb      = (37008 * (B - Y) >> 16) + 128;
+                unsigned char Y = (19589 * R + 38443 * G + 7504 * B) >> 16;
+                unsigned char Cr = (46740 * (R - Y) >> 16) + 128;
+                unsigned char Cb = (37008 * (B - Y) >> 16) + 128;
                 // Handle transparency channels directly
-                unsigned char* pBlendMap       = blendMap + (Cr << 8);
+                unsigned char* pBlendMap = blendMap + (Cr << 8);
                 const unsigned char blendValue = pBlendMap[Cb];
-                pOutput[3]                     = ClampToByte(A * blendValue);
+                pOutput[3] = ClampToByte(A * blendValue);
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -561,40 +561,40 @@ void ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned ch
     if (Channels == 1)
         return;
     float preMap[256 * 5] = { 0 };
-    float* pixelColorMap  = &preMap[0];
-    float* quad1yMap      = &preMap[256];
-    float* quad1xMap      = &preMap[256 + 256];
-    float* quad2yMap      = &preMap[256 + 256 + 256];
-    float* quad2xMap      = &preMap[256 + 256 + 256 + 256];
+    float* pixelColorMap = &preMap[0];
+    float* quad1yMap = &preMap[256];
+    float* quad1xMap = &preMap[256 + 256];
+    float* quad2yMap = &preMap[256 + 256 + 256];
+    float* quad2xMap = &preMap[256 + 256 + 256 + 256];
 
     unsigned short fractMap[256] = { 0 };
-    unsigned short sIntensity    = max(min(intensity, 100), 0);
-    int c1                       = 256 * (100 - sIntensity) / 100;
-    int c2                       = 256 * (100 - (100 - sIntensity)) / 100;
+    unsigned short sIntensity = max(min(intensity, 100), 0);
+    int c1 = 256 * (100 - sIntensity) / 100;
+    int c2 = 256 * (100 - (100 - sIntensity)) / 100;
 
     for (int b = 0; b < 256; b++) {
         pixelColorMap[b] = b * (63.0f / 255.0f);
-        fractMap[b]      = (unsigned short)(256 * (pixelColorMap[b] - truncf(pixelColorMap[b])));
-        quad1yMap[b]     = floorf(floorf(pixelColorMap[b]) * (1.0f / 8.0f));
-        quad1xMap[b]     = floorf(pixelColorMap[b]) - (quad1yMap[b] * 8.0f);
-        quad2yMap[b]     = floorf(ceilf(pixelColorMap[b]) * (1.0f / 8.0f));
-        quad2xMap[b]     = ceilf(pixelColorMap[b]) - (quad2yMap[b] * 8.0f);
-        quad1yMap[b]     = quad1yMap[b] * 64.0f + 0.5f;
-        quad2yMap[b]     = quad2yMap[b] * 64.0f + 0.5f;
-        quad1xMap[b]     = quad1xMap[b] * 64.0f + 0.5f;
-        quad2xMap[b]     = quad2xMap[b] * 64.0f + 0.5f;
+        fractMap[b] = (unsigned short)(256 * (pixelColorMap[b] - truncf(pixelColorMap[b])));
+        quad1yMap[b] = floorf(floorf(pixelColorMap[b]) * (1.0f / 8.0f));
+        quad1xMap[b] = floorf(pixelColorMap[b]) - (quad1yMap[b] * 8.0f);
+        quad2yMap[b] = floorf(ceilf(pixelColorMap[b]) * (1.0f / 8.0f));
+        quad2xMap[b] = ceilf(pixelColorMap[b]) - (quad2yMap[b] * 8.0f);
+        quad1yMap[b] = quad1yMap[b] * 64.0f + 0.5f;
+        quad2yMap[b] = quad2yMap[b] * 64.0f + 0.5f;
+        quad1xMap[b] = quad1xMap[b] * 64.0f + 0.5f;
+        quad2xMap[b] = quad2xMap[b] * 64.0f + 0.5f;
     }
 
     int lookupChannels = 3;
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char R = pInput[0];
             unsigned char G = pInput[1];
             unsigned char B = pInput[2];
-            float green     = pixelColorMap[G];
-            float red       = pixelColorMap[R];
+            float green = pixelColorMap[G];
+            float red = pixelColorMap[R];
             unsigned char* pLineLookup1 =
             &lookupTable[(((int)(quad1yMap[B] + green) << 9) + (int)(quad1xMap[B] + red)) * lookupChannels];
             unsigned char* pLineLookup2 =
@@ -633,7 +633,7 @@ void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Wid
     // 0.0721*256.0*256.0=4725.1456
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char* pSaturationMap =
             SaturationMap + (((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16) << 8);
@@ -660,7 +660,7 @@ void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, i
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = GammasMap[pInput[0]];
             pOutput[1] = GammasMap[pInput[1]];
@@ -685,7 +685,7 @@ void ocularConstrastFilter(unsigned char* Input, unsigned char* Output, int Widt
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = contrastMap[pInput[0]];
             pOutput[1] = contrastMap[pInput[1]];
@@ -710,7 +710,7 @@ void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = exposureMap[pInput[0]];
             pOutput[1] = exposureMap[pInput[1]];
@@ -736,7 +736,7 @@ void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Wid
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = BrightnessMap[pInput[0]];
             pOutput[1] = BrightnessMap[pInput[1]];
@@ -760,21 +760,21 @@ void ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Wid
     if (Channels == 1)
         return;
     unsigned short sIntensity = max(min(intensity, 100), 0);
-    int c1                    = 256 * (100 - sIntensity) / 100;
-    int c2                    = 256 * (100 - (100 - sIntensity)) / 100;
+    int c1 = 256 * (100 - sIntensity) / 100;
+    int c2 = 256 * (100 - (100 - sIntensity)) / 100;
 
     unsigned char ColorMapR[256] = { 0 };
     unsigned char ColorMapG[256] = { 0 };
     unsigned char ColorMapB[256] = { 0 };
     for (int pixel = 0; pixel < 256; pixel++) {
-        float fPixel     = pixel * (1.0f / 255.0f);
+        float fPixel = pixel * (1.0f / 255.0f);
         ColorMapR[pixel] = mix_u8(firstColorR, secondColorR, fPixel);
         ColorMapG[pixel] = mix_u8(firstColorG, secondColorG, fPixel);
         ColorMapB[pixel] = mix_u8(firstColorB, secondColorB, fPixel);
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char luminanceWeighting =
             ((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
@@ -798,10 +798,10 @@ void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, in
     if (Channels == 1)
         return;
     unsigned short sIntensity = max(min(intensity, 100), 0);
-    int c1                    = 256 * (100 - sIntensity) / 100;
-    int c2                    = 256 * (100 - (100 - sIntensity)) / 100;
-    short* distanceColorMap   = (short*)malloc(Height * sizeof(short));
-    short* patchDistanceMap   = (short*)malloc(Height * sizeof(short));
+    int c1 = 256 * (100 - sIntensity) / 100;
+    int c2 = 256 * (100 - (100 - sIntensity)) / 100;
+    short* distanceColorMap = (short*)malloc(Height * sizeof(short));
+    short* patchDistanceMap = (short*)malloc(Height * sizeof(short));
     if (distanceColorMap == NULL || patchDistanceMap == NULL) {
         if (distanceColorMap) {
             free(distanceColorMap);
@@ -813,13 +813,13 @@ void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, in
     }
     float color = 1.0f;
     for (int i = 0; i < Height; i++) {
-        float d             = i * (1.0f / Height) * slope + distance;
+        float d = i * (1.0f / Height) * slope + distance;
         distanceColorMap[i] = ClampToByte(255.0 * d * color);
         patchDistanceMap[i] = (short)(256 * clamp(1.0f / (1.0f - d), 0.0f, 1.0f));
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] =
             (int)(pInput[0] * c1 +
@@ -856,7 +856,7 @@ void ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width,
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 pOutput[3] = opacityMap[pInput[3]];
                 pInput += Channels;
@@ -875,7 +875,7 @@ void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, 
                         int Stride, ocularLevelParams* redLevelParams,
                         ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams) {
 
-    int Channels                 = Stride / Width;
+    int Channels = Stride / Width;
     unsigned char LevelMapR[256] = { 0 };
     unsigned char LevelMapG[256] = { 0 };
     unsigned char LevelMapB[256] = { 0 };
@@ -914,7 +914,7 @@ void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, 
 
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = LevelMapR[pInput[0]];
             pOutput[1] = LevelMapG[pInput[1]];
@@ -945,9 +945,9 @@ void yiq2rgb(short* Y, short* I, short* Q, unsigned char* R, unsigned char* G, u
 // hue : The hue angle, in degrees. 90 degrees by default
 void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                      float hueAdjust) {
-    int Channels               = Stride / Width;
-    hueAdjust                  = fmodf(hueAdjust, 360.0f) * 3.14159265358979323846f / 180.0f;
-    float hueMap[256 * 256]    = { 0 };
+    int Channels = Stride / Width;
+    hueAdjust = fmodf(hueAdjust, 360.0f) * 3.14159265358979323846f / 180.0f;
+    float hueMap[256 * 256] = { 0 };
     float ChromaMap[256 * 256] = { 0 };
 
     for (int Q = 0; Q < 256; Q++) {
@@ -964,21 +964,21 @@ void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int
             pHueMap++;
         }
     }
-    float hue    = 0;
+    float hue = 0;
     short YPrime = 0;
-    short I      = 0;
-    short Q      = 0;
+    short I = 0;
+    short Q = 0;
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             // Convert to YIQ
             rgb2yiq(&pInput[0], &pInput[1], &pInput[2], &YPrime, &I, &Q);
             // Calculate the hue and chroma
-            float* pHueMap    = hueMap + ((Q + 128) << 8);
-            hue               = pHueMap[I + 128];
+            float* pHueMap = hueMap + ((Q + 128) << 8);
+            hue = pHueMap[I + 128];
             float* pChromaMap = ChromaMap + ((Q + 128) << 8);
-            float chroma      = pChromaMap[I + 128];
+            float chroma = pChromaMap[I + 128];
             // Make the user's adjustments
             hue += (-hueAdjust); // why negative rotation?
             // Convert back to YIQ
@@ -1012,7 +1012,7 @@ void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output
     unsigned char HighlightShadowMapG[256 * 256] = { 0 };
     unsigned char HighlightShadowMapB[256 * 256] = { 0 };
     for (int lum = 0; lum < 256; lum++) {
-        float luminance                     = (1.0f / 255.0f) * lum;
+        float luminance = (1.0f / 255.0f) * lum;
         unsigned char* pHighlightShadowMapR = HighlightShadowMapR + (lum << 8);
         unsigned char* pHighlightShadowMapG = HighlightShadowMapG + (lum << 8);
         unsigned char* pHighlightShadowMapB = HighlightShadowMapB + (lum << 8);
@@ -1040,18 +1040,18 @@ void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
-            const unsigned char R               = pInput[0];
-            const unsigned char G               = pInput[1];
-            const unsigned char B               = pInput[2];
-            unsigned short lum                  = ((13926 * R + 46884 * G + 4725 * B) >> 16) << 8;
+            const unsigned char R = pInput[0];
+            const unsigned char G = pInput[1];
+            const unsigned char B = pInput[2];
+            unsigned short lum = ((13926 * R + 46884 * G + 4725 * B) >> 16) << 8;
             unsigned char* pHighlightShadowMapR = HighlightShadowMapR + (lum);
             unsigned char* pHighlightShadowMapG = HighlightShadowMapG + (lum);
             unsigned char* pHighlightShadowMapB = HighlightShadowMapB + (lum);
-            pOutput[0]                          = pHighlightShadowMapR[R];
-            pOutput[1]                          = pHighlightShadowMapG[G];
-            pOutput[2]                          = pHighlightShadowMapB[B];
+            pOutput[0] = pHighlightShadowMapR[R];
+            pOutput[1] = pHighlightShadowMapG[G];
+            pOutput[2] = pHighlightShadowMapB[B];
             pInput += Channels;
             pOutput += Channels;
         }
@@ -1069,14 +1069,14 @@ void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, in
         return;
     }
     short luminanceWeightingMap[256] = { 0 };
-    short shadowMap[256]             = { 0 };
-    short highlightMap[256]          = { 0 };
+    short shadowMap[256] = { 0 };
+    short highlightMap[256] = { 0 };
 
     int divLuminance[256 * 256] = { 0 };
     for (int pixel = 0; pixel < 256; pixel++) {
         luminanceWeightingMap[pixel] = (short)(pixel * 0.3f);
-        float luminance              = (1.0f / 255.0f) * pixel;
-        shadowMap[pixel]             = (short)(255.0f *
+        float luminance = (1.0f / 255.0f) * pixel;
+        shadowMap[pixel] = (short)(255.0f *
                                    clamp((powf(luminance, 1.0f / (shadows + 1.0f)) +
                                           (-0.76f) * powf(luminance, 2.0f / (shadows + 1.0f))) -
                                          luminance,
@@ -1098,17 +1098,17 @@ void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, in
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             const short luminance = luminanceWeightingMap[pInput[0]] +
             luminanceWeightingMap[pInput[1]] + luminanceWeightingMap[pInput[2]];
-            const short shadow    = shadowMap[luminance];
+            const short shadow = shadowMap[luminance];
             const short highlight = highlightMap[luminance];
-            short lshpixel        = (luminance + shadow + highlight);
-            int* pDivLuminance    = divLuminance + (luminance << 8);
-            pOutput[0]            = (lshpixel * pDivLuminance[pInput[0]]) >> 8;
-            pOutput[1]            = (lshpixel * pDivLuminance[pInput[1]]) >> 8;
-            pOutput[2]            = (lshpixel * pDivLuminance[pInput[2]]) >> 8;
+            short lshpixel = (luminance + shadow + highlight);
+            int* pDivLuminance = divLuminance + (luminance << 8);
+            pOutput[0] = (lshpixel * pDivLuminance[pInput[0]]) >> 8;
+            pOutput[1] = (lshpixel * pDivLuminance[pInput[1]]) >> 8;
+            pOutput[2] = (lshpixel * pDivLuminance[pInput[2]]) >> 8;
             pInput += Channels;
             pOutput += Channels;
         }
@@ -1126,12 +1126,12 @@ void ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Wid
     if (Channels == 1) {
         return;
     }
-    unsigned short sIntensity          = max(min(intensity, 100), 0);
-    int c1                             = 256 * (100 - sIntensity) / 100;
-    int c2                             = 256 * (100 - (100 - sIntensity)) / 100;
-    float fColorR                      = (float)filterColorR * (1.0f / 255.0f);
-    float fColorG                      = (float)filterColorG * (1.0f / 255.0f);
-    float fColorB                      = (float)filterColorB * (1.0f / 255.0f);
+    unsigned short sIntensity = max(min(intensity, 100), 0);
+    int c1 = 256 * (100 - sIntensity) / 100;
+    int c2 = 256 * (100 - (100 - sIntensity)) / 100;
+    float fColorR = (float)filterColorR * (1.0f / 255.0f);
+    float fColorG = (float)filterColorG * (1.0f / 255.0f);
+    float fColorB = (float)filterColorB * (1.0f / 255.0f);
     unsigned char filterColorRMap[256] = { 0 };
     unsigned char filterColorGMap[256] = { 0 };
     unsigned char filterColorBMap[256] = { 0 };
@@ -1149,12 +1149,12 @@ void ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Wid
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char lum = ((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
-            pOutput[0]        = (int)(pInput[0] * c1 + filterColorRMap[lum] * c2) >> 8;
-            pOutput[1]        = (int)(pInput[1] * c1 + filterColorGMap[lum] * c2) >> 8;
-            pOutput[2]        = (int)(pInput[2] * c1 + filterColorBMap[lum] * c2) >> 8;
+            pOutput[0] = (int)(pInput[0] * c1 + filterColorRMap[lum] * c2) >> 8;
+            pOutput[1] = (int)(pInput[1] * c1 + filterColorGMap[lum] * c2) >> 8;
+            pOutput[2] = (int)(pInput[2] * c1 + filterColorBMap[lum] * c2) >> 8;
             pInput += Channels;
             pOutput += Channels;
         }
@@ -1174,7 +1174,7 @@ void ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Wi
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             pOutput[0] = invertMap[pInput[0]];
             pOutput[1] = invertMap[pInput[1]];
@@ -1225,7 +1225,7 @@ void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output,
 
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 pOutput[0] = step(threshold, pInput[0]);
                 pInput++;
@@ -1237,7 +1237,7 @@ void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output,
 
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char luminance = ((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
             pOutput[2] = pOutput[1] = pOutput[0] = step(threshold, luminance);
@@ -1261,42 +1261,42 @@ void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int W
         return;
     }
     float Temperature = temperature;
-    Temperature       = Temperature < 5000 ? (float)(0.0004 * (Temperature - 5000.0)) :
-                                             (float)(0.00006 * (Temperature - 5000.0));
+    Temperature = Temperature < 5000 ? (float)(0.0004 * (Temperature - 5000.0)) :
+                                       (float)(0.00006 * (Temperature - 5000.0));
 
     float Tint = tint;
-    Tint       = (float)(Tint / 100.0f);
+    Tint = (float)(Tint / 100.0f);
 
     short YPrime = 0;
-    short I      = 0;
-    short Q      = 0;
+    short I = 0;
+    short Q = 0;
 
     float warmFilterR = 0.93f;
     float warmFilterG = 0.54f;
     float warmFilterB = 0;
-    int plusTint      = (int)(Tint * 255.0f * 0.5226f * 0.1f);
+    int plusTint = (int)(Tint * 255.0f * 0.5226f * 0.1f);
 
-    short QTint[256]                    = { 0 };
+    short QTint[256] = { 0 };
     unsigned char processedMap[256 * 3] = { 0 };
-    unsigned char* processedRMap        = &processedMap[0];
-    unsigned char* processedGMap        = &processedMap[256];
-    unsigned char* processedBMap        = &processedMap[512];
+    unsigned char* processedRMap = &processedMap[0];
+    unsigned char* processedGMap = &processedMap[256];
+    unsigned char* processedBMap = &processedMap[512];
     for (int pixel = 0; pixel < 256; pixel++) {
-        float fpixel         = pixel * (1.0f / 255.0f);
-        QTint[pixel]         = (short)clamp((float)(pixel - 127 + plusTint), -127.0f, 127.0f);
-        float processedR     = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterR) :
-                                                (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterR)));
-        float processedG     = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterG) :
-                                                (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterG)));
-        float processedB     = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterB) :
-                                                (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterB)));
+        float fpixel = pixel * (1.0f / 255.0f);
+        QTint[pixel] = (short)clamp((float)(pixel - 127 + plusTint), -127.0f, 127.0f);
+        float processedR = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterR) :
+                                            (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterR)));
+        float processedG = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterG) :
+                                            (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterG)));
+        float processedB = (fpixel < 0.5f ? (2.0f * fpixel * warmFilterB) :
+                                            (1.0f - 2.0f * (1.0f - fpixel) * (1.0f - warmFilterB)));
         processedRMap[pixel] = ClampToByte(255.0f * mix(fpixel, processedR, Temperature));
         processedGMap[pixel] = ClampToByte(255.0f * mix(fpixel, processedG, Temperature));
         processedBMap[pixel] = ClampToByte(255.0f * mix(fpixel, processedB, Temperature));
     }
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             const unsigned char R = pInput[0];
             const unsigned char G = pInput[1];
@@ -1332,21 +1332,21 @@ void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width
     if (Channels == 1) {
         return;
     }
-    int iVibrance    = (int)(-(vibrance * 256));
+    int iVibrance = (int)(-(vibrance * 256));
     unsigned char mx = 0;
-    int amt          = 0;
+    int amt = 0;
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             const unsigned char r = pInput[0];
             const unsigned char g = pInput[1];
             const unsigned char b = pInput[2];
-            mx                    = max3(r, g, b);
-            amt                   = (3 * mx - (r + g + b)) * iVibrance;
-            pOutput[0]            = ClampToByte((r * (255 * 256 - amt) + mx * amt) >> 16);
-            pOutput[1]            = ClampToByte((g * (255 * 256 - amt) + mx * amt) >> 16);
-            pOutput[2]            = ClampToByte((b * (255 * 256 - amt) + mx * amt) >> 16);
+            mx = max3(r, g, b);
+            amt = (3 * mx - (r + g + b)) * iVibrance;
+            pOutput[0] = ClampToByte((r * (255 * 256 - amt) + mx * amt) >> 16);
+            pOutput[1] = ClampToByte((g * (255 * 256 - amt) + mx * amt) >> 16);
+            pOutput[2] = ClampToByte((b * (255 * 256 - amt) + mx * amt) >> 16);
 
             pInput += Channels;
             pOutput += Channels;
@@ -1401,13 +1401,13 @@ void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char
 
     if (S > (const unsigned char*)0) {
         int r, g, b;
-        r       = *V;
-        g       = *V;
-        b       = *V;
+        r = *V;
+        g = *V;
+        b = *V;
         float h = *H * (6.0f / 180.0f); // 0`180 -> 0.0`1.0
-        int i   = (int)h;
-        int f   = (int)(256 * (h - (float)i));
-        int VS  = (*V * *S) >> 8;
+        int i = (int)h;
+        int f = (int)(256 * (h - (float)i));
+        int VS = (*V * *S) >> 8;
         int VSF = VS * f;
         switch (i) {
         case 0:
@@ -1463,10 +1463,10 @@ void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width
     if (Channels == 1) {
         return;
     }
-    int maxSatShiftAdjust     = (int)(maxSaturationShift * 255.0f * skinToneAdjust);
-    float maxHueShiftAdjust   = maxHueShift * skinToneAdjust;
+    int maxSatShiftAdjust = (int)(maxSaturationShift * 255.0f * skinToneAdjust);
+    float maxHueShiftAdjust = maxHueShift * skinToneAdjust;
     unsigned char hueMap[256] = { 0 };
-    int satMap[256]           = { 0 };
+    int satMap[256] = { 0 };
     for (unsigned int H = 0; H < 256; H++) {
         satMap[H] = 0;
         float hue = H * (1.0f / 255.0f);
@@ -1497,7 +1497,7 @@ void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width
     unsigned char H, S, V, _S;
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* pOutput = Output + (Y * Stride);
-        unsigned char* pInput  = Input + (Y * Stride);
+        unsigned char* pInput = Input + (Y * Stride);
         for (int X = 0; X < Width; X++) {
             unsigned char R = pInput[0];
             unsigned char G = pInput[1];
@@ -1520,15 +1520,15 @@ void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float* a3, f
 
     if (sigma < 0.5f)
         sigma = 0.5f;
-    alpha  = (float)exp((0.726) * (0.726)) / sigma;
-    lamma  = (float)exp(-alpha);
-    *b2    = (float)exp(-2 * alpha);
-    k      = (1 - lamma) * (1 - lamma) / (1 + 2 * alpha * lamma - (*b2));
-    *a0    = k;
-    *a1    = k * (alpha - 1) * lamma;
-    *a2    = k * (alpha + 1) * lamma;
-    *a3    = -k * (*b2);
-    *b1    = -2 * lamma;
+    alpha = (float)exp((0.726) * (0.726)) / sigma;
+    lamma = (float)exp(-alpha);
+    *b2 = (float)exp(-2 * alpha);
+    k = (1 - lamma) * (1 - lamma) / (1 + 2 * alpha * lamma - (*b2));
+    *a0 = k;
+    *a1 = k * (alpha - 1) * lamma;
+    *a2 = k * (alpha + 1) * lamma;
+    *a3 = -k * (*b2);
+    *b1 = -2 * lamma;
     *cprev = (*a0 + *a1) / (1 + *b1 + *b2);
     *cnext = (*a2 + *a3) / (1 + *b1 + *b2);
 }
@@ -1536,7 +1536,7 @@ void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float* a3, f
 void gaussianHorizontal(unsigned char* bufferPerLine, unsigned char* lpRowInitial,
                         unsigned char* lpColumn, int width, int height, int Channels, int Nwidth,
                         float a0a1, float a2a3, float b1b2, float cprev, float cnext) {
-    int HeightStep  = Channels * height;
+    int HeightStep = Channels * height;
     int WidthSubOne = width - 1;
     if (Channels == 3) {
         float prevOut[3];
@@ -1544,9 +1544,9 @@ void gaussianHorizontal(unsigned char* bufferPerLine, unsigned char* lpRowInitia
         prevOut[1] = (lpRowInitial[1] * cprev);
         prevOut[2] = (lpRowInitial[2] * cprev);
         for (int x = 0; x < width; ++x) {
-            prevOut[0]       = ((lpRowInitial[0] * (a0a1)) - (prevOut[0] * (b1b2)));
-            prevOut[1]       = ((lpRowInitial[1] * (a0a1)) - (prevOut[1] * (b1b2)));
-            prevOut[2]       = ((lpRowInitial[2] * (a0a1)) - (prevOut[2] * (b1b2)));
+            prevOut[0] = ((lpRowInitial[0] * (a0a1)) - (prevOut[0] * (b1b2)));
+            prevOut[1] = ((lpRowInitial[1] * (a0a1)) - (prevOut[1] * (b1b2)));
+            prevOut[2] = ((lpRowInitial[2] * (a0a1)) - (prevOut[2] * (b1b2)));
             bufferPerLine[0] = (unsigned char)prevOut[0];
             bufferPerLine[1] = (unsigned char)prevOut[1];
             bufferPerLine[2] = (unsigned char)prevOut[2];
@@ -1624,7 +1624,7 @@ void gaussianHorizontal(unsigned char* bufferPerLine, unsigned char* lpRowInitia
         float prevOut = (lpRowInitial[0] * cprev);
 
         for (int x = 0; x < width; ++x) {
-            prevOut          = ((lpRowInitial[0] * (a0a1)) - (prevOut * (b1b2)));
+            prevOut = ((lpRowInitial[0] * (a0a1)) - (prevOut * (b1b2)));
             bufferPerLine[0] = (unsigned char)prevOut;
             bufferPerLine += Channels;
             lpRowInitial += Channels;
@@ -1650,7 +1650,7 @@ void gaussianVertical(unsigned char* bufferPerLine, unsigned char* lpRowInitial,
                       unsigned char* lpColInitial, int height, int width, int Channels, float a0a1,
                       float a2a3, float b1b2, float cprev, float cnext) {
 
-    int WidthStep    = Channels * width;
+    int WidthStep = Channels * width;
     int HeightSubOne = height - 1;
     if (Channels == 3) {
         float prevOut[3];
@@ -1659,9 +1659,9 @@ void gaussianVertical(unsigned char* bufferPerLine, unsigned char* lpRowInitial,
         prevOut[2] = (lpRowInitial[2] * cprev);
 
         for (int y = 0; y < height; y++) {
-            prevOut[0]       = ((lpRowInitial[0] * a0a1) - (prevOut[0] * b1b2));
-            prevOut[1]       = ((lpRowInitial[1] * a0a1) - (prevOut[1] * b1b2));
-            prevOut[2]       = ((lpRowInitial[2] * a0a1) - (prevOut[2] * b1b2));
+            prevOut[0] = ((lpRowInitial[0] * a0a1) - (prevOut[0] * b1b2));
+            prevOut[1] = ((lpRowInitial[1] * a0a1) - (prevOut[1] * b1b2));
+            prevOut[2] = ((lpRowInitial[2] * a0a1) - (prevOut[2] * b1b2));
             bufferPerLine[0] = (unsigned char)prevOut[0];
             bufferPerLine[1] = (unsigned char)prevOut[1];
             bufferPerLine[2] = (unsigned char)prevOut[2];
@@ -1697,10 +1697,10 @@ void gaussianVertical(unsigned char* bufferPerLine, unsigned char* lpRowInitial,
         prevOut[3] = (lpRowInitial[3] * cprev);
 
         for (int y = 0; y < height; y++) {
-            prevOut[0]       = ((lpRowInitial[0] * a0a1) - (prevOut[0] * b1b2));
-            prevOut[1]       = ((lpRowInitial[1] * a0a1) - (prevOut[1] * b1b2));
-            prevOut[2]       = ((lpRowInitial[2] * a0a1) - (prevOut[2] * b1b2));
-            prevOut[3]       = ((lpRowInitial[3] * a0a1) - (prevOut[3] * b1b2));
+            prevOut[0] = ((lpRowInitial[0] * a0a1) - (prevOut[0] * b1b2));
+            prevOut[1] = ((lpRowInitial[1] * a0a1) - (prevOut[1] * b1b2));
+            prevOut[2] = ((lpRowInitial[2] * a0a1) - (prevOut[2] * b1b2));
+            prevOut[3] = ((lpRowInitial[3] * a0a1) - (prevOut[3] * b1b2));
             bufferPerLine[0] = (unsigned char)prevOut[0];
             bufferPerLine[1] = (unsigned char)prevOut[1];
             bufferPerLine[2] = (unsigned char)prevOut[2];
@@ -1734,9 +1734,9 @@ void gaussianVertical(unsigned char* bufferPerLine, unsigned char* lpRowInitial,
         }
     } else if (Channels == 1) {
         float prevOut = 0;
-        prevOut       = (lpRowInitial[0] * cprev);
+        prevOut = (lpRowInitial[0] * cprev);
         for (int y = 0; y < height; y++) {
-            prevOut          = ((lpRowInitial[0] * a0a1) - (prevOut * b1b2));
+            prevOut = ((lpRowInitial[0] * a0a1) - (prevOut * b1b2));
             bufferPerLine[0] = (unsigned char)prevOut;
             bufferPerLine += Channels;
             lpRowInitial += Channels;
@@ -1769,9 +1769,9 @@ void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int W
     float a2a3 = (a2 + a3);
     float b1b2 = (b1 + b2);
 
-    int bufferSizePerThread      = (Width > Height ? Width : Height) * Channels;
+    int bufferSizePerThread = (Width > Height ? Width : Height) * Channels;
     unsigned char* bufferPerLine = (unsigned char*)malloc(bufferSizePerThread);
-    unsigned char* tempData      = (unsigned char*)malloc(Height * Stride);
+    unsigned char* tempData = (unsigned char*)malloc(Height * Stride);
     if (bufferPerLine == NULL || tempData == NULL) {
         if (tempData) {
             free(tempData);
@@ -1805,7 +1805,7 @@ void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int W
 
 void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char* y,
                unsigned char* cb, unsigned char* cr) {
-    *y  = (unsigned char)((19595 * R + 38470 * G + 7471 * B) >> 16);
+    *y = (unsigned char)((19595 * R + 38470 * G + 7471 * B) >> 16);
     *cb = (unsigned char)(((36962 * (B - *y)) >> 16) + 128);
     *cr = (unsigned char)(((46727 * (R - *y)) >> 16) + 128);
 }
@@ -1817,9 +1817,9 @@ void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned cha
     int r, g, b;
     int cr = Cr - 128;
     int cb = Cb - 128;
-    r      = y_fixed + cr * float2fixed(1.40200f);
-    g      = y_fixed + (cr * -float2fixed(0.71414f)) + ((cb * -float2fixed(0.34414f)) * 0xffff0000);
-    b      = y_fixed + cb * float2fixed(1.77200f);
+    r = y_fixed + cr * float2fixed(1.40200f);
+    g = y_fixed + (cr * -float2fixed(0.71414f)) + ((cb * -float2fixed(0.34414f)) * 0xffff0000);
+    b = y_fixed + cb * float2fixed(1.77200f);
     r >>= 20;
     g >>= 20;
     b >>= 20;
@@ -1853,9 +1853,9 @@ void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Wi
                              int Stride, float GaussianSigma, int intensity) {
 
     int Channels = Stride / Width;
-    intensity    = max(min(intensity, 100), 0);
-    int c1       = 256 * (100 - intensity) / 100;
-    int c2       = 256 * (100 - (100 - intensity)) / 100;
+    intensity = max(min(intensity, 100), 0);
+    int c1 = 256 * (100 - intensity) / 100;
+    int c2 = 256 * (100 - (100 - intensity)) / 100;
 
     unsigned char unsharpMaskMap[256 * 256] = { 0 };
     for (unsigned int PS = 0; PS < 256; PS++) {
@@ -1886,8 +1886,8 @@ void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Wi
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
-            unsigned char* pTemp  = Temp + (Y * Width);
-            unsigned char* pBlur  = Blur + (Y * Width);
+            unsigned char* pTemp = Temp + (Y * Width);
+            unsigned char* pBlur = Blur + (Y * Width);
             for (int X = 0; X < Width; X++) {
                 pTemp[0] = (unsigned char)((19595 * pInput[0] + 38470 * pInput[1] + 7471 * pInput[2]) >> 16);
 
@@ -1901,10 +1901,10 @@ void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Wi
         ocularGaussianBlurFilter(Temp, Blur, Width, Height, Width, GaussianSigma);
         unsigned char cb, cr;
         for (int Y = 0; Y < Height; Y++) {
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pTemp   = Temp + (Y * Width);
-            unsigned char* pBlur   = Blur + (Y * Width);
+            unsigned char* pTemp = Temp + (Y * Width);
+            unsigned char* pBlur = Blur + (Y * Width);
             for (int x = 0; x < Width; x++) {
                 cb = (unsigned char)((36962 * (pInput[2] - (int)(pTemp[0])) >> 16) + 128);
                 cr = (unsigned char)((46727 * (pInput[0] - (int)(pTemp[0])) >> 16) + 128);
@@ -1935,14 +1935,14 @@ void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Wi
         ocularGaussianBlurFilter(Input, Blur, Width, Height, Width, GaussianSigma);
 
         for (int Y = 0; Y < Height; Y++) {
-            unsigned char* pInput  = Input + (Y * Width);
-            unsigned char* pBlur   = Blur + (Y * Width);
+            unsigned char* pInput = Input + (Y * Width);
+            unsigned char* pBlur = Blur + (Y * Width);
             unsigned char* pOutput = Output + (Y * Width);
             for (int x = 0; x < Width; x++) {
                 // Sharpen: High Contrast Overlay
-                pOutput[0]                     = pInput[0] - pOutput[0] + 128;
+                pOutput[0] = pInput[0] - pOutput[0] + 128;
                 unsigned char* pUnsharpMaskMap = unsharpMaskMap + (pInput[0] << 8);
-                pOutput[0]                     = pUnsharpMaskMap[pOutput[0]];
+                pOutput[0] = pUnsharpMaskMap[pOutput[0]];
 
                 pBlur++;
                 pOutput++;
@@ -1960,17 +1960,17 @@ void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Wi
 
 inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Channels, int Radius) {
-    int iRadius          = Radius + 1;
-    int iScale           = (int)((256.0f * 256.0f) / (2 * Radius + 1));
-    int iWidthStep       = Width * Channels;
-    int iWidthStepDec    = (Width - 1) * Channels;
-    int iRadChannels     = Radius * Channels;
+    int iRadius = Radius + 1;
+    int iScale = (int)((256.0f * 256.0f) / (2 * Radius + 1));
+    int iWidthStep = Width * Channels;
+    int iWidthStepDec = (Width - 1) * Channels;
+    int iRadChannels = Radius * Channels;
     int iRadChannelsPlus = (iRadChannels + Channels);
     switch (Channels) {
     case 1: {
         for (int y = 0; y < Height; y++) {
             //  Process left edge
-            int iY  = y * iWidthStep;
+            int iY = y * iWidthStep;
             int sum = Input[iY] * Radius;
             for (int x = 0; x < iRadius; x++) {
                 int p = (y * Width + x) * Channels;
@@ -1979,7 +1979,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
             Output[iY] = (sum * iScale) >> 16;
             for (int x = 1; x < iRadius; x++) {
                 int pLeft = iY + x * Channels;
-                int p0    = pLeft + iRadChannels;
+                int p0 = pLeft + iRadChannels;
 
                 sum += Input[p0];
                 sum -= Input[iY];
@@ -2002,8 +2002,8 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
             // Process right edge
             for (int x = Width - Radius; x < Width; x++) {
                 int iRight = iY + x * Channels;
-                int i0     = iY + iWidthStepDec;
-                int i1     = iRight - iRadChannelsPlus;
+                int i0 = iY + iWidthStepDec;
+                int i1 = iRight - iRadChannelsPlus;
 
                 sum += Input[i0];
                 sum -= Input[i1];
@@ -2016,7 +2016,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
         for (int y = 0; y < Height; y++) {
             //  Process left edge
 
-            int iY   = y * iWidthStep;
+            int iY = y * iWidthStep;
             int sumR = Input[iY] * Radius;
             int sumG = Input[iY + 1] * Radius;
             int sumB = Input[iY + 2] * Radius;
@@ -2026,12 +2026,12 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
                 sumG += Input[i + 1];
                 sumB += Input[i + 2];
             }
-            Output[iY]     = (sumR * iScale) >> 16;
+            Output[iY] = (sumR * iScale) >> 16;
             Output[iY + 1] = (sumG * iScale) >> 16;
             Output[iY + 2] = (sumB * iScale) >> 16;
             for (int x = 1; x < iRadius; x++) {
                 int iLeft = iY + x * Channels;
-                int i0    = iLeft + iRadChannels;
+                int i0 = iLeft + iRadChannels;
 
                 sumR += Input[i0];
                 sumR -= Input[iY];
@@ -2039,7 +2039,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[iY + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[iY + 2];
-                Output[iLeft]     = (sumR * iScale) >> 16;
+                Output[iLeft] = (sumR * iScale) >> 16;
                 Output[iLeft + 1] = (sumG * iScale) >> 16;
                 Output[iLeft + 2] = (sumB * iScale) >> 16;
             }
@@ -2059,7 +2059,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
 
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iKernal]     = (sumR * iScale) >> 16;
+                Output[iKernal] = (sumR * iScale) >> 16;
                 Output[iKernal + 1] = (sumG * iScale) >> 16;
                 Output[iKernal + 2] = (sumB * iScale) >> 16;
             }
@@ -2067,8 +2067,8 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
             // Process right edge
             for (int x = Width - Radius; x < Width; x++) {
                 int iRight = iY + x * Channels;
-                int i0     = iY + iWidthStepDec;
-                int i1     = iRight - iRadChannelsPlus;
+                int i0 = iY + iWidthStepDec;
+                int i1 = iRight - iRadChannelsPlus;
 
                 sumR += Input[i0];
                 sumR -= Input[i1];
@@ -2078,7 +2078,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
 
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iRight]     = (sumR * iScale) >> 16;
+                Output[iRight] = (sumR * iScale) >> 16;
                 Output[iRight + 1] = (sumG * iScale) >> 16;
                 Output[iRight + 2] = (sumB * iScale) >> 16;
             }
@@ -2088,7 +2088,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
     case 4: {
         for (int y = 0; y < Height; y++) {
             //  Process left edge
-            int iY   = y * iWidthStep;
+            int iY = y * iWidthStep;
             int sumR = Input[iY] * Radius;
             int sumG = Input[iY + 1] * Radius;
             int sumB = Input[iY + 2] * Radius;
@@ -2098,20 +2098,20 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
                 sumG += Input[i + 1];
                 sumB += Input[i + 2];
             }
-            Output[iY]     = (sumR * iScale) >> 16;
+            Output[iY] = (sumR * iScale) >> 16;
             Output[iY + 1] = (sumG * iScale) >> 16;
             Output[iY + 2] = (sumB * iScale) >> 16;
             Output[iY + 3] = Input[iY + 3];
             for (int x = 1; x < iRadius; x++) {
                 int iLeft = iY + x * Channels;
-                int i0    = iLeft + iRadChannels;
+                int i0 = iLeft + iRadChannels;
                 sumR += Input[i0];
                 sumR -= Input[iLeft];
                 sumG += Input[i0 + 1];
                 sumG -= Input[iLeft + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[iLeft + 2];
-                Output[iLeft]     = (sumR * iScale) >> 16;
+                Output[iLeft] = (sumR * iScale) >> 16;
                 Output[iLeft + 1] = (sumG * iScale) >> 16;
                 Output[iLeft + 2] = (sumB * iScale) >> 16;
                 Output[iLeft + 3] = Input[iLeft + 3];
@@ -2132,7 +2132,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
 
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iKernal]     = (sumR * iScale) >> 16;
+                Output[iKernal] = (sumR * iScale) >> 16;
                 Output[iKernal + 1] = (sumG * iScale) >> 16;
                 Output[iKernal + 2] = (sumB * iScale) >> 16;
                 Output[iKernal + 3] = Input[iKernal + 3];
@@ -2141,8 +2141,8 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
             // Process right edge
             for (int x = Width - Radius; x < Width; x++) {
                 int iRight = iY + x * Channels;
-                int i0     = iY + iWidthStepDec;
-                int i1     = iRight - iRadChannelsPlus;
+                int i0 = iY + iWidthStepDec;
+                int i1 = iRight - iRadChannelsPlus;
 
                 sumR += Input[i0];
                 sumR -= Input[i1];
@@ -2152,7 +2152,7 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
 
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iRight]     = (sumR * iScale) >> 16;
+                Output[iRight] = (sumR * iScale) >> 16;
                 Output[iRight + 1] = (sumG * iScale) >> 16;
                 Output[iRight + 2] = (sumB * iScale) >> 16;
                 Output[iRight + 3] = Input[iRight + 3];
@@ -2166,18 +2166,18 @@ inline void boxfilterRow(unsigned char* Input, unsigned char* Output, int Width,
 
 inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Channels, int Radius) {
-    int iScale           = (int)((256.0f * 256.0f) / (2 * Radius + 1));
-    int iWidthStep       = Width * Channels;
-    int iWidthStepDec    = (Height - 1) * iWidthStep;
-    int iRadWidthStep    = Radius * iWidthStep;
+    int iScale = (int)((256.0f * 256.0f) / (2 * Radius + 1));
+    int iWidthStep = Width * Channels;
+    int iWidthStepDec = (Height - 1) * iWidthStep;
+    int iRadWidthStep = Radius * iWidthStep;
     int iRadWidthStepDec = (iRadWidthStep + iWidthStep);
-    int iHeightRadius    = Height - Radius;
-    int iRadius          = Radius + 1;
+    int iHeightRadius = Height - Radius;
+    int iRadius = Radius + 1;
     switch (Channels) {
     case 1: {
         for (int x = 0; x < Width; x++) {
             //  Process left edge
-            int iX  = x * Channels;
+            int iX = x * Channels;
             int sum = Input[iX] * Radius;
             for (int y = 0; y < iRadius; y++) {
                 int i = (y * Width + x) * Channels;
@@ -2201,8 +2201,8 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
             for (int y = iRadius; y < iHeightRadius; y++) {
 
                 int iKernal = iX + y * iWidthStep;
-                int i0      = iKernal + iRadWidthStep;
-                int i1      = iKernal - iRadWidthStepDec;
+                int i0 = iKernal + iRadWidthStep;
+                int i1 = iKernal - iRadWidthStepDec;
 
                 sum += Input[i0];
                 sum -= Input[i1];
@@ -2229,7 +2229,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
     case 3: {
         for (int x = 0; x < Width; x++) {
             //  Process left edge
-            int iX   = x * Channels;
+            int iX = x * Channels;
             int sumR = Input[iX] * Radius;
             int sumG = Input[iX + 1] * Radius;
             int sumB = Input[iX + 2] * Radius;
@@ -2239,12 +2239,12 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG += Input[i + 1];
                 sumB += Input[i + 2];
             }
-            Output[iX]     = (sumR * iScale) >> 16;
+            Output[iX] = (sumR * iScale) >> 16;
             Output[iX + 1] = (sumG * iScale) >> 16;
             Output[iX + 2] = (sumB * iScale) >> 16;
 
             for (int y = 1; y < iRadius; y++) {
-                int i  = iX + y * iWidthStep;
+                int i = iX + y * iWidthStep;
                 int i0 = i + iRadWidthStep;
 
                 sumR += Input[i0];
@@ -2253,7 +2253,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[iX + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[iX + 2];
-                Output[i]     = (sumR * iScale) >> 16;
+                Output[i] = (sumR * iScale) >> 16;
                 Output[i + 1] = (sumG * iScale) >> 16;
                 Output[i + 2] = (sumB * iScale) >> 16;
             }
@@ -2273,7 +2273,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[i1 + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iKernal]     = (sumR * iScale) >> 16;
+                Output[iKernal] = (sumR * iScale) >> 16;
                 Output[iKernal + 1] = (sumG * iScale) >> 16;
                 Output[iKernal + 2] = (sumB * iScale) >> 16;
             }
@@ -2281,8 +2281,8 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
             // Process right edge
             for (int y = iHeightRadius; y < Height; y++) {
                 int iRight = iX + y * iWidthStep;
-                int i0     = iWidthStepDec + iX;
-                int i1     = iRight - iRadWidthStepDec;
+                int i0 = iWidthStepDec + iX;
+                int i1 = iRight - iRadWidthStepDec;
 
                 sumR += Input[i0];
                 sumR -= Input[i1];
@@ -2290,7 +2290,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[i1 + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iRight]     = (sumR * iScale) >> 16;
+                Output[iRight] = (sumR * iScale) >> 16;
                 Output[iRight + 1] = (sumG * iScale) >> 16;
                 Output[iRight + 2] = (sumB * iScale) >> 16;
             }
@@ -2302,7 +2302,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
     case 4: {
         for (int x = 0; x < Width; x++) {
             //  Process left edge
-            int iX   = x * Channels;
+            int iX = x * Channels;
             int sumR = Input[iX] * Radius;
             int sumG = Input[iX + 1] * Radius;
             int sumB = Input[iX + 2] * Radius;
@@ -2312,12 +2312,12 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG += Input[i + 1];
                 sumB += Input[i + 2];
             }
-            Output[iX]     = (sumR * iScale) >> 16;
+            Output[iX] = (sumR * iScale) >> 16;
             Output[iX + 1] = (sumG * iScale) >> 16;
             Output[iX + 2] = (sumB * iScale) >> 16;
             Output[iX + 3] = Input[iX + 3];
             for (int y = 1; y < iRadius; y++) {
-                int i  = iX + y * iWidthStep;
+                int i = iX + y * iWidthStep;
                 int i0 = i + iRadWidthStep;
                 sumR += Input[i0];
                 sumR -= Input[iX];
@@ -2325,7 +2325,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[iX + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[iX + 2];
-                Output[i]     = (sumR * iScale) >> 16;
+                Output[i] = (sumR * iScale) >> 16;
                 Output[i + 1] = (sumG * iScale) >> 16;
                 Output[i + 2] = (sumB * iScale) >> 16;
                 Output[i + 3] = Input[i + 3];
@@ -2335,15 +2335,15 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
             for (int y = iRadius; y < iHeightRadius; y++) {
 
                 int iKernal = iX + y * iWidthStep;
-                int i0      = iKernal + iRadWidthStep;
-                int i1      = iKernal - iRadWidthStepDec;
+                int i0 = iKernal + iRadWidthStep;
+                int i1 = iKernal - iRadWidthStepDec;
                 sumR += Input[i0];
                 sumR -= Input[i1];
                 sumG += Input[i0 + 1];
                 sumG -= Input[i1 + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iKernal]     = (sumR * iScale) >> 16;
+                Output[iKernal] = (sumR * iScale) >> 16;
                 Output[iKernal + 1] = (sumG * iScale) >> 16;
                 Output[iKernal + 2] = (sumB * iScale) >> 16;
                 Output[iKernal + 3] = Input[iKernal + 3];
@@ -2361,7 +2361,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
                 sumG -= Input[i1 + 1];
                 sumB += Input[i0 + 2];
                 sumB -= Input[i1 + 2];
-                Output[iRight]     = (sumR * iScale) >> 16;
+                Output[iRight] = (sumR * iScale) >> 16;
                 Output[iRight + 1] = (sumG * iScale) >> 16;
                 Output[iRight + 2] = (sumB * iScale) >> 16;
                 Output[iRight + 3] = Input[iRight + 3];
@@ -2379,7 +2379,7 @@ inline void boxfilterCol(unsigned char* Input, unsigned char* Output, int Width,
 void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Stride, int Radius) {
 
-    int Channels        = Stride / Width;
+    int Channels = Stride / Width;
     unsigned char* temp = (unsigned char*)malloc(Width * Height * Channels);
     if (temp == NULL) {
         return;
@@ -2393,9 +2393,9 @@ void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width,
                          int Stride, float Radius, int sharpness, int intensity) {
 
     int Channels = Stride / Width;
-    intensity    = max(min(intensity, 100), 0);
-    int c1       = 256 * (100 - intensity) / 100;
-    int c2       = 256 * (100 - (100 - intensity)) / 100;
+    intensity = max(min(intensity, 100), 0);
+    int c1 = 256 * (100 - intensity) / 100;
+    int c2 = 256 * (100 - (100 - intensity)) / 100;
     // Sharpen: High Contrast Overlay
     unsigned char sharpnessMap[256 * 256] = { 0 };
     for (unsigned int PS = 0; PS < 256; PS++) {
@@ -2426,8 +2426,8 @@ void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width,
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pInput = Input + (Y * Stride);
-            unsigned char* pTemp  = temp + (Y * Width);
-            unsigned char* pBlur  = blur + (Y * Width);
+            unsigned char* pTemp = temp + (Y * Width);
+            unsigned char* pBlur = blur + (Y * Width);
             for (int X = 0; X < Width; X++) {
                 pTemp[0] = (unsigned char)((19595 * pInput[0] + 38470 * pInput[1] + 7471 * pInput[2]) >> 16);
                 pBlur[0] = pTemp[0];
@@ -2439,10 +2439,10 @@ void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width,
         ocularBoxBlurFilter(temp, blur, Width, Height, Width, (int)Radius);
         unsigned char cb, cr;
         for (int Y = 0; Y < Height; Y++) {
-            unsigned char* pInput  = Input + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
             unsigned char* pOutput = Output + (Y * Stride);
-            unsigned char* pTemp   = temp + (Y * Width);
-            unsigned char* pBlur   = blur + (Y * Width);
+            unsigned char* pTemp = temp + (Y * Width);
+            unsigned char* pBlur = blur + (Y * Width);
             for (int x = 0; x < Width; x++) {
                 cb = (unsigned char)((36962 * (pInput[2] - (int)(pTemp[0])) >> 16) + 128);
                 cr = (unsigned char)((46727 * (pInput[0] - (int)(pTemp[0])) >> 16) + 128);
@@ -2473,12 +2473,12 @@ void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width,
         ocularBoxBlurFilter(Input, Blur, Width, Height, Width, (int)Radius);
 
         for (int Y = 0; Y < Height; Y++) {
-            unsigned char* pInput  = Input + (Y * Width);
-            unsigned char* pBlur   = Blur + (Y * Width);
+            unsigned char* pInput = Input + (Y * Width);
+            unsigned char* pBlur = Blur + (Y * Width);
             unsigned char* pOutput = Output + (Y * Width);
             for (int x = 0; x < Width; x++) {
                 unsigned char* pSharpnessMap = sharpnessMap + (pInput[0] << 8);
-                pOutput[0]                   = pSharpnessMap[pOutput[0]];
+                pOutput[0] = pSharpnessMap[pOutput[0]];
 
 
                 pBlur++;
@@ -2500,7 +2500,7 @@ void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width,
 void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
                             unsigned char* Output, int newWidth, int newHeight, int dstStride) {
 
-    int Channels  = Stride / Width;
+    int Channels = Stride / Width;
     int dstOffset = dstStride - Channels * newWidth;
     float xFactor = (float)Width / newWidth;
     float yFactor = (float)Height / newHeight;
@@ -2509,9 +2509,9 @@ void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned i
     int xmax = Width - 1;
 
     for (int y = 0; y < newHeight; y++) {
-        float oy  = (float)y * yFactor;
-        int oy1   = (int)oy;
-        int oy2   = (oy1 == ymax) ? oy1 : oy1 + 1;
+        float oy = (float)y * yFactor;
+        int oy1 = (int)oy;
+        int oy2 = (oy1 == ymax) ? oy1 : oy1 + 1;
         float dy1 = oy - (float)oy1;
         float dy2 = 1.0f - dy1;
 
@@ -2519,11 +2519,11 @@ void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned i
         unsigned char* tp2 = Input + oy2 * Stride;
 
         for (int x = 0; x < newWidth; x++) {
-            float ox          = (float)x * xFactor;
-            int ox1           = (int)ox;
-            int ox2           = (ox1 == xmax) ? ox1 : ox1 + 1;
-            float dx1         = ox - (float)ox1;
-            float dx2         = 1.0f - dx1;
+            float ox = (float)x * xFactor;
+            int ox1 = (int)ox;
+            int ox2 = (ox1 == xmax) ? ox1 : ox1 + 1;
+            float dx1 = ox - (float)ox1;
+            float dx2 = 1.0f - dx1;
             unsigned char* p1 = tp1 + ox1 * Channels;
             unsigned char* p2 = tp1 + ox2 * Channels;
             unsigned char* p3 = tp2 + ox1 * Channels;
@@ -2544,7 +2544,7 @@ void ocularCropFilter(const unsigned char* Input, int Width, int Height, int src
     int Channels = srcStride / Width;
 
     const unsigned char* src = Input + cropY * srcStride + cropX * Channels;
-    unsigned char* dst       = Output;
+    unsigned char* dst = Output;
 
     for (int y = 0; y < dstHeight; y++) {
         memcpy(dst, src, dstStride);
@@ -2561,9 +2561,9 @@ void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Widt
     case 4:
     case 3: {
         unsigned int histoRGB[256 * 3] = { 0 };
-        unsigned int* histoR           = &histoRGB[0];
-        unsigned int* histoG           = &histoRGB[256];
-        unsigned int* histoB           = &histoRGB[512];
+        unsigned int* histoR = &histoRGB[0];
+        unsigned int* histoG = &histoRGB[256];
+        unsigned int* histoB = &histoRGB[512];
         for (int Y = 0; Y < Height; Y++) {
             const unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
@@ -2579,10 +2579,10 @@ void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Widt
         int thresholdGMax = 0;
         int thresholdBMin = 0;
         int thresholdBMax = 0;
-        int gap           = (int)(fraction * Width * Height);
-        int sumR          = 0;
-        int sumG          = 0;
-        int sumB          = 0;
+        int gap = (int)(fraction * Width * Height);
+        int sumR = 0;
+        int sumG = 0;
+        int sumB = 0;
 
         for (int i = 0; sumR < gap; ++i) {
             sumR += histoR[i];
@@ -2612,9 +2612,9 @@ void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Widt
             thresholdBMax = i;
         }
         unsigned char MapRGB[256 * 3] = { 0 };
-        unsigned char* MapB           = &MapRGB[0];
-        unsigned char* MapG           = &MapRGB[256];
-        unsigned char* MapR           = &MapRGB[512];
+        unsigned char* MapB = &MapRGB[0];
+        unsigned char* MapG = &MapRGB[256];
+        unsigned char* MapR = &MapRGB[512];
         for (int i = 0; i < 256; i++) {
             if (i < thresholdRMin)
                 MapR[i] = (i + 0) >> 1;
@@ -2638,7 +2638,7 @@ void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Widt
 
         for (int Y = 0; Y < Height; Y++) {
             const unsigned char* pInput = Input + (Y * Stride);
-            unsigned char* pOutput      = Output + (Y * Stride);
+            unsigned char* pOutput = Output + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 pOutput[0] = MapR[pInput[0]];
                 pOutput[1] = MapG[pInput[1]];
@@ -2660,8 +2660,8 @@ void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Widt
         }
         int thresholdMin = 0;
         int thresholdMax = 0;
-        int gap          = (int)(fraction * Width * Height);
-        int sumGray      = 0;
+        int gap = (int)(fraction * Width * Height);
+        int sumGray = 0;
         for (int i = 0; sumGray < gap; ++i) {
             sumGray += histoGray[i];
             thresholdMin = i;
