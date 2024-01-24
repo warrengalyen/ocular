@@ -2820,16 +2820,26 @@ extern "C" {
         int houghWidth = halfHoughWidth * 2;
         int maxTheta = (int)(180.0f / resTheta + 0.5f);
         int houghMapSize = houghWidth * maxTheta;
-
+        unsigned short* houghMap = (unsigned short*)calloc(houghMapSize, sizeof(unsigned short));
         float* sinLUT = (float*)calloc(maxTheta, sizeof(float));
         float* cosLUT = (float*)calloc(maxTheta, sizeof(float));
+        if (sinLUT == NULL || cosLUT == NULL || houghMap == NULL) {
+            if (houghMap) {
+                free(houghMap);
+            }
+            if (cosLUT) {
+                free(cosLUT);
+            }
+            if (sinLUT) {
+                free(sinLUT);
+            }
+            return 0;
+        }
         float thetaStep = M_PI / maxTheta;
         for (int theta = 0; theta < maxTheta; theta++) {
             sinLUT[theta] = (float)fastSin(theta * thetaStep);
             cosLUT[theta] = (float)fastCos(theta * thetaStep);
         }
-
-        unsigned short* houghMap = (unsigned short*)calloc(houghMapSize, sizeof(unsigned short));
 
         for (int y = 0; y < Height; y++) {
             unsigned char* pIn = Input + (y * Width);
