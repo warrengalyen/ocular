@@ -41,7 +41,7 @@ static uint64_t nanotimer() {
         }
         ever = 1;
     }
-    return (frequency.denom) / (frequency.numer);
+    return mach_absolute_time() * frequency.numer / frequency.denom;
 #elif defined(_WIN32)
     static LARGE_INTEGER frequency;
     if (!ever) {

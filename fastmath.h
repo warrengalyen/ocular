@@ -98,7 +98,7 @@ static const float sinTable_f32[FAST_MATH_TABLE_SIZE + 1] = {
     -0.02454123f, -0.01227154f, -0.00000000f
 };
 
-inline float fastSin(float x) {
+static inline float fastSin(float x) {
     float sinVal, fract, in;
     unsigned short index;
     float a, b;
@@ -132,7 +132,7 @@ inline float fastSin(float x) {
     return (sinVal);
 }
 
-inline float fastCos(float x) {
+static inline float fastCos(float x) {
     float cosVal, fract, in;
     unsigned short index;
     float a, b;
