@@ -3,6 +3,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
 #define USE_SHELL_OPEN
+#define access _access
+#else
+#include <unistd.h>
 #endif
 #include "ocular.h"
 #define STB_IMAGE_STATIC
@@ -12,11 +15,9 @@
 #define TJE_IMPLEMENTATION
 #include "tiny_jpeg.h"
 // ref:https://github.com/serge-rgb/TinyJPEG/blob/master/tiny_jpeg.h
-#include <io.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 // Timing
 #include <stdint.h>
 #if defined(__APPLE__)
@@ -40,7 +41,7 @@ static uint64_t nanotimer() {
         }
         ever = 1;
     }
-    return;
+    return (frequency.denom) / (frequency.numer);
 #elif defined(_WIN32)
     static LARGE_INTEGER frequency;
     if (!ever) {
@@ -75,8 +76,19 @@ double calcElapsed(double start, double end) {
     double took = -start;
     return took + end;
 }
-
-// Stores the current location of the file passed in
+#ifndef _MAX_DRIVE
+#define _MAX_DRIVE 3
+#endif
+#ifndef _MAX_FNAME
+#define _MAX_FNAME 256
+#endif
+#ifndef _MAX_EXT
+#define _MAX_EXT 256
+#endif
+#ifndef _MAX_DIR
+#define _MAX_DIR 256
+#endif
+// stores the current location of the file passed in
 char saveFile[1024];
 // Load images
 unsigned char* loadImage(const char* filename, int* Width, int* Height, int* Channels) {
@@ -99,21 +111,6 @@ void saveImage(const char* filename, int Width, int Height, int Channels, unsign
     // Not available on other platforms yet
 #endif
 }
-
-#ifndef ClampToByte
-#define ClampToByte(v) (((unsigned)(int)(v)) < (255) ? (v) : ((int)(v) < 0) ? (0) : (255))
-#endif
-
-typedef struct ocularRect {
-    int x;
-    int y;
-    int Width;
-    int Height;
-} ocularRect;
-
-#ifndef clamp
-#define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
-#endif
 
 // split path function
 void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
@@ -188,7 +185,7 @@ int main(int argc, char** argv) {
 
     char* szfile = argv[1];
     // Check if the input file exists
-    if (_access(szfile, 0) == -1) {
+    if (access(szfile, 0) == -1) {
         printf("The input file does not exist and the parameters are incorrect! \n ");
     }
 

@@ -1,6 +1,5 @@
 #include "ocular.h"
 #include <math.h>
-
 #include <string.h>
 #ifdef __cplusplus
 extern "C" {
@@ -54,30 +53,6 @@ extern "C" {
 
     inline int Abs(int x) { return (x ^ (x >> 31)) - (x >> 31); }
 
-#ifndef ClampToByte
-#define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
-#endif
-#ifndef min
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-#ifndef min3
-#define min3(a, b, c) min(min((a), (b)), (c))
-#endif
-#ifndef max
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-#ifndef max3
-#define max3(a, b, c) max(max((a), (b)), (c))
-#endif
-
-    float clamp(float value, float min, float max) {
-        if (value > max)
-            value = max;
-        if (value < min)
-            value = min;
-        return value;
-    }
-
     unsigned char mix_u8(unsigned char a, unsigned char b, float alpha) {
         return (unsigned char)ClampToByte(a * (1.0f - alpha) + b * alpha);
     }
@@ -104,41 +79,41 @@ extern "C" {
 
     void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
+        int Channels = Stride / Width;
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
-        const int R_WT = 256 - B_WT - G_WT; // int(0.299 * 256 + 0.5);
-        int Channel = Stride / Width;
-        if (Channel == 3) {
+        const int R_WT = 256 - B_WT - G_WT;
+        if (Channels == 3) {
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* LinePS = Input + Y * Stride;
                 unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
-                for (; X < Width - 4; X += 4, LinePS += Channel * 4) {
+                for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
                     LinePD[X + 0] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                     LinePD[X + 1] = (B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8;
                     LinePD[X + 2] = (B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8;
                     LinePD[X + 3] = (B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8;
                 }
-                for (; X < Width; X++, LinePS += Channel) {
+                for (; X < Width; X++, LinePS += Channels) {
                     LinePD[X] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                 }
             }
-        } else if (Channel == 4) {
+        } else if (Channels == 4) {
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* LinePS = Input + Y * Stride;
                 unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
-                for (; X < Width - 4; X += 4, LinePS += Channel * 4) {
+                for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
                     LinePD[X + 0] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                     LinePD[X + 1] = (B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8;
                     LinePD[X + 2] = (B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8;
                     LinePD[X + 3] = (B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8;
                 }
-                for (; X < Width; X++, LinePS += Channel) {
+                for (; X < Width; X++, LinePS += Channels) {
                     LinePD[X] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                 }
             }
-        } else if (Channel == 1) {
+        } else if (Channels == 1) {
             if (Output != Input) {
                 memcpy(Output, Input, Height * Stride);
             }
@@ -481,7 +456,6 @@ extern "C" {
         float colorMatrix[4 * 4] = { 0.3588f, 0.7044f, 0.1368f, 0.0f,    0.2990f, 0.5870f,
                                      0.1140f, 0.0f,    0.2392f, 0.4696f, 0.0912f, 0.0f,
                                      0.f,     0.f,     0.f,     1.f };
-
         ocularColorMatrixFilter(Input, Output, Width, Height, Stride, colorMatrix, fIntensity);
     }
 
@@ -928,6 +902,7 @@ extern "C" {
 
     void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Stride, float hueAdjust) {
+
         int Channels = Stride / Width;
         hueAdjust = fmodf(hueAdjust, 360.0f) * 3.14159265358979323846f / 180.0f;
         float hueMap[256 * 256] = { 0 };
@@ -1709,7 +1684,6 @@ extern "C" {
 
     void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width,
                                   int Height, int Stride, float GaussianSigma) {
-
         int Channels = Stride / Width;
         float a0, a1, a2, a3, b1, b2, cprev, cnext;
 
@@ -1811,7 +1785,6 @@ extern "C" {
                 unsigned char retPD = ClampToByte((PS - PD) + 128);
                 retPD = ((PS <= 128) ? (retPD * PS / 128) : (255 - (255 - retPD) * (255 - PS) / 128));
                 // enhanced edge method
-                //   unsigned char retPD = ClampToByte((PS - PD) + PS);
                 pUnsharpMaskMap[0] = ClampToByte((PS * c1 + retPD * c2) >> 8);
                 pUnsharpMaskMap++;
             }
@@ -1872,7 +1845,6 @@ extern "C" {
             free(Blur);
             break;
         }
-
 
         case 1: {
             unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
@@ -2349,8 +2321,6 @@ extern "C" {
                 unsigned char retPD = ClampToByte((sharpness * (PS - PD)) + 128);
                 retPD = ((PS <= 128) ? (retPD * PS / 128) : (255 - (255 - retPD) * (255 - PS) / 128));
                 // enhanced edge method
-                //   unsigned char retPD = ClampToByte(sharpness*(PS - PD) + PS);
-
                 pSharpnessMap[0] = ClampToByte((PS * c1 + retPD * c2) >> 8);
                 pSharpnessMap++;
             }
@@ -2408,7 +2378,6 @@ extern "C" {
             break;
         }
 
-
         case 1: {
 
             unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
@@ -2425,7 +2394,6 @@ extern "C" {
                 for (int x = 0; x < Width; x++) {
                     unsigned char* pSharpnessMap = sharpnessMap + (pInput[0] << 8);
                     pOutput[0] = pSharpnessMap[pOutput[0]];
-
 
                     pBlur++;
                     pOutput++;
@@ -2648,6 +2616,7 @@ extern "C" {
     }
 
     void ocularSobelEdge(unsigned char* Input, unsigned char* Output, int Width, int Height) {
+
         if ((Input == NULL) || (Output == NULL))
             return;
         if ((Width <= 0) || (Height <= 0))
@@ -2712,6 +2681,7 @@ extern "C" {
 
     int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity,
                          int Threshold, float resTheta, int numLine, float* Radius, float* Theta) {
+
         int halfHoughWidth = (int)(sqrt((float)(Width * Width + Height * Height)));
         int houghWidth = halfHoughWidth * 2;
         int maxTheta = (int)(180.0f / resTheta + 0.5f);
@@ -2774,6 +2744,7 @@ extern "C" {
 
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1,
                         int x2, int y2, unsigned char R, unsigned char G, unsigned char B) {
+
         int channels = stride / width;
 
         int xs, ys, xe, ye;

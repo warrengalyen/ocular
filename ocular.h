@@ -6,8 +6,28 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "fastmath.h"
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef clamp
+#define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
+#endif
+#ifndef ClampToByte
+#define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
+#endif
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef min3
+#define min3(a, b, c) min(min((a), (b)), (c))
+#endif
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef max3
+#define max3(a, b, c) max(max((a), (b)), (c))
 #endif
 
 #ifndef M_PI
@@ -103,7 +123,7 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param Luminance
+    /// @param[out] Luminance Returns average luminosity value.
     void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance);
 
     /// @brief Transforms the colors of an image by apply a matrix to them.
