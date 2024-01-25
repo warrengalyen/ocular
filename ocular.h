@@ -11,6 +11,10 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#pragma warning(disable : 4996) // VS doesn't like fopen, but fopen_s is not standard C so unusable here
+#endif /*_MSC_VER */
+
 #ifndef clamp
 #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
 #endif
@@ -528,6 +532,12 @@ extern "C" {
                         int x2, int y2, unsigned char R, unsigned char G, unsigned char B);
 
     //--------------------------Image processing--------------------------
+
+    //--------------------------preImage processing--------------------------
+
+    bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
+
+    //--------------------------preImage processing--------------------------
 
 #ifdef __cplusplus
 }

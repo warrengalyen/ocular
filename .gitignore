@@ -2,3 +2,5 @@
 .clang-format
 *.o
 *.exe
+/CMakeFiles
+CMakeCache.txt
