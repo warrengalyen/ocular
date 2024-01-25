@@ -102,11 +102,7 @@ extern "C" {
         return sqrtf(dx * dx + dy * dy);
     }
 
-    /// @brief Converts an image to grayscale(a slightly faster implementation of the saturation filter, without
-    ///        the ability to vary the color contribution)
     void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
-
-        int Channels = Stride / Width;
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
@@ -149,10 +145,6 @@ extern "C" {
         }
     }
 
-    /// @brief Adjusts the individual RGB channels of an image
-    /// @param redAdjustment Normalized values by which each color channel is multiplied. Range [0.0-1.0], default 1.0
-    /// @param greenAdjustment Normalized values by which each color channel is multiplied. Range [0.0-1.0], default 1.0
-    /// @param blueAdjustment Normalized values by which each color channel is multiplied. Range [0.0-1.0], default 1.0
     void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Stride, float redAdjustment, float greenAdjustment, float blueAdjustment) {
 
@@ -180,10 +172,6 @@ extern "C" {
         }
     }
 
-    /// @brief Applies a thresholding operation where the threshold is continually adjusted based on the average luminance
-    ///        of the image.
-    /// @param thresholdMultiplier Factor that the average luminance will be multiplied by in order to arrive at the final
-    ///                            threshold to use. Default is 1.0.
     void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width,
                                                int Height, int Stride, float thresholdMultiplier) {
 
@@ -247,7 +235,6 @@ extern "C" {
         }
     }
 
-    /// @brief Determines the average color, by averaging the RGBA componenets for each each pixel in an image.
     void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR,
                             unsigned char* AverageG, unsigned char* AverageB, unsigned char* AverageA) {
 
@@ -335,12 +322,6 @@ extern "C" {
         }
     }
 
-    /// @brief This reduces an image to its average luminosity.
-    /// @param Input
-    /// @param Width
-    /// @param Height
-    /// @param Stride
-    /// @param Luminance
     void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance) {
 
         int Channels = Stride / Width;
@@ -381,9 +362,6 @@ extern "C" {
         }
     }
 
-    /// @brief Transforms the colors of an image by apply a matrix to them.
-    /// @param colorMatrix A 4x4 matrix used to transform each color in an image.
-    /// @param intensity The degree to which the new transformed color replaces the original color for each pixel.
     void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                  int Stride, float* colorMatrix, float intensity) {
 
@@ -507,12 +485,6 @@ extern "C" {
         ocularColorMatrixFilter(Input, Output, Width, Height, Stride, colorMatrix, fIntensity);
     }
 
-    // For a given color in the image, sets the alpha channel to 0. This is similar to the
-    // ocularChromaKeyBlendFilter, only instead of blending in a second image for a matching color
-    // this doesn't take in a second image and just turns a given color transparent.
-    // thresholdSensitivity : How close a color match needs to exist to the target color to be
-    // replaced(default of 0.4)
-    // smoothing : How smoothly to blend for the color match(default of 0.1)
     void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                int Stride, unsigned char colorToReplaceR, unsigned char colorToReplaceG,
                                unsigned char colorToReplaceB, float thresholdSensitivity, float smoothing) {
@@ -594,7 +566,6 @@ extern "C" {
         }
     }
 
-    // Uses an RGB color lookup image to remap the colors in an image.
     void ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable,
                             int Width, int Height, int Stride, int intensity) {
 
@@ -653,8 +624,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the saturation of an image
-    // saturation : The degree of saturation or desaturation to apply to the image(0.0 - 2.0, with 1.0 as the default)
     void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                 int Stride, float saturation) {
 
@@ -687,8 +656,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the gamma of an image
-    // gamma : The gamma adjustment to apply(0.0 - 3.0, with 1.0 as the default)
     void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                            int Stride, float gamma) {
 
@@ -712,8 +679,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the contrast of the image
-    // contrast : The adjusted contrast(0.0 - 4.0, with 1.0 as the default)
     void ocularConstrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                int Stride, float contrast) {
 
@@ -737,8 +702,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the exposure of the image
-    // exposure : The adjusted exposure(-10.0 - 10.0, with 0.0 as the default)
     void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                               int Stride, float exposure) {
 
@@ -762,8 +725,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the brightness of the image
-    // brightness : The adjusted brightness(-1.0 - 1.0, with 0.0 as the default)
     void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                 int Stride, int brightness) {
 
@@ -788,10 +749,6 @@ extern "C" {
         }
     }
 
-    // Uses the luminance of the image to mix between two user - specified colors
-    // firstColor : The first and second colors specify what colors replace the dark and light areas of
-    //              the image, respectively. The defaults are(0.0, 0.0, 0.5) amd(1.0, 0.0, 0.0).
-    // secondColor :
     void ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                 int Stride, unsigned char firstColorR, unsigned char firstColorG,
                                 unsigned char firstColorB, unsigned char secondColorR,
@@ -829,9 +786,6 @@ extern "C" {
         }
     }
 
-    // Used to add or remove haze (similar to a UV filter)
-    // distance : Strength of the color applied. Default 0. Values between -0.3 and 0.3 are best.
-    // slope : Amount of color change. Default 0. Values between -0.3 and 0.3 are best.
     void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                           int Stride, float distance, float slope, int intensity) {
 
@@ -882,8 +836,6 @@ extern "C" {
         free(patchDistanceMap);
     }
 
-    // Adjusts the alpha channel of the incoming image
-    // opacity : The value to multiply the incoming alpha channel for each pixel by (0.0 - 1.0, with 1.0 as the default)
     void ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                              int Stride, float opacity) {
 
@@ -907,11 +859,6 @@ extern "C" {
         }
     }
 
-    // Photoshop-like levels adjustment. The min, max, minOut and maxOut parameters are floats in
-    // the range[0, 1] .If you have parameters from Photoshop in the range[0, 255] you must first
-    // convert them to be[0, 1]. The gamma / mid parameter is a float >= 0. This matches the value
-    // from Photoshop. If you want to apply levels to RGB as well as individual channels you need to
-    // use this filter twice - first for the individual channels and then for all channels.
     void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                             int Stride, ocularLevelParams* redLevelParams,
                             ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams) {
@@ -966,7 +913,6 @@ extern "C" {
         }
     }
 
-    /* RGB to YIQ */
     void rgb2yiq(unsigned char* R, unsigned char* G, unsigned char* B, short* Y, short* I, short* Q) {
         *Y = ((int)(0.299f * 65536) * *R + (int)(0.587f * 65536) * *G + (int)(0.114f * 65536) * *B) >> 16;
         *I = ((int)(0.595f * 65536) * *R - (int)(0.274453f * 65536) * *G - (int)(0.321263f * 65536) * *B) >> 16;
@@ -974,17 +920,12 @@ extern "C" {
         ((int)(0.211456f * 65536) * *R - (int)(0.522591f * 65536) * *G + (int)(0.311135f * 65536) * *B) >> 16;
     }
 
-
-    /* YIQ to RGB */
     void yiq2rgb(short* Y, short* I, short* Q, unsigned char* R, unsigned char* G, unsigned char* B) {
         *R = ClampToByte((int)(Y + ((((int)(0.9563 * 65536)) * (*I)) + ((int)(0.6210 * 65536)) * (*Q))) >> 16);
         *G = ClampToByte((int)(Y - ((((int)(0.2721 * 65536)) * (*I)) + ((int)(0.6474 * 65536)) * (*Q))) >> 16);
         *B = ClampToByte((int)(Y + ((((int)(1.7046 * 65536)) * (*Q)) - ((int)(1.1070 * 65536)) * (*I))) >> 16);
     }
 
-
-    // Adjusts the hue of an image
-    // hue : The hue angle, in degrees. 90 degrees by default
     void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                          int Stride, float hueAdjust) {
         int Channels = Stride / Width;
@@ -1033,13 +974,6 @@ extern "C" {
         }
     }
 
-    // Allows you to tint the shadows and highlights of an image independently using a color and
-    // intensity.
-    // shadowTintColor : Shadow tint RGB color(GPUVector4).Default : {1.0f, 0.0f, 0.0f, 1.0f}
-    // (red).
-    // highlightTintColor : Highlight tint RGB color(GPUVector4).Default : {0.0f, 0.0f, 1.0f, 1.0f} (blue).
-    // shadowTintIntensity : Shadow tint intensity, from 0.0 to 1.0.Default :
-    // 0.0 highlightTintIntensity : Highlight tint intensity, from 0.0 to 1.0, with 0.0 as the default.
     void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width,
                                          int Height, int Stride, float shadowTintR,
                                          float shadowTintG, float shadowTintB, float highlightTintR,
@@ -1101,9 +1035,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the shadows and highlights of an image
-    // shadows : Increase to lighten shadows, from 0.0 to 1.0, with 0.0 as the default.
-    // highlights : Decrease to darken highlights, from 0.0 to 1.0, with 1.0 as the default.
     void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width,
                                      int Height, int Stride, float shadows, float highlights) {
 
@@ -1158,9 +1089,6 @@ extern "C" {
         }
     }
 
-    // Converts the image to a single - color version, based on the luminance of each pixel
-    // intensity : The degree to which the specific color replaces the normal image color(0.0 - 1.0, with 1.0 as the default)
-    // color : The color to use as the basis for the effect, with(0.6, 0.45, 0.3, 1.0) as the default.
     void ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                 int Stride, unsigned char filterColorR, unsigned char filterColorG,
                                 unsigned char filterColorB, int intensity) {
@@ -1207,7 +1135,6 @@ extern "C" {
         }
     }
 
-    // Inverts the colors of an image
     void ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
         int Channels = Stride / Width;
@@ -1231,8 +1158,6 @@ extern "C" {
         }
     }
 
-    // Outputs a generated image with a solid color.
-    // color : The color, in a four component format, that is used to fill the image.
     void ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride,
                                    unsigned char colorR, unsigned char colorG, unsigned char colorB,
                                    unsigned char colorAlpha) {
@@ -1262,8 +1187,6 @@ extern "C" {
         }
     }
 
-    // Pixels with a luminance above the threshold will appear white, and those below will be black
-    // threshold : The luminance threshold, from 0.0 to 1.0, with a default of 0.5
     void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width,
                                         int Height, int Stride, unsigned char threshold) {
 
@@ -1294,11 +1217,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the white balance of an image.
-    // temperature : The temperature to adjust the image by, in ºK.A value of 4000 is very cool and
-    // 7000 very warm. The default value is 5000. Note that the scale between 4000 and 5000 is
-    // nearly as visually significant as that between 5000 and 7000. tint : The tint to adjust the
-    // image by. A value of - 200 is very green and 200 is very pink. The default value is 0.
     void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width,
                                   int Height, int Stride, float temperature, float tint) {
 
@@ -1368,9 +1286,6 @@ extern "C" {
         }
     }
 
-    // Adjusts the vibrance of an image
-    // vibrance : The vibrance adjustment to apply, using 0.0 as the default, and a suggested min /
-    // max of around - 1.2 and 1.2, respectively.
     void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                               int Stride, float vibrance) {
 
@@ -1491,16 +1406,6 @@ extern "C" {
         }
     }
 
-    // A skin-tone adjustment filter that affects a unique range of light skin-tone colors and adjusts
-    // the pink / green or pink / orange range accordingly. Default values are targeted at fair
-    // caucasian skin, but can be adjusted as required.
-    // skinToneAdjust : Amount to adjust skin tone.Default : 0.0, suggested min / max : -0.3 and 0.3
-    // respectively.
-    // skinHue : Skin hue to be detected.Default : 0.05 (fair caucasian to reddish skin).
-    // skinHueThreshold : Amount of variance in skin hue. Default : 40.0.
-    // maxHueShift : Maximum amount of hue shifting allowed. Default : 0.25.
-    // maxSaturationShift = Maximum amount of saturation to be shifted(when using orange). Default: 0.4.
-    // upperSkinToneColor = GPUImageSkinToneUpperColorGreen or GPUImageSkinToneUpperColorOrange
     void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                               int Stride, float skinToneAdjust, float skinHue, float skinHueThreshold,
                               float maxHueShift, float maxSaturationShift, int upperSkinToneColor) {
@@ -1802,7 +1707,6 @@ extern "C" {
         }
     }
 
-    // A hardware-optimized, variable radius Gaussian blur
     void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width,
                                   int Height, int Stride, float GaussianSigma) {
 
@@ -1892,9 +1796,6 @@ extern "C" {
         *B = b;
     }
 
-    // Applies an unsharp mask
-    // GaussianSigma : The blur radius of the underlying Gaussian blur. The default is 4.0.
-    // intensity : The strength of the sharpening, from 0.0 on up, with a default of 1.0
     void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                                  int Stride, float GaussianSigma, int intensity) {
 
@@ -2420,9 +2321,6 @@ extern "C" {
         }
     }
 
-    // A hardware-optimized, variable radius box blur
-    // Radius : A radius in pixels to use for the blur, with a default of 2.0. This adjusts the
-    // sigma variable in the Gaussian distribution function.
     void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height,
                              int Stride, int Radius) {
 
@@ -2543,8 +2441,6 @@ extern "C" {
         }
     }
 
-    // Bilinear interpolation. This lets you up - or downsample an image using Lanczos resampling,
-    // which results in noticeably better quality than the standard linear or trilinear interpolation.
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
                                 unsigned char* Output, int newWidth, int newHeight, int dstStride) {
 
