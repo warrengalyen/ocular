@@ -75,9 +75,8 @@ extern "C" {
 
     //--------------------------Color adjustments--------------------------
 
-    /// @brief Converts an image to grayscale (a slightly faster implementation of
-    /// the saturation filter,
-    ///        without the ability to vary the color contribution)
+    /// @brief Converts an RGB image to single channel grayscale (a slightly faster implementation of
+    /// the saturation filter, without the ability to vary the color contribution)
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -511,7 +510,7 @@ extern "C" {
                           int dstWidth, int dstHeight, int dstStride);
 
     /// @brief Applies a sobel edge detection filter
-    /// @param Input The image input data buffer.
+    /// @param Input The image input data buffer (assumes grayscale image).
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
@@ -536,4 +535,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* OCULAR_H */
+#endif  /* OCULAR_H */

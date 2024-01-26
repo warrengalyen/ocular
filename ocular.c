@@ -93,7 +93,7 @@ extern "C" {
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
-        const int R_WT = 256 - B_WT - G_WT; //     int(0.299 * 256 + 0.5);
+        const int R_WT = 256 - B_WT - G_WT;
         int Channels = Stride / Width;
         if (Channels == 3) {
             for (int Y = 0; Y < Height; Y++) {
@@ -113,7 +113,7 @@ extern "C" {
         } else if (Channels == 4) {
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* LinePS = Input + Y * Stride;
-                unsigned char* LinePD = Output + Y * Width;
+                unsigned char* LinePD = Output + Y * Stride;
                 int X = 0;
                 for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
                     LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);

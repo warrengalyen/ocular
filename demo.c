@@ -12,10 +12,8 @@
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-// ref:https://github.com/nothings/stb/blob/master/stb_image.h
-#define TJE_IMPLEMENTATION
-#include "tiny_jpeg.h"
-// ref:https://github.com/serge-rgb/TinyJPEG/blob/master/tiny_jpeg.h
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -104,7 +102,7 @@ void saveImage(const char* filename, int Width, int Height, int Channels, unsign
     memcpy(saveFile + strlen(saveFile), filename, strlen(filename));
     *(saveFile + strlen(saveFile) + 1) = 0;
     // Save as jpg
-    if (!tje_encode_to_file(saveFile, Width, Height, Channels, true, Output)) {
+    if (!stbi_write_jpg(saveFile, Width, Height, Channels, Output, 100)) {
         fprintf(stderr, "Writing to JPEG file failed.\n");
         return;
     }
@@ -206,6 +204,8 @@ int main(int argc, char** argv) {
     // Load images
     inputImage = loadImage(szfile, &Width, &Height, &Channels);
 
+    printf("channels: %d\n", Channels);
+
     double nLoadTime = calcElapsed(startTime, now());
     printf("Loading time: %d milliseconds!\n ", (int)(nLoadTime * 1000));
     if ((Channels != 0) && (Width != 0) && (Height != 0)) {
@@ -226,20 +226,7 @@ int main(int argc, char** argv) {
         int nTVal = 100;
         float Theta = 1.0f;
         ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
-        ocularSobelEdge(outputImg, outputImg, Width, Height);
-        int nLine = ocularHoughLines(outputImg, Width, Height, nTNum, nTVal, Theta, 100, arrRho, arrTheta);
-        memcpy(outputImg, inputImage, Width * Channels * Height);
-        for (int i = 0; i < nLine; i++) {
-            if (arrTheta[i] == 90) {
-                ocularDrawLine(outputImg, Width, Height, Width * Channels, (int)arrRho[i], 0, (int)arrRho[i], Height - 1, 255, 0, 0);
-            } else {
-                int x1 = 0;
-                int y1 = (int)(arrRho[i] / fastCos(arrTheta[i] * M_PI / 180.0f) + 0.5f);
-                int x2 = Width - 1;
-                int y2 = (int)((arrRho[i] - x2 * fastSin(arrTheta[i] * M_PI / 180.0f)) / fastCos(arrTheta[i] * M_PI / 180.0f) + 0.5f);
-                ocularDrawLine(outputImg, Width, Height, Width * Channels, x1, y1, x2, y2, 255, 0, 0);
-            }
-        }
+        // ocularSobelEdge(outputImg, outputImg, Width, Height);
 
         // Processing algorithm
         double nProcessTime = now();
@@ -247,7 +234,7 @@ int main(int argc, char** argv) {
         // Save the processed image
         startTime = now();
 
-        saveImage("_done.jpg", Width, Height, Channels, outputImg);
+        saveImage("_done.jpg", Width, Height, 1, outputImg);
         double nSaveTime = calcElapsed(startTime, now());
 
         printf("Saving took: %d milliseconds!\n ", (int)(nSaveTime * 1000));
@@ -265,8 +252,8 @@ int main(int argc, char** argv) {
         printf("Load file: %s fail!\n", szfile);
     }
 
-    getchar();
-    printf("Press any key to exit the program \n");
+    // getchar();
+    // printf("Press any key to exit the program \n");
 
     return EXIT_SUCCESS;
 }
