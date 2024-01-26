@@ -91,21 +91,20 @@ extern "C" {
 
     void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
-        int Channels = Stride / Width;
-
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
         const int R_WT = 256 - B_WT - G_WT; //     int(0.299 * 256 + 0.5);
+        int Channels = Stride / Width;
         if (Channels == 3) {
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* LinePS = Input + Y * Stride;
                 unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
                 for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
-                    LinePD[X + 0] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
-                    LinePD[X + 1] = (unsigned char)(B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8;
-                    LinePD[X + 2] = (unsigned char)(B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8;
-                    LinePD[X + 3] = (unsigned char)(B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8;
+                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
+                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
+                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8);
                 }
                 for (; X < Width; X++, LinePS += Channels) {
                     LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
@@ -117,13 +116,13 @@ extern "C" {
                 unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
                 for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
-                    LinePD[X + 0] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
-                    LinePD[X + 1] = (unsigned char)(B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8;
-                    LinePD[X + 2] = (unsigned char)(B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8;
-                    LinePD[X + 3] = (unsigned char)(B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8;
+                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
+                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
+                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8);
                 }
                 for (; X < Width; X++, LinePS += Channels) {
-                    LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
+                    LinePD[X] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                 }
             }
         } else if (Channels == 1) {
@@ -1267,7 +1266,7 @@ extern "C" {
 
     void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char* V, unsigned char* R, unsigned char* G, unsigned char* B) {
 
-        if (S > (const unsigned char*)0) {
+        if (S > 0) {
             int r, g, b;
             r = *V;
             g = *V;
@@ -2583,7 +2582,7 @@ extern "C" {
     int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta, int numLine,
                          float* Radius, float* Theta) {
 
-        int halfHoughWidth = (int)(sqrt((float)(Width * Width + Height * Height)));
+        int halfHoughWidth = (int)(sqrtf((float)(Width * Width + Height * Height)));
         int houghWidth = halfHoughWidth * 2;
         int maxTheta = (int)(180.0f / resTheta + 0.5f);
         int houghMapSize = houghWidth * maxTheta;
