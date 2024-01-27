@@ -434,6 +434,19 @@ extern "C" {
 
     //--------------------------Image processing--------------------------
 
+    /// @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
+    /// This is a fast implementation, like guassian blur, that performs vertical/horizontal passes independently.
+    /// @param Input The image input data buffer.
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    /// @param Stride The number of bytes in one row of pixels.
+    /// @param sigmaSpatial The size of the Gaussian bilateral filter window to use. A larger value means that farther
+    /// pixels will influence each other as long as their colors are close enough. Range [0 - 1.0]
+    /// @param sigmaRange Control how much an adjacent pixel is downweighted because of the intensity difference. A
+    /// larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
+    void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
+
     /// @brief Performs a smoothing of an image using a discrete Guassian kernel.
     /// Reduces noise by averaging it out, but will also reduce edges.
     /// @param Input The image input data buffer.
@@ -535,4 +548,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif  /* OCULAR_H */
+#endif /* OCULAR_H */

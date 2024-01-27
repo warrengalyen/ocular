@@ -167,18 +167,16 @@ void getCurrentFilePath(const char* filePath, char* saveFile) {
 
 int main(int argc, char** argv) {
 
-    printf("Ocular Image Processing library\n ");
-    printf("repo: https://github.com/warrengalyen/ocular/ \n ");
-    printf("Supports parsing the following image formats: \n ");
-    printf("JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC \n ");
+    printf("Ocular Image Processing library\n");
+    printf("repo: https://github.com/warrengalyen/ocular/ \n");
+    printf("Supports parsing the following image formats: \n");
+    printf("JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC \n\n");
 
     // Check whether the parameters are correct
     if (argc < 2) {
-        printf("Parameter error. \n ");
-        printf("Please drag and drop the image file onto the executable file, or "
-               "use the command "
-               "line: demo.exe image \n ");
-        printf("Please drag and drop the file e.g.: demo.exe d:\\image.jpg \n ");
+        printf("Parameter error.\n");
+        printf("Please drag and drop the image file onto the executable file, or use the command line: demo.exe image \n");
+        printf("Please drag and drop the file e.g.: demo.exe d:\\image.jpg \n");
 
         return 0;
     }
@@ -186,7 +184,7 @@ int main(int argc, char** argv) {
     char* szfile = argv[1];
     // Check if the input file exists
     if (access(szfile, 0) == -1) {
-        printf("The input file does not exist and the parameters are incorrect! \n ");
+        printf("The input file does not exist and the parameters are incorrect! \n");
     }
 
     getCurrentFilePath(szfile, saveFile);
@@ -204,10 +202,8 @@ int main(int argc, char** argv) {
     // Load images
     inputImage = loadImage(szfile, &Width, &Height, &Channels);
 
-    printf("channels: %d\n", Channels);
-
     double nLoadTime = calcElapsed(startTime, now());
-    printf("Loading time: %d milliseconds!\n ", (int)(nLoadTime * 1000));
+    printf("Loading time: %d milliseconds!\n", (int)(nLoadTime * 1000));
     if ((Channels != 0) && (Width != 0) && (Height != 0)) {
 
         // Allocate and load the same memory for processing and outputting results
@@ -217,27 +213,26 @@ int main(int argc, char** argv) {
             // output memory for easy processing.
             memcpy(outputImg, inputImage, Width * Channels * Height);
         } else {
-            printf("Load file: %s fail!\n ", szfile);
+            printf("Load file: %s fail!\n", szfile);
         }
         startTime = now();
-        float arrRho[100];
-        float arrTheta[100];
-        int nTNum = 200;
-        int nTVal = 100;
-        float Theta = 1.0f;
-        ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
+
+        // ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
+        // Channels = 1;
         // ocularSobelEdge(outputImg, outputImg, Width, Height);
+
+        ocularBilateralFilter(inputImage, outputImg, Width, Height, Width * Channels, 0.08, 0.12);
 
         // Processing algorithm
         double nProcessTime = now();
-        printf("Processing time: %d milliseconds!\n ", (int)(nProcessTime * 1000));
+        printf("Processing time: %d milliseconds!\n", (int)(nProcessTime * 1000));
         // Save the processed image
         startTime = now();
 
-        saveImage("_done.jpg", Width, Height, 1, outputImg);
+        saveImage("_done.jpg", Width, Height, Channels, outputImg);
         double nSaveTime = calcElapsed(startTime, now());
 
-        printf("Saving took: %d milliseconds!\n ", (int)(nSaveTime * 1000));
+        printf("Saving took: %d milliseconds!\n", (int)(nSaveTime * 1000));
         // Release occupied memory
         if (outputImg) {
             stbi_image_free(outputImg);
@@ -251,9 +246,6 @@ int main(int argc, char** argv) {
     } else {
         printf("Load file: %s fail!\n", szfile);
     }
-
-    // getchar();
-    // printf("Press any key to exit the program \n");
 
     return EXIT_SUCCESS;
 }
