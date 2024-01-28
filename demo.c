@@ -14,6 +14,10 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#define SFD_IMPLEMENTATION
+
+#include "sfd.h"
+#include <inttypes.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -89,29 +93,39 @@ double calcElapsed(double start, double end) {
 #ifndef _MAX_DIR
 #define _MAX_DIR 256
 #endif
-// stores the current location of the file passed in
-char saveFile[1024];
-// Load images
+
+static const char* calculateSize(uint64_t bytes) {
+    char* suffix[] = { "B", "KB", "MB", "GB", "TB" };
+    char length = sizeof(suffix) / sizeof(suffix[0]);
+
+    int i = 0;
+    double dblBytes = bytes;
+
+    if (bytes > 1024) {
+        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
+            dblBytes = bytes / 1024.0;
+    }
+
+    static char output[200];
+    sprintf(output, "%.02lf %s", dblBytes, suffix[i]);
+    return output;
+}
+
 unsigned char* loadImage(const char* filename, int* Width, int* Height, int* Channels) {
     return stbi_load(filename, Width, Height, Channels, 0);
 }
 
-// Save image
 void saveImage(const char* filename, int Width, int Height, int Channels, unsigned char* Output) {
 
-    memcpy(saveFile + strlen(saveFile), filename, strlen(filename));
-    *(saveFile + strlen(saveFile) + 1) = 0;
-    // Save as jpg
-    if (!stbi_write_jpg(saveFile, Width, Height, Channels, Output, 100)) {
+    if (!stbi_write_jpg(filename, Width, Height, Channels, Output, 100)) {
         fprintf(stderr, "Writing to JPEG file failed.\n");
         return;
     }
 #ifdef USE_SHELL_OPEN
-    browse(saveFile);
+    browse(filename);
 #endif
 }
 
-// split path function
 void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
     const char* end;
     const char* p;
@@ -151,43 +165,39 @@ void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
     }
 }
 
-// Get the current file location passed in
-void getCurrentFilePath(const char* filePath, char* saveFile) {
-    char drive[_MAX_DRIVE];
-    char dir[_MAX_DIR];
-    char fname[_MAX_FNAME];
-    char ext[_MAX_EXT];
-    splitpath(filePath, drive, dir, fname, ext);
-    size_t n = strlen(filePath);
-    memcpy(saveFile, filePath, n);
-    char* cur_saveFile = saveFile + (n - strlen(ext));
-    cur_saveFile[0] = '_';
-    cur_saveFile[1] = 0;
-}
-
 int main(int argc, char** argv) {
 
     printf("Ocular Image Processing library\n");
-    printf("repo: https://github.com/warrengalyen/ocular/ \n");
-    printf("Supports parsing the following image formats: \n");
-    printf("JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC \n\n");
+    printf("https://github.com/warrengalyen/ocular/ \n");
 
-    // Check whether the parameters are correct
+    char* filename = NULL;
     if (argc < 2) {
-        printf("Parameter error.\n");
-        printf("Please drag and drop the image file onto the executable file, or use the command line: demo.exe image \n");
-        printf("Please drag and drop the file e.g.: demo.exe d:\\image.jpg \n");
+        printf("usage: %s   image \n ", argv[0]);
+        printf("e.g.: %s   d:\\image.jpg \n ", argv[0]);
+        sfd_Options opt = {
+            .title = "Open Image File",
+            .filter_name = "Image File",
+            .filter = "*.png|*.jpg",
+        };
 
-        return 0;
-    }
+        filename = (char*)sfd_open_dialog(&opt);
+        if (filename) {
+            printf("Retrieved file: '%s'\n", filename);
+        } else {
+            printf("Open canceled\n");
+            return -1;
+        }
+    } else
+        filename = argv[1];
 
-    char* szfile = argv[1];
-    // Check if the input file exists
-    if (access(szfile, 0) == -1) {
-        printf("The input file does not exist and the parameters are incorrect! \n");
-    }
 
-    getCurrentFilePath(szfile, saveFile);
+    char drive[3];
+    char dir[256];
+    char fname[256];
+    char ext[256];
+    char out_file[1024];
+    splitpath(filename, drive, dir, fname, ext);
+    sprintf(out_file, "%s%s%s_processed.jpg", drive, dir, fname);
 
     int Width = 0;                    // Image width
     int Height = 0;                   // Image height
@@ -195,27 +205,19 @@ int main(int argc, char** argv) {
     unsigned char* inputImage = NULL; // Input image pointer
 
     int filesize = 0;
-    ocularGetImageSize(szfile, &Width, &Height, &filesize);
-    printf("file: %s\nfilesize: %d\nwidth: %d\nheight: %d\n", szfile, filesize, Width, Height);
+    ocularGetImageSize(filename, &Width, &Height, &filesize);
+    printf("file: %s\nfilesize: %s\nwidth: %d\nheight: %d\n", filename, calculateSize(filesize), Width, Height);
 
     double startTime = now();
-    // Load images
-    inputImage = loadImage(szfile, &Width, &Height, &Channels);
-
+    inputImage = loadImage(filename, &Width, &Height, &Channels);
     double nLoadTime = calcElapsed(startTime, now());
-    printf("Loading time: %d milliseconds!\n", (int)(nLoadTime * 1000));
+    printf("Load time: %d ms.\n", (int)(nLoadTime * 1000));
     if ((Channels != 0) && (Width != 0) && (Height != 0)) {
-
-        // Allocate and load the same memory for processing and outputting results
         unsigned char* outputImg = (unsigned char*)stbi__malloc(Width * Channels * Height * sizeof(unsigned char));
-        if (inputImage) {
-            // If the image is loaded successfully, the content will be copied to the
-            // output memory for easy processing.
-            memcpy(outputImg, inputImage, Width * Channels * Height);
-        } else {
-            printf("Load file: %s fail!\n", szfile);
+        if (inputImage == NULL || outputImg == NULL) {
+            printf("Load file: %s fail!\n", filename);
+            return -1;
         }
-        startTime = now();
 
         // ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
         // Channels = 1;
@@ -233,29 +235,21 @@ int main(int argc, char** argv) {
             printf("[x] ColorCast \n");
         }
 
-        // Processing algorithm
-        double nProcessTime = now();
-        printf("Processing time: %d milliseconds!\n", (int)(nProcessTime * 1000));
-        // Save the processed image
+        double nProcessTime = calcElapsed(startTime, now());
+        printf("Processing time: %d ms.\n", (int)(nProcessTime * 1000));
         startTime = now();
-
-        saveImage("_done.jpg", Width, Height, Channels, outputImg);
+        saveImage(out_file, Width, Height, Channels, outputImg);
         double nSaveTime = calcElapsed(startTime, now());
-
-        printf("Saving took: %d milliseconds!\n", (int)(nSaveTime * 1000));
+        printf("Save time: %d ms\n", (int)(nSaveTime * 1000));
         // Release occupied memory
-        if (outputImg) {
-            stbi_image_free(outputImg);
-            outputImg = NULL;
-        }
+        stbi_image_free(outputImg);
+        stbi_image_free(inputImage);
 
-        if (inputImage) {
-            stbi_image_free(inputImage);
-            inputImage = NULL;
-        }
     } else {
-        printf("Load file: %s fail!\n", szfile);
+        printf("Load file: %s fail!\n", filename);
     }
 
+    printf("press any key to exit. \n");
+    getchar();
     return EXIT_SUCCESS;
 }
