@@ -31,9 +31,11 @@ An image processing library implemented in pure-C, with no external dependencies
 - Vibrance
 - Skin Tone
 - Auto Level
+- Auto White Balance
 
 ### Image Processing Filters
 
+- Bilateral (selectively blurs preserving edges and other details)
 - Guassian Blur
 - Box Blur
 - Unsharp Mask
@@ -53,7 +55,6 @@ An image processing library implemented in pure-C, with no external dependencies
 
 Planned features include:
 
-Bilteral filter, bokeh effect, deskewing, retinex, auto white balance,
-skin smoothing and possibly deblurring.
+Bokeh effect, deskewing, retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
 
 Suggestions for new features are welcome. The main focus of this library is common and advanced image processing algorithms.
