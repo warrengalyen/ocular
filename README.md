@@ -41,7 +41,6 @@ An image processing library implemented in pure-C, with no external dependencies
 - Unsharp Mask
 - Sharpen
 - Bilinear resampling (resize)
-- Crop
 - Sobel Edge
 
 ### General
@@ -49,6 +48,7 @@ An image processing library implemented in pure-C, with no external dependencies
 - Retrieve average image luminosity
 - Retrieve average color
 - Retrieve image size
+- Crop
 - Hough tranform line detection
 
 ## TODO

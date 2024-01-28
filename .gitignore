@@ -4,4 +4,6 @@
 *.exe
 /CMakeFiles
 CMakeCache.txt
-/build
+cmake_install.cmake
+Makefile
+/bin
