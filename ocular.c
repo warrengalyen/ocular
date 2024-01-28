@@ -1135,6 +1135,134 @@ extern "C" {
         }
     }
 
+    void autoLevel(const unsigned int* histgram, unsigned char* remapLut, int numberOfPixels, float cutLimit, float contrast) {
+        int minPos = 0, maxPos = 255;
+        int minValue = 0, maxValue = 255;
+        for (int I = 0; I < 256; I++) {
+            if (histgram[I] != 0) {
+                minValue = I;
+                break;
+            }
+        }
+        for (int I = 255; I >= 0; I--) {
+            if (histgram[I] != 0) {
+                maxValue = I;
+                break;
+            }
+        }
+        int sum = 0;
+        for (int I = minValue; I < 256; I++) {
+            sum = sum + histgram[I];
+            if (sum >= numberOfPixels * cutLimit) {
+                minPos = I;
+                break;
+            }
+        }
+        sum = 0;
+        for (int I = 255; I >= 0; I--) {
+            sum = sum + histgram[I];
+            if (sum >= numberOfPixels * cutLimit) {
+                maxPos = I;
+                break;
+            }
+        }
+
+        int delta = (int)((maxValue - minValue) * contrast * 0.5f);
+        minValue = ClampToByte(minValue - delta);
+        maxValue = ClampToByte(maxValue + delta);
+        if (maxPos != minPos) {
+            for (int I = 0; I < 256; I++) {
+                if (I < minPos)
+                    remapLut[I] = (unsigned char)minValue;
+                else if (I > maxPos)
+                    remapLut[I] = (unsigned char)maxValue;
+                else
+                    remapLut[I] = (unsigned char)ClampToByte((maxValue - minValue) * (I - minPos) / (maxPos - minPos) + minValue);
+            }
+        } else {
+            for (int I = 0; I < 256; I++) {
+                remapLut[I] = (unsigned char)maxPos;
+            }
+        }
+    }
+
+    bool isColorCast(const unsigned int* histogramCb, const unsigned int* histogramCr, int numberOfPixels, int colorCoeff) {
+        unsigned int sumCb = 0;
+        unsigned int sumCr = 0;
+        float meanCb = 0, meanCr = 0;
+        for (unsigned int i = 0; i < 256; i++) {
+            sumCb += histogramCb[i] * i;
+            sumCr += histogramCr[i] * i;
+        }
+        meanCb = sumCb * (1.0f / numberOfPixels);
+        meanCr = sumCr * (1.0f / numberOfPixels);
+        int avgColorCoeff = (abs(meanCb - 127) + abs(meanCr - 127));
+        if (avgColorCoeff < colorCoeff) {
+            return false;
+        }
+        return true;
+    }
+
+    bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride,
+                                int colorCoeff, float cutLimit, float contrast) {
+
+        bool ret = false;
+        if (channels == 3 || channels == 4) {
+            int numberOfPixels = height * width;
+            unsigned int histogramYcbcr[768] = { 0 };
+            unsigned int* histogramY = &histogramYcbcr[0];
+            unsigned int* histogramCb = &histogramYcbcr[256];
+            unsigned int* histogramCr = &histogramYcbcr[512];
+            unsigned int histogramRGB[768] = { 0 };
+            unsigned int* histogramR = &histogramRGB[0];
+            unsigned int* histogramG = &histogramRGB[256];
+            unsigned int* histogramB = &histogramRGB[512];
+            unsigned char Y = 0;
+            unsigned char Cb = 0;
+            unsigned char Cr = 0;
+            for (int y = 0; y < height; y++) {
+                const unsigned char* scanIn = input + y * stride;
+                for (int x = 0; x < width; x++) {
+                    const unsigned char R = scanIn[0];
+                    const unsigned char G = scanIn[1];
+                    const unsigned char B = scanIn[2];
+                    histogramR[R]++;
+                    histogramG[G]++;
+                    histogramB[B]++;
+                    rgb2ycbcr(R, G, B, &Y, &Cb, &Cr);
+                    histogramY[Y]++;
+                    histogramCb[Cb]++;
+                    histogramCr[Cr]++;
+                    scanIn += channels;
+                }
+            }
+            ret = isColorCast(histogramCb, histogramCr, numberOfPixels, colorCoeff);
+            if (!ret) {
+                memcpy(output, input, numberOfPixels * channels * sizeof(*input));
+                return ret;
+            }
+            unsigned char mapRGB[256 * 3] = { 0 };
+            unsigned char* mapR = &mapRGB[0];
+            unsigned char* mapG = &mapRGB[256];
+            unsigned char* mapB = &mapRGB[256 + 256];
+            autoLevel(histogramR, mapR, numberOfPixels, cutLimit, contrast);
+            autoLevel(histogramG, mapG, numberOfPixels, cutLimit, contrast);
+            autoLevel(histogramB, mapB, numberOfPixels, cutLimit, contrast);
+            for (int y = 0; y < height; y++) {
+                unsigned char* scanIn = input + y * stride;
+                unsigned char* scanOut = output + y * stride;
+                for (int x = 0; x < width; x++) {
+                    scanOut[0] = mapR[scanIn[0]];
+                    scanOut[1] = mapG[scanIn[1]];
+                    scanOut[2] = mapB[scanIn[2]];
+                    scanIn += channels;
+                    scanOut += channels;
+                }
+            }
+        }
+        return ret;
+    }
+
     void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint) {
 
         int Channels = Stride / Width;

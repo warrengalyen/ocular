@@ -221,7 +221,17 @@ int main(int argc, char** argv) {
         // Channels = 1;
         // ocularSobelEdge(outputImg, outputImg, Width, Height);
 
-        ocularBilateralFilter(inputImage, outputImg, Width, Height, Width * Channels, 0.08, 0.12);
+        // ocularBilateralFilter(inputImage, outputImg, Width, Height, Width * Channels, 0.08, 0.12);
+
+        int colorCoeff = 15;
+        float cutLimit = 0.01;
+        float contrast = 0.9;
+        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, Width, Height, Channels, Width * Channels, colorCoeff, cutLimit, contrast);
+        if (colorCast) {
+            printf("[✓] ColorCast \n");
+        } else {
+            printf("[x] ColorCast \n");
+        }
 
         // Processing algorithm
         double nProcessTime = now();

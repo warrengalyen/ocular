@@ -372,6 +372,19 @@ extern "C" {
     /// @param threshold The luminance threshold. Range [0.0 - 1.0]. Default. 0.5.
     void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
 
+    /// @brief Automatically applies a neutral white balance to an image.
+    /// @param input The image input data buffer.
+    /// @param output The image output data buffer.
+    /// @param width The width of the image in pixels.
+    /// @param geight The height of the image in pixels.
+    /// @param stride The number of bytes in one row of pixels.
+    /// @param colorCoeff Used to measure the intensity of color casting. Range [0 - 127]
+    /// @param cutLimit The histogram clipping upper/lower limit. Range [0 - 1.0]
+    /// @param contrast The histgram contrast strength. Range [0 - 1.0]
+    /// @return bool Whether the image has a color cast.
+    bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int Width, int height, int channels, int stride,
+                                int colorCoeff, float cutLimit, float contrast);
+
     /// @brief Adjust the white balance of of an image
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
@@ -382,8 +395,8 @@ extern "C" {
     /// of 4000 is very cool and 7000 very warm. The default value is 5000. Note
     /// that the scale between 4000 and 5000 is nearly as visually significant as
     /// that between 5000 and 7000.
-    /// @param tint A value of -200 is very green and 200 is very pink. The default
-    /// value is 0.
+    /// @param tint Tints the image either towards green or magenta. Useful for removing color casts. A value of -200
+    /// is very green and 200 is very pink.
     void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint);
 
     /// @brief Adjusts the vibrance of an image
