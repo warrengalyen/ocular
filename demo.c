@@ -1,98 +1,23 @@
-// If it is Windows, call the system API ShellExecuteA to open the picture
-#if defined(_MSC_VER)
-#define _CRT_SECURE_NO_WARNINGS
-#include <windows.h>
-#define access _access
-#else
-#include <unistd.h>
-#endif
 #include "browse.h"
-#define USE_SHELL_OPEN
 #include "ocular.h"
+
+#define USE_SHELL_OPEN
+
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include "stb_image.h"
 #include "stb_image_write.h"
+
 #define SFD_IMPLEMENTATION
 
 #include "sfd.h"
-#include <inttypes.h>
-#include <math.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <stdio.h>
-
-// Timing
+#include "timing.h"
 #include <stdint.h>
-#if defined(__APPLE__)
-#include <mach/mach_time.h>
-#elif defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else // __linux
-#include <time.h>
-#ifndef CLOCK_MONOTONIC //_RAW
-#define CLOCK_MONOTONIC CLOCK_REALTIME
-#endif
-#endif
-static uint64_t nanotimer() {
-    static int ever = 0;
-#if defined(__APPLE__)
-    static mach_timebase_info_data_t frequency;
-    if (!ever) {
-        if (mach_timebase_info(&frequency) != KERN_SUCCESS) {
-            return 0;
-        }
-        ever = 1;
-    }
-    return mach_absolute_time() * frequency.numer / frequency.denom;
-#elif defined(_WIN32)
-    static LARGE_INTEGER frequency;
-    if (!ever) {
-        QueryPerformanceFrequency(&frequency);
-        ever = 1;
-    }
-    LARGE_INTEGER t;
-    QueryPerformanceCounter(&t);
-    return (t.QuadPart * (uint64_t)1e9) / frequency.QuadPart;
-#else // __linux
-    struct timespec t;
-    if (!ever) {
-        if (clock_gettime(CLOCK_MONOTONIC, &spec) != 0) {
-            return 0;
-        }
-        ever = 1;
-    }
-    clock_gettime(CLOCK_MONOTONIC, &spec);
-    return (t.tv_sec * (uint64_t)1e9) + t.tv_nsec;
-#endif
-}
-
-static double now() {
-    static uint64_t epoch = 0;
-    if (!epoch) {
-        epoch = nanotimer();
-    }
-    return (nanotimer() - epoch) / 1e9;
-};
-
-double calcElapsed(double start, double end) {
-    double took = -start;
-    return took + end;
-}
-#ifndef _MAX_DRIVE
-#define _MAX_DRIVE 3
-#endif
-#ifndef _MAX_FNAME
-#define _MAX_FNAME 256
-#endif
-#ifndef _MAX_EXT
-#define _MAX_EXT 256
-#endif
-#ifndef _MAX_DIR
-#define _MAX_DIR 256
-#endif
 
 static const char* calculateSize(uint64_t bytes) {
     char* suffix[] = { "B", "KB", "MB", "GB", "TB" };
