@@ -7,7 +7,9 @@
 *.exe
 CMakeFiles
 CMakeCache.txt
-cmake_install.cmake
+*.cmake
 Makefile
 /bin
-test_filters.h
+demo/test_filters.h
+
+/dll

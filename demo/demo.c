@@ -1,8 +1,8 @@
 #include "browse.h"
-#include "ocular.h"
+#include "../lib/ocular.h"
 
 #if __has_include("test_filters.h")
-#include "test_filters.h"
+    #include "test_filters.h"
 #endif
 
 #define USE_SHELL_OPEN

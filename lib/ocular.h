@@ -39,6 +39,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../dll/dlib_export.h"
+
     // Parameters for Levels filter
     typedef struct {
         // color level minimum
