@@ -2,8 +2,10 @@
 .idea
 .clang-format
 *.o
+*.dll
+*.a
 *.exe
-/CMakeFiles
+CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
 Makefile

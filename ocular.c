@@ -69,21 +69,23 @@ extern "C" {
 
     static inline int Abs(int x) { return (x ^ (x >> 31)) - (x >> 31); }
 
-    unsigned char mix_u8(unsigned char a, unsigned char b, float alpha) {
+    static unsigned char mix_u8(unsigned char a, unsigned char b, float alpha) {
         return (unsigned char)ClampToByte(a * (1.0f - alpha) + b * alpha);
     }
 
-    float dot(unsigned char R, unsigned char G, unsigned char B, float fR, float fG, float fB) { return (float)(R * fR + G * fG + B * fB); }
+    static float dot(unsigned char R, unsigned char G, unsigned char B, float fR, float fG, float fB) {
+        return (float)(R * fR + G * fG + B * fB);
+    }
 
     static inline float mix(float a, float b, float alpha) { return (a * (1.0f - alpha) + b * alpha); }
 
-    unsigned char degree(unsigned char InputColor, unsigned char OutputColor, float intensity) {
+    static unsigned char degree(unsigned char InputColor, unsigned char OutputColor, float intensity) {
         return (unsigned char)ClampToByte(((intensity * OutputColor) + (1.0f - intensity) * InputColor));
     }
 
-    float smoothstep(float edgeMin, float edgeMax, float x) { return clamp((x - edgeMin) / (edgeMax - edgeMin), 0.0f, 1.0f); }
+    static float smoothstep(float edgeMin, float edgeMax, float x) { return clamp((x - edgeMin) / (edgeMax - edgeMin), 0.0f, 1.0f); }
 
-    float vec2_distance(float vecX, float vecY, float otherX, float otherY) {
+    static float vec2_distance(float vecX, float vecY, float otherX, float otherY) {
         float dx = vecX - otherX;
         float dy = vecY - otherY;
         return sqrtf(dx * dx + dy * dy);
@@ -1135,7 +1137,7 @@ extern "C" {
         }
     }
 
-    void autoLevel(const unsigned int* histgram, unsigned char* remapLut, int numberOfPixels, float cutLimit, float contrast) {
+    static void autoLevel(const unsigned int* histgram, unsigned char* remapLut, int numberOfPixels, float cutLimit, float contrast) {
         int minPos = 0, maxPos = 255;
         int minValue = 0, maxValue = 255;
         for (int I = 0; I < 256; I++) {
@@ -1186,7 +1188,7 @@ extern "C" {
         }
     }
 
-    bool isColorCast(const unsigned int* histogramCb, const unsigned int* histogramCr, int numberOfPixels, int colorCoeff) {
+    static bool isColorCast(const unsigned int* histogramCb, const unsigned int* histogramCr, int numberOfPixels, int colorCoeff) {
         unsigned int sumCb = 0;
         unsigned int sumCr = 0;
         float meanCb = 0, meanCr = 0;
@@ -1499,7 +1501,7 @@ extern "C" {
         }
     }
 
-    int getDiffFactor(const unsigned char* color1, const unsigned char* color2, const int channels) {
+    static int getDiffFactor(const unsigned char* color1, const unsigned char* color2, const int channels) {
         int final_diff;
         int component_diff[4];
 
@@ -1524,8 +1526,9 @@ extern "C" {
         return final_diff;
     }
 
-    void bilateralHorizontal(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f, float inv_alpha_f,
-                             float* left_Color_Buffer, float* left_Factor_Buffer, float* right_Color_Buffer, float* right_Factor_Buffer) {
+    static void bilateralHorizontal(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f,
+                                    float inv_alpha_f, float* left_Color_Buffer, float* left_Factor_Buffer, float* right_Color_Buffer,
+                                    float* right_Factor_Buffer) {
 
         // Left and right pass
         int Stride = Width * Channels;
@@ -1599,8 +1602,8 @@ extern "C" {
         }
     }
 
-    void bilateralVertical(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f, float inv_alpha_f,
-                           float* down_Color_Buffer, float* down_Factor_Buffer, float* up_Color_Buffer, float* up_Factor_Buffer) {
+    static void bilateralVertical(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f, float inv_alpha_f,
+                                  float* down_Color_Buffer, float* down_Factor_Buffer, float* up_Color_Buffer, float* up_Factor_Buffer) {
 
         // Down pass and Up pass
         int Stride = Width * Channels;
@@ -1746,7 +1749,7 @@ extern "C" {
         }
     }
 
-    void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float* a3, float* b1, float* b2, float* cprev, float* cnext) {
+    static void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float* a3, float* b1, float* b2, float* cprev, float* cnext) {
         float alpha, lamma, k;
 
         if (sigma < 0.5f)
@@ -1764,8 +1767,8 @@ extern "C" {
         *cnext = (*a2 + *a3) / (1 + *b1 + *b2);
     }
 
-    void gaussianHorizontal(unsigned char* bufferPerLine, const unsigned char* lpRowInitial, unsigned char* lpColumn, int width, int height,
-                            int Channels, int Nwidth, float a0a1, float a2a3, float b1b2, float cprev, float cnext) {
+    static void gaussianHorizontal(unsigned char* bufferPerLine, const unsigned char* lpRowInitial, unsigned char* lpColumn, int width,
+                                   int height, int Channels, int Nwidth, float a0a1, float a2a3, float b1b2, float cprev, float cnext) {
         int HeightStep = Channels * height;
         int WidthSubOne = width - 1;
         if (Channels == 3) {
@@ -1876,8 +1879,8 @@ extern "C" {
         }
     }
 
-    void gaussianVertical(unsigned char* bufferPerLine, const unsigned char* lpRowInitial, unsigned char* lpColInitial, int height,
-                          int width, int Channels, float a0a1, float a2a3, float b1b2, float cprev, float cnext) {
+    static void gaussianVertical(unsigned char* bufferPerLine, const unsigned char* lpRowInitial, unsigned char* lpColInitial, int height,
+                                 int width, int Channels, float a0a1, float a2a3, float b1b2, float cprev, float cnext) {
 
         int WidthStep = Channels * width;
         int HeightSubOne = height - 1;
@@ -2023,7 +2026,7 @@ extern "C" {
         free(tempData);
     }
 
-#define float2fixed(x) (((int)((x)*4096.0f + 0.5f)) << 8)
+#define float2fixed(x) (((int)((x) * 4096.0f + 0.5f)) << 8)
 
     void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char* y, unsigned char* cb, unsigned char* cr) {
         *y = (unsigned char)((19595 * R + 38470 * G + 7471 * B) >> 16);

@@ -6,31 +6,31 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1310)
-#pragma warning(disable : 4996) // VS doesn't like fopen, but fopen_s is not
-                                // standard C so unusable here
-#endif /*_MSC_VER */
+    #pragma warning(disable : 4996) // VS doesn't like fopen, but fopen_s is not
+                                    // standard C so unusable here
+#endif                              /*_MSC_VER */
 
 #ifndef clamp
-#define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
+    #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
 #endif
 #ifndef ClampToByte
-#define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
+    #define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
 #endif
 #ifndef min
-#define min(a, b) (((a) < (b)) ? (a) : (b))
+    #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 #ifndef min3
-#define min3(a, b, c) min(min((a), (b)), (c))
+    #define min3(a, b, c) min(min((a), (b)), (c))
 #endif
 #ifndef max
-#define max(a, b) (((a) > (b)) ? (a) : (b))
+    #define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 #ifndef max3
-#define max3(a, b, c) max(max((a), (b)), (c))
+    #define max3(a, b, c) max(max((a), (b)), (c))
 #endif
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846f
+    #define M_PI 3.14159265358979323846f
 #endif
 
 #include "fastmath.h"
