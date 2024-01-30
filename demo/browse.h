@@ -7,33 +7,25 @@
 
 #if _WIN32
 
-#include <windows.h>
+    #include <windows.h>
 
-#pragma comment(lib,"shell32.lib")
+    #pragma comment(lib, "shell32.lib")
 
-static void browse(const char *url)
-{
-#if _MSC_VER
-    ShellExecute(NULL,(LPCWSTR) "open",(LPCWSTR) url, NULL, NULL, SW_SHOWNORMAL);
-#else
-	ShellExecute(NULL,"open", url, NULL, NULL, SW_SHOWNORMAL);
-#endif
-}
+static void browse(const char* url) { ShellExecuteA(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL); }
 
 #endif
 
-#if linux || __FreeBSD__ || __sun&&__SVR4
+#if linux || __FreeBSD__ || __sun && __SVR4
 
-#include        <sys/types.h>
-#include        <sys/wait.h>
-#include        <unistd.h>
+    #include <sys/types.h>
+    #include <sys/wait.h>
+    #include <unistd.h>
 
-static void browse(const char *url)
-{
+static void browse(const char* url) {
     pid_t childpid;
-    const char *args[3];
+    const char* args[3];
 
-    const char *browser = getenv("BROWSER");
+    const char* browser = getenv("BROWSER");
     if (browser)
         browser = strdup(browser);
     else
@@ -44,10 +36,9 @@ static void browse(const char *url)
     args[2] = NULL;
 
     childpid = fork();
-    if (childpid == 0)
-    {
+    if (childpid == 0) {
         execvp(args[0], (char**)args);
-        perror(args[0]);                // failed to execute
+        perror(args[0]); // failed to execute
         return;
     }
 }
@@ -56,25 +47,22 @@ static void browse(const char *url)
 
 #if __APPLE__
 
-#include        <sys/types.h>
-#include        <sys/wait.h>
-#include        <unistd.h>
+    #include <sys/types.h>
+    #include <sys/wait.h>
+    #include <unistd.h>
 
-static  void browse(const char *url)
-{
+static void browse(const char* url) {
     pid_t childpid;
-    const char *args[5];
+    const char* args[5];
 
-    char *browser = getenv("BROWSER");
-    if (browser)
-    {   browser = strdup(browser);
+    char* browser = getenv("BROWSER");
+    if (browser) {
+        browser = strdup(browser);
         args[0] = browser;
         args[1] = url;
         args[2] = NULL;
-    }
-    else
-    {
-        //browser = "/Applications/Safari.app/Contents/MacOS/Safari";
+    } else {
+        // browser = "/Applications/Safari.app/Contents/MacOS/Safari";
         args[0] = "open";
         args[1] = "-a";
         args[2] = "/Applications/Safari.app";
@@ -83,14 +71,13 @@ static  void browse(const char *url)
     }
 
     childpid = fork();
-    if (childpid == 0)
-    {
+    if (childpid == 0) {
         execvp(args[0], (char**)args);
-        perror(args[0]);                // failed to execute
+        perror(args[0]); // failed to execute
         return;
     }
 }
 
 #endif
 
-#endif  /* DEMO_BROWSE_H */
+#endif /* DEMO_BROWSE_H */
