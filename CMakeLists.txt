@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin") # .exe and .dll
 
 add_subdirectory(lib)
+add_subdirectory(dll)
 add_subdirectory(demo)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

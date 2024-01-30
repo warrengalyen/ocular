@@ -32,5 +32,5 @@ target_include_directories(ocular PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # List files that install and/or package should provide.
 # Each library should know what it want to distribute,
 # which files are internal or intermediate and which are public library export.
-install(TARGETS ocular DESTINATION bin)
+install(TARGETS ocular DESTINATION ocular-bin)
 install(FILES ocular.h DESTINATION ocular-include)

@@ -39,8 +39,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../dll/dlib_export.h"
-
     // Parameters for Levels filter
     typedef struct {
         // color level minimum
@@ -364,8 +362,7 @@ extern "C" {
                                    unsigned char colorB, unsigned char colorAlpha);
 
     /// @brief Converts an image to black and white based on a luminance threshold.
-    /// Piuxels with a luminance above the threshold will appear white, and those
-    /// below will be black.
+    /// Pixels with a luminance above the threshold will appear white, and those below will be black.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -382,7 +379,7 @@ extern "C" {
     /// @param stride The number of bytes in one row of pixels.
     /// @param colorCoeff Used to measure the intensity of color casting. Range [0 - 127]
     /// @param cutLimit The histogram clipping upper/lower limit. Range [0 - 1.0]
-    /// @param contrast The histgram contrast strength. Range [0 - 1.0]
+    /// @param contrast The histogram contrast strength. Range [0 - 1.0]
     /// @return bool Whether the image has a color cast.
     bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int Width, int height, int channels, int stride,
                                 int colorCoeff, float cutLimit, float contrast);
@@ -450,7 +447,7 @@ extern "C" {
     //--------------------------Image processing--------------------------
 
     /// @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
-    /// This is a fast implementation, like guassian blur, that performs vertical/horizontal passes independently.
+    /// This is a fast implementation, like gaussian blur, that performs vertical/horizontal passes independently.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -458,7 +455,7 @@ extern "C" {
     /// @param Stride The number of bytes in one row of pixels.
     /// @param sigmaSpatial The size of the Gaussian bilateral filter window to use. A larger value means that farther
     /// pixels will influence each other as long as their colors are close enough. Range [0 - 1.0]
-    /// @param sigmaRange Control how much an adjacent pixel is downweighted because of the intensity difference. A
+    /// @param sigmaRange Control how much an adjacent pixel is down-weighted because of the intensity difference. A
     /// larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
     void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
 
@@ -484,7 +481,7 @@ extern "C" {
     /// of 1.0.
     void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
 
-    /// @brief A hardware-optimizer, variable radius box blur
+    /// @brief A hardware-optimized, variable radius box blur
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -506,10 +503,8 @@ extern "C" {
     /// @param intensity The strength of the sharpening kernel. Range [0-100]
     void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, int sharpness, int intensity);
 
-    /// @brief Resizes an image using bilinear interpolation. This lets you up or
-    /// downsample an image
-    //  using Lanczos resampling, which results in noticeably better quality than
-    //  the standard linear or trilinear interpolation.
+    /// @brief Resizes an image using bilinear interpolation. This lets you up or down-sample an image using Lanczos
+    /// resampling, which results in noticeably better quality than the standard linear or trilinear interpolation.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
