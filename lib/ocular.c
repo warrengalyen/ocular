@@ -2594,7 +2594,7 @@ extern "C" {
         free(temp);
     }
 
-    void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, int sharpness, int intensity) {
+    void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
 
         int Channels = Stride / Width;
         intensity = max(min(intensity, 100), 0);
@@ -2895,7 +2895,7 @@ extern "C" {
         }
     }
 
-    void ocularSobelEdge(unsigned char* Input, unsigned char* Output, int Width, int Height) {
+    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height) {
 
         if ((Input == NULL) || (Output == NULL))
             return;

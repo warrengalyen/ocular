@@ -106,8 +106,7 @@ extern "C" {
     /// is 1.0.
     void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier);
 
-    /// @brief Determines the average color, by averaging the RGBA componenets for
-    /// each each pixel in an image.
+    /// @brief Determines the average color, by averaging the RGBA components for each each pixel in an image.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -145,8 +144,7 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param intensity The degree to which the sepia tone replaces the normal
-    /// image color. Range [0.0 - 1.0]. Default 1.0.
+    /// @param intensity The degree to which the sepia tone replaces the normal image color. Range [0 - 100].
     void ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
 
     /// @brief For a given color in the image, sets the alpha channel to 0.
@@ -230,11 +228,9 @@ extern "C" {
     /// @param firstColorG The green channel to replace in dark areas of the image.
     /// @param firstColorB The blue channel to replace in dark areas of the image.
     /// @param secondColorR The red channel to replace in light areas of the image.
-    /// @param secondColorG The green channel to replace in light areas of the
-    /// image.
+    /// @param secondColorG The green channel to replace in light areas of the image.
     /// @param secondColorB The blue channel to replace in light areas of the image.
-    /// @param intensity The luminance intensity to use for dark and light areas.
-    /// Range [0 - 100].
+    /// @param intensity The luminance intensity to use for dark and light areas. Range [0 - 100].
     void ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
                                 unsigned char firstColorG, unsigned char firstColorB, unsigned char secondColorR,
                                 unsigned char secondColorG, unsigned char secondColorB, int intensity);
@@ -245,12 +241,9 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param distance Strength of the color applied. Default 0. Values between
-    /// -0.3 and 0.3 are best.
-    /// @param slope Amount of color change. Default 0. Values between -0.3 and 0.3
-    /// are best.
-    /// @param intensity The luminance intensity to apply. Range [0 - 100]. Default
-    /// 100.
+    /// @param distance Strength of the color applied. Default 0. Values between -0.3 and 0.3 are best.
+    /// @param slope Amount of color change. Default 0. Values between -0.3 and 0.3 are best.
+    /// @param intensity The luminance intensity to apply. Range [0 - 100]. Default 100.
     void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity);
 
     /// @brief Adjusts the alpha channel of the image
@@ -275,12 +268,9 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param redLevelParams The red channel for parameters for min, mid, max and
-    /// output values.
-    /// @param greenLevelParams The green channel for parameters for min, mid, max
-    /// and output values.
-    /// @param blueLevelParams The blue channel for parameters for min, mid, max and
-    /// output values.
+    /// @param redLevelParams The red channel for parameters for min, mid, max and output values.
+    /// @param greenLevelParams The green channel for parameters for min, mid, max and output values.
+    /// @param blueLevelParams The blue channel for parameters for min, mid, max and output values.
     void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                             ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams);
 
@@ -304,10 +294,8 @@ extern "C" {
     /// @param shadowTintG Shadow tint green channel adjustment. Range [0 - 1.0]
     /// @param shadowTintB Shadow tint blue channel adjustment. Range [0 - 1.0]
     /// @param highlightTintR Highlight tint red channel adjustment. Range [0 - 1.0]
-    /// @param highlightTintG Highlight tint green channel adjustment. Range [0
-    /// - 1.0]
-    /// @param highlightTintB Highlight tint blue channel adjustment. Range [0
-    /// - 1.0]
+    /// @param highlightTintG Highlight tint green channel adjustment. Range [0 - 1.0]
+    /// @param highlightTintB Highlight tint blue channel adjustment. Range [0 - 1.0]
     /// @param shadowTintIntensity Shadow tint intensity. Range [0 - 1.0]
     /// @param highlightTintIntensity Highlight tint intensity. Range [0 - 1.0]
     void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
@@ -320,14 +308,11 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param shadows Increase to lighten shadows, from 0.0 to 1.0, with 0.0 as the
-    /// default.
-    /// @param highlights Decrease to darken highlights, from 0.0 to 1.0, with 1.0
-    /// as the default.
+    /// @param shadows Increase to lighten shadows, from 0.0 to 1.0, with 0.0 as the default.
+    /// @param highlights Decrease to darken highlights, from 0.0 to 1.0, with 1.0 as the default.
     void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights);
 
-    /// @brief Converts the image to a single - color version, based on the
-    /// luminance of each pixel
+    /// @brief Converts the image to a single color version, based on the luminance of each pixel
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -375,7 +360,7 @@ extern "C" {
     /// @param input The image input data buffer.
     /// @param output The image output data buffer.
     /// @param width The width of the image in pixels.
-    /// @param geight The height of the image in pixels.
+    /// @param height The height of the image in pixels.
     /// @param stride The number of bytes in one row of pixels.
     /// @param colorCoeff Used to measure the intensity of color casting. Range [0 - 127]
     /// @param cutLimit The histogram clipping upper/lower limit. Range [0 - 1.0]
@@ -405,8 +390,7 @@ extern "C" {
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
     /// @param vibrance The vibrance adjustment to apply, using 0.0 as the default,
-    /// and a
-    // suggested min/max of around - 1.2 and 1.2, respectively.
+    /// and a suggested min/max of around - 1.2 and 1.2, respectively.
     void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance);
 
     /// @brief A skin-tone adjustment filter that affects a unique range of light
@@ -418,14 +402,11 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param skinToneAdjust Amount to adjust skin tone. Default : 0.0, suggested
-    /// min/max : -0.3 and 0.3 respectively.
-    /// @param skinHue Skin hue to be detected. Default : 0.05 (fair caucasian to
-    /// reddish skin).
+    /// @param skinToneAdjust Amount to adjust skin tone. Default : 0.0, suggested min/max : -0.3 and 0.3 respectively.
+    /// @param skinHue Skin hue to be detected. Default : 0.05 (fair caucasian to reddish skin).
     /// @param skinHueThreshold Amount of variance in skin hue. Default : 40.0.
     /// @param maxHueShift Maximum amount of hue shifting allowed. Default : 0.25.
-    /// @param maxSaturationShift Maximum amount of saturation to be shifted (when
-    /// using orange). Default: 0.4.
+    /// @param maxSaturationShift Maximum amount of saturation to be shifted (when using orange). Default: 0.4.
     /// @param upperSkinToneColor Adjusts hue or saturation based on what tone we
     /// are aiming for. 0 = Pink/Green, 1 = Pink/Orange
     void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
@@ -437,9 +418,8 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param fraction Clipping threshold in percentage of pixels allowed to clip
-    /// to clip to the
-    // white and black points of the histogram. Range [0.001 - 0.1]
+    /// @param fraction Clipping threshold in percentage of pixels allowed to clip to clip to the
+    /// white and black points of the histogram. Range [0.001 - 0.1]
     void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
     //--------------------------Color adjustments--------------------------
@@ -487,11 +467,11 @@ extern "C" {
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
     /// @param Stride The number of bytes in one row of pixels.
-    /// @param Radius A radius in pixels to use for the blur, with a default of 2.0.
+    /// @param Radius A radius in pixels to use for the blur, >= 0.0
     /// This adjusts the sigma variable in the Gaussian distribution function.
     void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
-    /// @brief Applies a Laplacian sharpening filter to an image.
+    /// @brief Applies a Gaussian sharpening filter to an image.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
@@ -501,9 +481,9 @@ extern "C" {
     /// @param sharpness The sigma of the gaussian, the smaller sigma is the more
     /// the kernel in concentrated on the center pixel.
     /// @param intensity The strength of the sharpening kernel. Range [0-100]
-    void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, int sharpness, int intensity);
+    void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity);
 
-    /// @brief Resizes an image using bilinear interpolation. This lets you up or down-sample an image using Lanczos
+    /// @brief Resizes an image using Lanczos interpolation. This lets you up or down-sample an image using Lanczos
     /// resampling, which results in noticeably better quality than the standard linear or trilinear interpolation.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
@@ -512,8 +492,7 @@ extern "C" {
     /// @param Stride The number of bytes in one row of pixels.
     /// @param newWidth The new width of the image.
     /// @param newHeight The new height of the image.
-    /// @param dstStride The number of bytes in one row of pixels for output. Used
-    /// to calculate destination offset.
+    /// @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
                                 int newWidth, int newHeight, int dstStride);
 
@@ -527,8 +506,7 @@ extern "C" {
     /// @param cropY Starting Y coordinate to start crop.
     /// @param dstWidth The crop width of the image.
     /// @param dstHeight The crop height of the image.
-    /// @param dstStride The number of bytes in one row of pixels for output. Used
-    /// to calculate destination offset.
+    /// @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
     void ocularCropFilter(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
                           int dstWidth, int dstHeight, int dstStride);
 
@@ -537,7 +515,7 @@ extern "C" {
     /// @param Output The image output data buffer.
     /// @param Width The width of the image in pixels.
     /// @param Height The height of the image in pixels.
-    void ocularSobelEdge(unsigned char* Input, unsigned char* Output, int Width, int Height);
+    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
 
     /// @brief Performs a Hough transform to detect lines in an image.
     int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta, int numLine,
