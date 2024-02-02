@@ -35,12 +35,14 @@ An image processing library implemented in pure-C, with no external dependencies
 
 ### Image Processing Filters
 
+- 2D Convolution
 - Bilateral (selectively blurs preserving edges and other details)
 - Guassian Blur
 - Box Blur
+- Motion Blur
 - Unsharp Mask
 - Sharpen
-- Bilinear resampling (resize)
+- Lanzcos resampling (resize)
 - Sobel Edge
 
 ### General
