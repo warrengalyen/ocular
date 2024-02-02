@@ -163,7 +163,7 @@ extern "C" {
     //--------------------------Image processing--------------------------
 
     DLIB_EXPORT void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
-                                               int* kernel, unsigned char filterW, unsigned char cfactor, unsigned char bias);
+                                               float* kernel, unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
     DLIB_EXPORT void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
 
