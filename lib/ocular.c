@@ -3304,14 +3304,6 @@ extern "C" {
             sumWeights += kernel[i];
         }
 
-        for (int i = 0; i < kernelSize; i++) {
-            for (int j = 0; j < kernelSize; j++) {
-                printf("%d ", kernel[i * kernelSize + j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-
         ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
 
         free(kernel);
