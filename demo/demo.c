@@ -154,15 +154,22 @@ int main(int argc, char** argv) {
 
         // ocularBilateralFilter(inputImage, outputImg, Width, Height, Width * Channels, 0.08, 0.12);
 
-        int colorCoeff = 15;
-        float cutLimit = 0.01;
-        float contrast = 0.9;
-        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, Width, Height, Channels, Width * Channels, colorCoeff, cutLimit, contrast);
-        if (colorCast) {
-            printf("[✓] ColorCast \n");
-        } else {
-            printf("[x] ColorCast \n");
-        }
+        //        int colorCoeff = 15;
+        //        float cutLimit = 0.01;
+        //        float contrast = 0.9;
+        //        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, Width, Height, Channels, Width * Channels, colorCoeff,
+        //        cutLimit, contrast); if (colorCast) {
+        //            printf("[✓] ColorCast \n");
+        //        } else {
+        //            printf("[x] ColorCast \n");
+        //        }
+
+
+        int Blurfilter[25] = {
+            0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+        };
+
+        ocularConvolution2DFilter(inputImage, outputImg, Width, Height, Channels, Blurfilter, 10, 13, 0);
 
         double nProcessTime = calcElapsed(startTime, now());
         printf("Processing time: %d ms.\n", (int)(nProcessTime * 1000));

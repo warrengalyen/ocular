@@ -17,7 +17,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin")
 
 add_executable(demo demo.c)
 
-
 # Demo application require both libraries, so add them
 target_link_libraries(demo
         ocular

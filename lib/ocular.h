@@ -7,8 +7,8 @@ extern "C" {
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1310)
     #pragma warning(disable : 4996) // VS doesn't like fopen, but fopen_s is not
-                                    // standard C so unusable here
-#endif                              /*_MSC_VER */
+// standard C so unusable here
+#endif /*_MSC_VER */
 
 #ifndef clamp
     #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
@@ -361,7 +361,7 @@ extern "C" {
     /// @param output The image output data buffer.
     /// @param width The width of the image in pixels.
     /// @param height The height of the image in pixels.
-    /// @param stride The number of bytes in one row of pixels.
+    /// @param channels The number of color channels in the image.
     /// @param colorCoeff Used to measure the intensity of color casting. Range [0 - 127]
     /// @param cutLimit The histogram clipping upper/lower limit. Range [0 - 1.0]
     /// @param contrast The histogram contrast strength. Range [0 - 1.0]
@@ -424,7 +424,44 @@ extern "C" {
 
     //--------------------------Color adjustments--------------------------
 
-    //--------------------------Image processing--------------------------
+    //--------------------------Blur filters--------------------------
+
+    /// @brief A hardware-optimized, variable radius box blur
+    /// @param Input The image input data buffer.
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    /// @param Stride The number of bytes in one row of pixels.
+    /// @param Radius A radius in pixels to use for the blur, >= 0.0
+    /// This adjusts the sigma variable in the Gaussian distribution function.
+    void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
+    /// @brief Performs a smoothing of an image using a discrete Gaussian kernel.
+    /// Reduces noise by averaging it out, but will also reduce edges.
+    /// Note: This is a radius-independent fast gaussian blur implementation.
+    /// @param Input The image input data buffer.
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    /// @param Stride The number of bytes in one row of pixels.
+    /// @param GaussianSigma A radius in pixels to use for the blur, >= 0.0
+    void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
+
+    //--------------------------Blur filters--------------------------
+
+
+    //-------------------------- Edge detection --------------------------
+
+    /// @brief Applies a sobel edge detection filter
+    /// @param Input The image input data buffer (assumes grayscale image).
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
+
+    //-------------------------- Edge detection --------------------------
+
+    //--------------------------Enhancement filters--------------------------
 
     /// @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
     /// This is a fast implementation, like gaussian blur, that performs vertical/horizontal passes independently.
@@ -439,16 +476,6 @@ extern "C" {
     /// larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
     void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
 
-    /// @brief Performs a smoothing of an image using a discrete Guassian kernel.
-    /// Reduces noise by averaging it out, but will also reduce edges.
-    /// @param Input The image input data buffer.
-    /// @param Output The image output data buffer.
-    /// @param Width The width of the image in pixels.
-    /// @param Height The height of the image in pixels.
-    /// @param Stride The number of bytes in one row of pixels.
-    /// @param GaussianSigma A radius in pixels to use for the blur, >= 0.0
-    void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
-
     /// @brief Applies an unsharp mask
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
@@ -461,16 +488,6 @@ extern "C" {
     /// of 1.0.
     void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
 
-    /// @brief A hardware-optimized, variable radius box blur
-    /// @param Input The image input data buffer.
-    /// @param Output The image output data buffer.
-    /// @param Width The width of the image in pixels.
-    /// @param Height The height of the image in pixels.
-    /// @param Stride The number of bytes in one row of pixels.
-    /// @param Radius A radius in pixels to use for the blur, >= 0.0
-    /// This adjusts the sigma variable in the Gaussian distribution function.
-    void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
     /// @brief Applies a Gaussian sharpening filter to an image.
     /// @param Input The image input data buffer.
     /// @param Output The image output data buffer.
@@ -482,6 +499,23 @@ extern "C" {
     /// the kernel in concentrated on the center pixel.
     /// @param intensity The strength of the sharpening kernel. Range [0-100]
     void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity);
+
+    //--------------------------Enhancement filters--------------------------
+
+    //--------------------------Misc--------------------------
+
+    /// @brief Applies a 2D convolution to an image using a kernel.
+    /// @param Input The image input data buffer.
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    /// @param Channels The number of color channels in the image.
+    /// @param kernel The kernel matrix to apply. Width and height must be odd. This expects a 1D array.
+    /// @param filterW The kernel matrix width.
+    /// @param cfactor The sum of all values greater than 0 in the kernel.
+    /// @param bias Used to increase/decrease all values greater than 0 in the kernel.
+    void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int* kernel,
+                                   unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
     /// @brief Resizes an image using Lanczos interpolation. This lets you up or down-sample an image using Lanczos
     /// resampling, which results in noticeably better quality than the standard linear or trilinear interpolation.
@@ -510,12 +544,8 @@ extern "C" {
     void ocularCropFilter(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
                           int dstWidth, int dstHeight, int dstStride);
 
-    /// @brief Applies a sobel edge detection filter
-    /// @param Input The image input data buffer (assumes grayscale image).
-    /// @param Output The image output data buffer.
-    /// @param Width The width of the image in pixels.
-    /// @param Height The height of the image in pixels.
-    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
+    //--------------------------Misc--------------------------
+
 
     /// @brief Performs a Hough transform to detect lines in an image.
     int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta, int numLine,
@@ -525,7 +555,7 @@ extern "C" {
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
                         unsigned char G, unsigned char B);
 
-    //--------------------------Image processing--------------------------
+    //--------------------------Misc--------------------------
 
     //--------------------------preImage processing--------------------------
 

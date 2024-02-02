@@ -1,10 +1,13 @@
 #include <math.h>
 #include <string.h>
 #include <sys/stat.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #include "ocular.h"
+
     /*
     LevelParams redLevelParams = {
         // color level minimum
@@ -3216,6 +3219,59 @@ extern "C" {
         if (fp != NULL)
             fclose(fp);
         return has_image_size;
+    }
+
+    void ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, int* kernel,
+                                   unsigned char filterW, unsigned char cfactor, unsigned char bias) {
+
+        int factor = 256 / cfactor;
+        int halfW = filterW / 2;
+        if (channels == 3 || channels == 4) {
+            for (int y = 0; y < height; y++) {
+                int y1 = y - halfW + height;
+                for (int x = 0; x < width; x++) {
+                    int x1 = x - halfW + width;
+                    int r = 0;
+                    int g = 0;
+                    int b = 0;
+                    unsigned int p = (y * width + x) * channels;
+                    for (unsigned int fx = 0; fx < filterW; fx++) {
+                        int dx = (x1 + fx) % width;
+                        int fidx = fx * (filterW);
+                        for (unsigned int fy = 0; fy < filterW; fy++) {
+                            int pos = (((y1 + fy) % height) * width + dx) * channels;
+
+                            int* pKernel = &kernel[fidx + (fy)];
+                            r += input[pos] * (*pKernel);
+                            g += input[pos + 1] * (*pKernel);
+                            b += input[pos + 2] * (*pKernel);
+                        }
+                    }
+                    output[p] = ClampToByte(((factor * r) >> 8) + bias);
+                    output[p + 1] = ClampToByte(((factor * g) >> 8) + bias);
+                    output[p + 2] = ClampToByte(((factor * b) >> 8) + bias);
+                }
+            }
+        } else if (channels == 1) {
+            for (int y = 0; y < height; y++) {
+                int y1 = y - halfW + height;
+                for (int x = 0; x < width; x++) {
+                    int r = 0;
+                    unsigned int p = (y * width + x);
+                    int x1 = x - halfW + width;
+                    for (unsigned int fx = 0; fx < filterW; fx++) {
+                        int dx = (x1 + fx) % width;
+                        int fidx = fx * (filterW);
+                        for (unsigned int fy = 0; fy < filterW; fy++) {
+                            int pos = (((y1 + fy) % height) * width + dx);
+                            int szKernel = kernel[fidx + (fy)];
+                            r += input[pos] * szKernel;
+                        }
+                    }
+                    output[p] = ClampToByte(((factor * r) >> 8) + bias);
+                }
+            }
+        }
     }
 #ifdef __cplusplus
 }
