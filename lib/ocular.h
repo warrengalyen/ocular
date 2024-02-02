@@ -524,7 +524,7 @@ extern "C" {
     /// @param filterW The kernel matrix width.
     /// @param cfactor The sum of all values greater than 0 in the kernel.
     /// @param bias Used to increase/decrease all values greater than 0 in the kernel.
-    void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int* kernel,
+    void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
                                    unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
     /// @brief Resizes an image using Lanczos interpolation. This lets you up or down-sample an image using Lanczos

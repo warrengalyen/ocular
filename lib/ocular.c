@@ -3221,7 +3221,7 @@ extern "C" {
         return has_image_size;
     }
 
-    void ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, int* kernel,
+    void ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, float* kernel,
                                    unsigned char filterW, unsigned char cfactor, unsigned char bias) {
 
         int factor = 256 / cfactor;
@@ -3241,7 +3241,7 @@ extern "C" {
                         for (unsigned int fy = 0; fy < filterW; fy++) {
                             int pos = (((y1 + fy) % height) * width + dx) * channels;
 
-                            int* pKernel = &kernel[fidx + (fy)];
+                            float* pKernel = &kernel[fidx + (fy)];
                             r += input[pos] * (*pKernel);
                             g += input[pos + 1] * (*pKernel);
                             b += input[pos + 2] * (*pKernel);
@@ -3264,7 +3264,7 @@ extern "C" {
                         int fidx = fx * (filterW);
                         for (unsigned int fy = 0; fy < filterW; fy++) {
                             int pos = (((y1 + fy) % height) * width + dx);
-                            int szKernel = kernel[fidx + (fy)];
+                            float szKernel = kernel[fidx + (fy)];
                             r += input[pos] * szKernel;
                         }
                     }
@@ -3280,7 +3280,7 @@ extern "C" {
         int kernelSize = ceil(2 * radius + 1);
 
         // allocate memory for the kernel
-        int* kernel = (int*)malloc(kernelSize * kernelSize * sizeof(int));
+        float* kernel = (float*)malloc(kernelSize * kernelSize * sizeof(float));
 
         // calculate motion blur weights based on the angle
         float angleRadians = angle * M_PI / 180.0; // convert angle to radians
@@ -3298,11 +3298,16 @@ extern "C" {
             }
         }
 
-        // Normalize the kernel weights to ensure they sum to 1
-        int sumWeights = 0;
+        // Calculate the sum of all the weights in the kernel
+        float sumWeights = 0.0;
         for (int i = 0; i < kernelSize * kernelSize; i++) {
             sumWeights += kernel[i];
         }
+
+        // Normalize the kernel so the sum of all weights is equal to 1
+        //        for (int i = 0; i < kernelSize * kernelSize; i++) {
+        //            kernel[i] /= sumWeights;
+        //        }
 
         ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
 
