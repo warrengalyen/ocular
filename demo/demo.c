@@ -165,11 +165,13 @@ int main(int argc, char** argv) {
         //        }
 
 
-        int Blurfilter[25] = {
-            0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
-        };
+        //        int Blurfilter[25] = {
+        //            0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+        //        };
+        //
+        //        ocularConvolution2DFilter(inputImage, outputImg, Width, Height, Channels, Blurfilter, 10, 13, 0);
 
-        ocularConvolution2DFilter(inputImage, outputImg, Width, Height, Channels, Blurfilter, 10, 13, 0);
+        ocularMotionBlurFilter(inputImage, outputImg, Width, Height, Channels, 5, 30);
 
         double nProcessTime = calcElapsed(startTime, now());
         printf("Processing time: %d ms.\n", (int)(nProcessTime * 1000));

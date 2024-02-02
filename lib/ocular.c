@@ -3273,6 +3273,49 @@ extern "C" {
             }
         }
     }
+
+    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle) {
+
+        // enforce odd width kernel which ensures a center pixel is always available
+        int kernelSize = ceil(2 * radius + 1);
+
+        // allocate memory for the kernel
+        int* kernel = (int*)malloc(kernelSize * kernelSize * sizeof(int));
+
+        // calculate motion blur weights based on the angle
+        float angleRadians = angle * M_PI / 180.0; // convert angle to radians
+        float dx = fastCos(angleRadians);
+        float dy = fastSin(angleRadians);
+
+        // set weights for the kernel
+        for (int i = 0; i < kernelSize; i++) {
+            for (int j = 0; j < kernelSize; j++) {
+                float distance = fabs(round((float)(i - radius) * dx + (float)(j - radius) * dy));
+                kernel[i * kernelSize + j] = (int)((radius - distance) / radius); // linear interpolate
+                if (kernel[i * kernelSize + j] < 0) {
+                    kernel[i * kernelSize + j] = 0;
+                }
+            }
+        }
+
+        // Normalize the kernel weights to ensure they sum to 1
+        int sumWeights = 0;
+        for (int i = 0; i < kernelSize * kernelSize; i++) {
+            sumWeights += kernel[i];
+        }
+
+        for (int i = 0; i < kernelSize; i++) {
+            for (int j = 0; j < kernelSize; j++) {
+                printf("%d ", kernel[i * kernelSize + j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+        ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
+
+        free(kernel);
+    }
 #ifdef __cplusplus
 }
 #endif

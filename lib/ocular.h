@@ -447,6 +447,16 @@ extern "C" {
     /// @param GaussianSigma A radius in pixels to use for the blur, >= 0.0
     void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
 
+    /// @brief Performs a convolution blurring that simulates the effect of shooting a moving object on film.
+    /// @param Input The image input data buffer.
+    /// @param Output The image output data buffer.
+    /// @param Width The width of the image in pixels.
+    /// @param Height The height of the image in pixels.
+    /// @param Channels The numbers of color channels in the image.
+    /// @param radius A radius in pixels to use for the blur, >= 0.0
+    /// @param angle The angle of the blur. Range [0 - 360]
+    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
+
     //--------------------------Blur filters--------------------------
 
 
