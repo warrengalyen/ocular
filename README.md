@@ -1,6 +1,24 @@
-# Ocular
+<br />
+<p style="text-align: center;">
+  <h1 style="text-align: center;">Ocular</h1>
 
-An image processing library implemented in pure-C, with no external dependencies.
+  <p style="text-align: center;">
+    An image processing library implemented in pure-C
+  </p>
+</p>
+
+[![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](https://github.com/warrengalyen/ocular/wiki/Documentation)
+
+## About
+
+Ocular is a library for common and advanced image processing
+algorithms, without the use of any external dependencies. Suggestions for new features are welcome.
+
+## Documentation
+
+The documentation of the exported functions can be found
+in [`ocular.h`](https://github.com/warrengalyen/improcc/blob/main/lib/ocular.h) and in
+the [wiki](https://github.com/warrengalyen/ocular/wiki/Documentation).
 
 ## Features
 
@@ -37,12 +55,12 @@ An image processing library implemented in pure-C, with no external dependencies
 
 - 2D Convolution
 - Bilateral (selectively blurs preserving edges and other details)
-- Guassian Blur
+- Gaussian Blur
 - Box Blur
 - Motion Blur
 - Unsharp Mask
 - Sharpen
-- Lanzcos resampling (resize)
+- Lanczos resampling (resize)
 - Sobel Edge
 
 ### General
@@ -51,7 +69,22 @@ An image processing library implemented in pure-C, with no external dependencies
 - Retrieve average color
 - Retrieve image size
 - Crop
-- Hough tranform line detection
+- Hough transform line detection
+
+## Running
+
+To compile the library, simply do the following:
+
+```sh
+cmake .
+make
+```
+
+This will out the following 3 files:
+
+- static library `lib\libocular.xxx`
+- dynamic link library `bin\ocular.dll`
+- console demo `bin\demo.exe`
 
 ## TODO
 
@@ -59,4 +92,4 @@ Planned features include:
 
 Bokeh effect, deskewing, retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
 
-Suggestions for new features are welcome. The main focus of this library is common and advanced image processing algorithms.
+
