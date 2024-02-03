@@ -188,8 +188,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
 
-    DLIB_EXPORT int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
-                                     int numLine, float* Radius, float* Theta);
+    DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
+                                             int numLine, float* Radius, float* Theta);
 
     DLIB_EXPORT void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2,
                                     unsigned char R, unsigned char G, unsigned char B);

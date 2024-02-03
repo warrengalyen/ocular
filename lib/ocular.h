@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 #include "fastmath.h"
+#include "util.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -556,10 +557,14 @@ extern "C" {
 
     //--------------------------Misc--------------------------
 
-
     /// @brief Performs a Hough transform to detect lines in an image.
-    int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta, int numLine,
-                         float* Radius, float* Theta);
+    /// @param Input The image input data buffer. Must be single channel, preferably processed through edge detection.
+    /// @param[out] LineNumber The location where the number of detected lines are to be stored.
+    /// @param[out] DetectedLine A location where parameters of detected lines are to be stored.
+    /// @param Height The height of the input image.
+    /// @param Width The width of the input image.
+    /// @param threshold The maximum number of lines to return.
+    void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold);
 
     /// @brief Simply draws a straight line. More of a utility function.
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,

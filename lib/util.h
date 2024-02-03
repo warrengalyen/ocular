@@ -2,8 +2,15 @@
 #define OCULAR_UTIL_H
 
 #include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #define float2fixed(x) (((int)((x) * 4096.0f + 0.5f)) << 8)
+
+struct LineParameter {
+    float angle;
+    float distance;
+};
 
 static inline unsigned long byteswap_ulong(unsigned long i) {
     unsigned long j;
@@ -48,7 +55,7 @@ static float vec2_distance(float vecX, float vecY, float otherX, float otherY) {
 }
 
 // Normalize a kernel so that it produces correct colors.
-void normalizeKernel(float* kernel, int kernelWidth) {
+static void normalizeKernel(float* kernel, int kernelWidth) {
     int sum = 0;
     int total = kernelWidth * kernelWidth;
     for (int i = 0; i < total; i++) {
@@ -169,5 +176,63 @@ static void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float
     *cprev = (*a0 + *a1) / (1 + *b1 + *b2);
     *cnext = (*a2 + *a3) / (1 + *b1 + *b2);
 }
+
+// Add extra rows and columns of zeroes to the edges of an image.
+// The zeros are added to the borders of the image so that the size of the image is increased,
+// but the original content remains unchanged. This is commonly used in convolution.
+static void zeroPadding(unsigned char* input, unsigned char* output, int row, int col) {
+    int inputCols = col - 2; // input number of column
+
+    for (int i = 1; i < row - 1; i++) {
+        for (int j = 1; j < col - 1; j++) {
+            *(output + i * col + j) = *(input + (i - 1) * inputCols + (j - 1));
+        }
+    }
+}
+
+static int FindArrayMax(unsigned int* Array, int numElements) {
+    int N = 0; // N is used to indicate the order of the element int the array which has the max value: Array[N] is the maximum in Array
+    for (int i = 1; i < numElements; i++) {
+        if (Array[N] >= Array[i])
+            N = N;
+        else
+            N = i;
+    }
+
+    return N;
+}
+
+static void FindMaxVote(unsigned int** VoteTable, int numAngles, int numDistances, int* M, int* N) {
+    unsigned int* maxVoteDiffAngles = (unsigned int*)malloc(numAngles * sizeof(unsigned int));
+
+    for (int i = 0; i < numAngles; i++) {
+        int j = FindArrayMax(VoteTable[i], numDistances);
+        maxVoteDiffAngles[i] = VoteTable[i][j];
+    }
+
+    *M = FindArrayMax(maxVoteDiffAngles, numAngles);
+    *N = FindArrayMax(VoteTable[*M], numDistances);
+
+    free(maxVoteDiffAngles);
+}
+
+static void houghTransformLine(unsigned char* input, float minAngle, float angleInterval, int numAngles, float minDistance,
+                               float distanceInterval, int NumDistances, unsigned int** VoteTable, int width, int height) {
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            if (*(input + y * width + x) == 255) {
+                for (int i = 0; i < numAngles; i++) {
+                    float angle = minAngle + angleInterval * ((float)i);
+                    float distance = ((float)x) * cos(angle / 180 * M_PI) + ((float)y) * sin(angle / 180 * M_PI);
+                    int j = (int)((distance - minDistance) / distanceInterval);
+                    if (j < NumDistances) {
+                        VoteTable[i][j] = ((VoteTable[i][j]) + 1);
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 #endif // OCULAR_UTIL_H

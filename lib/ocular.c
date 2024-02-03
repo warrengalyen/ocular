@@ -7,7 +7,6 @@ extern "C" {
 #endif
 
 #include "ocular.h"
-#include "util.h"
 
     /*
     LevelParams redLevelParams = {
@@ -2807,67 +2806,80 @@ extern "C" {
         }
     }
 
-    int ocularHoughLines(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta, int numLine,
-                         float* Radius, float* Theta) {
+    void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold) {
 
-        int halfHoughWidth = (int)(sqrtf((float)(Width * Width + Height * Height)));
-        int houghWidth = halfHoughWidth * 2;
-        int maxTheta = (int)(180.0f / resTheta + 0.5f);
-        int houghMapSize = houghWidth * maxTheta;
-        unsigned short* houghMap = (unsigned short*)calloc((size_t)houghMapSize, sizeof(unsigned short));
-        float* sinLUT = (float*)calloc((size_t)maxTheta, sizeof(float));
-        float* cosLUT = (float*)calloc((size_t)maxTheta, sizeof(float));
-        if (sinLUT == NULL || cosLUT == NULL || houghMap == NULL) {
-            if (houghMap) {
-                free(houghMap);
-            }
-            if (cosLUT) {
-                free(cosLUT);
-            }
-            if (sinLUT) {
-                free(sinLUT);
-            }
-            return 0;
+        float diagonalLength = sqrt((float)(Height * Height + Width * Width));
+        float minAngle = 0;
+        float maxAngle = 90;
+        float angleIntervalCoarse = 2;
+        float angleIntervalFine = 0.1;
+        float distanceIntervalCoarse = 2;
+        float distanceIntervalFine = 1;
+
+        int numAnglesCoarse = (int)(maxAngle / angleIntervalCoarse) + 1;
+        int numDistancesCoarse = (int)diagonalLength / distanceIntervalCoarse + 1;
+
+        // build and initialize the vote tables for coarse angle and distance
+        unsigned int** voteTableCoarse = (unsigned int**)malloc(numAnglesCoarse * sizeof(unsigned int*));
+        for (int i = 0; i < numAnglesCoarse; i++) {
+            voteTableCoarse[i] = (unsigned int*)malloc(numDistancesCoarse * sizeof(unsigned int));
         }
-        float thetaStep = M_PI / maxTheta;
-        for (int theta = 0; theta < maxTheta; theta++) {
-            sinLUT[theta] = (float)fastSin(theta * thetaStep);
-            cosLUT[theta] = (float)fastCos(theta * thetaStep);
+        for (int i = 0; i < numAnglesCoarse; i++) {
+            for (int j = 0; j < numDistancesCoarse; j++) {
+                voteTableCoarse[i][j] = 0;
+            }
         }
 
-        for (int y = 0; y < Height; y++) {
-            unsigned char* pIn = Input + (y * Width);
-            for (int x = 0; x < Width; x++) {
-                if (pIn[x] > Threshold) {
-                    for (int theta = 0; theta < maxTheta; theta++) {
-                        int r = (int)(x * sinLUT[theta] + y * cosLUT[theta] + halfHoughWidth + 0.5f);
-                        houghMap[r * maxTheta + theta]++;
-                    }
+        houghTransformLine(Input, minAngle, angleIntervalCoarse, numAnglesCoarse, 0, distanceIntervalCoarse, numDistancesCoarse,
+                           voteTableCoarse, Height, Width);
+
+        int maxVote = 110;
+        int m = 0;
+        int n = 0; // voteTableCoarse[m][n] has the maximum votes.
+
+        while (maxVote > threshold) {
+            FindMaxVote(voteTableCoarse, numAnglesCoarse, numDistancesCoarse, &m, &n);
+            maxVote = voteTableCoarse[m][n];
+            float angleWithMaxVoteCoarse = minAngle + m * angleIntervalCoarse;
+            float distanceWithMaxVoteCoarse = n * distanceIntervalCoarse;
+            (*LineNumber)++;
+            DetectedLine[(*LineNumber) - 1].angle = angleWithMaxVoteCoarse;
+            DetectedLine[(*LineNumber) - 1].distance = distanceWithMaxVoteCoarse;
+
+            if (n > 0) {
+                voteTableCoarse[m][n - 1] = 0;
+                if (m > 0) {
+                    voteTableCoarse[m - 1][n - 1] = 0;
+                }
+                if (m < numAnglesCoarse - 1) {
+                    voteTableCoarse[n + 1][n - 1] = 0;
                 }
             }
-        }
 
-        int nLine = 0;
-        for (int i = 0; i < houghMapSize && nLine < numLine; i++) {
-            if (houghMap[i] > lineIntensity) {
-                Radius[nLine] = (float)(i / maxTheta);
-                Theta[nLine] = (i - Radius[nLine] * maxTheta) * resTheta;
-                Radius[nLine] -= halfHoughWidth;
-                nLine++;
+            if (n < numDistancesCoarse - 1) {
+                voteTableCoarse[m][n + 1] = 0;
+                if (m > 0) {
+                    voteTableCoarse[m - 1][n + 1] = 0;
+                }
+                if (m < numAnglesCoarse - 1) {
+                    voteTableCoarse[m + 1][n + 1] = 0;
+                }
+            }
+
+            if (m > 0) {
+                voteTableCoarse[m - 1][n] = 0;
+            }
+
+            if (m < numAnglesCoarse - 1) {
+                voteTableCoarse[m + 1][n] = 0;
             }
         }
 
-        if (houghMap) {
-            free(houghMap);
-        }
-        if (cosLUT) {
-            free(cosLUT);
-        }
-        if (sinLUT) {
-            free(sinLUT);
+        for (int i = 0; i < numAnglesCoarse; i++) {
+            free(voteTableCoarse[i]);
         }
 
-        return nLine;
+        free(voteTableCoarse);
     }
 
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
@@ -3072,7 +3084,7 @@ extern "C" {
                                    unsigned char filterW, unsigned char cfactor, unsigned char bias) {
 
         int factor = 256 / cfactor;
-        int halfW = filterW / 2;
+        int halfW = (filterW - 1) / 2;
         if (channels == 3 || channels == 4) {
             for (int y = 0; y < height; y++) {
                 int y1 = y - halfW + height;
@@ -3087,7 +3099,6 @@ extern "C" {
                         int fidx = fx * (filterW);
                         for (unsigned int fy = 0; fy < filterW; fy++) {
                             int pos = (((y1 + fy) % height) * width + dx) * channels;
-
                             float* pKernel = &kernel[fidx + (fy)];
                             r += input[pos] * (*pKernel);
                             g += input[pos + 1] * (*pKernel);
