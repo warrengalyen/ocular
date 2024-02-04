@@ -40,6 +40,41 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+    // TODO: Implement these within the filters
+    // Return status codes for filter exported functions
+    typedef enum {
+        OC_STATUS_OK = 0,                   //	Normal, no errors
+        OC_STATUS_ERR_OUTOFMEMORY = 1,      //	Out of memory
+        OC_STATUS_ERR_STACKOVERFLOW = 2,    //	Stack overflow
+        OC_STATUS_ERR_NULLREFERENCE = 3,    //	Empty reference
+        OC_STATUS_ERR_INVALIDPARAMETER = 4, //	The parameters are not within the normal range
+        OC_STATUS_ERR_PARAMISMATCH = 5,     //	Parameter mismatch
+        OC_STATUS_ERR_INDEXOUTOFRANGE = 6,
+        OC_STATUS_ERR_NOTSUPPORTED = 7,
+        OC_STATUS_ERR_OVERFLOW = 8,
+        OC_STATUS_ERR_FILENOTFOUND = 9,
+        OC_STATUS_ERR_UNKNOWN
+    } OC_STATUS;
+
+    typedef enum {
+        OC_DEPTH_8U = 0,  //	unsigned char
+        OC_DEPTH_8S = 1,  //	char
+        OC_DEPTH_16S = 2, //	short
+        OC_DEPTH_32S = 3, //    int
+        OC_DEPTH_32F = 4, //	float
+        OC_DEPTH_64F = 5, //	double
+    } OC_BITDEPTH;
+
+    typedef struct {
+        int Width;           // The width of the image
+        int Height;          // The height of the image
+        int Stride;          // The number of bytes occupied by a line element
+        int Channels;        // Number of color channels
+        int Depth;           // The data type used
+        unsigned char* Data; // Data of the image
+        int Reserved;        // Reserved use (not yet used)
+    } OcImage;
+
     // Parameters for Levels filter
     typedef struct {
         // color level minimum
@@ -84,7 +119,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    void ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
 
     /** @brief Adjusts the individual RGB channels of an image
      *  @param Input The image input data buffer.
@@ -615,6 +650,32 @@ extern "C" {
      */
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
                         unsigned char G, unsigned char B);
+
+    /**
+     * @brief Allocates a new image data structure in memory.
+     * @param Width The width of the image.
+     * @param Height The height of the image.
+     * @param Depth The color depth of the image.
+     * @param Channel The number of color channels of the image.
+     * @param[out] image The returned image data structure.
+     * @return 0 if success, otherwise fail.
+     */
+    OC_STATUS ocularCreateImage(int Width, int Height, int Depth, int Channel, OcImage** image);
+
+    /**
+     * @brief Releases a created image data structure from memory.
+     * @param image The image data structure that needs to be released.
+     * @return 0 if success, otherwise fail.
+     */
+    OC_STATUS ocularFreeImage(OcImage** image);
+
+    /**
+     * @brief Clone an existing image.
+     * @param Input The image data structure to copy.
+     * @param[out] Output The returned image data structure. This should be empty and not previously allocated.
+     * @return 0 if success, otherwise fail.
+     */
+    OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output);
 
     //--------------------------Misc--------------------------
 

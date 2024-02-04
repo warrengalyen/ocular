@@ -4,6 +4,9 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define WIDTHBYTES(bytes) (((bytes * 8) + 31) / 32 * 4)
 
 #define float2fixed(x) (((int)((x) * 4096.0f + 0.5f)) << 8)
 
@@ -234,5 +237,18 @@ static void houghTransformLine(unsigned char* input, float minAngle, float angle
     }
 }
 
+static void* AllocMemory(unsigned int Size, bool ZeroMemory) {
+    void* ptr = _mm_malloc(Size, 32);
+    if (ptr != NULL)
+        if (ZeroMemory == true)
+            memset(ptr, 0, Size);
+
+    return ptr;
+}
+
+static void FreeMemory(void* ptr) {
+    if (ptr != NULL)
+        _mm_free(ptr);
+}
 
 #endif // OCULAR_UTIL_H

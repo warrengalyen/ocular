@@ -52,46 +52,59 @@ extern "C" {
         true,
     }; */
 
+    // Obtain the number of bytes actually occupied by an element based on the type of the OcImage element.
+    int OC_ELEMENT_SIZE(int Depth) {
+        int Size;
+        switch (Depth) {
+        case OC_DEPTH_8U: Size = sizeof(unsigned char); break;
+        case OC_DEPTH_8S: Size = sizeof(char); break;
+        case OC_DEPTH_16S: Size = sizeof(short); break;
+        case OC_DEPTH_32S: Size = sizeof(int); break;
+        case OC_DEPTH_32F: Size = sizeof(float); break;
+        case OC_DEPTH_64F: Size = sizeof(double); break;
+        default: Size = 0; break;
+        }
+        return Size;
+    }
 
-    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    void ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
         const int R_WT = 256 - B_WT - G_WT;
-        int Channels = Stride / Width;
-        if (Channels == 3) {
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* LinePS = Input + Y * Stride;
-                unsigned char* LinePD = Output + Y * Width;
+        if (Input->Channels == 3) {
+            for (int Y = 0; Y < Input->Height; Y++) {
+                unsigned char* LinePS = Input->Data + Y * Input->Stride;
+                unsigned char* LinePD = Output->Data + Y * Output->Width;
                 int X = 0;
-                for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
+                for (; X < Input->Width - 4; X += 4, LinePS += Input->Channels * 4) {
                     LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                     LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
                     LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
                     LinePD[X + 3] = (unsigned char)((B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8);
                 }
-                for (; X < Width; X++, LinePS += Channels) {
+                for (; X < Input->Width; X++, LinePS += Input->Channels) {
                     LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                 }
             }
-        } else if (Channels == 4) {
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* LinePS = Input + Y * Stride;
-                unsigned char* LinePD = Output + Y * Stride;
+        } else if (Input->Channels == 4) {
+            for (int Y = 0; Y < Input->Height; Y++) {
+                unsigned char* LinePS = Input->Data + Y * Input->Stride;
+                unsigned char* LinePD = Output->Data + Y * Output->Stride;
                 int X = 0;
-                for (; X < Width - 4; X += 4, LinePS += Channels * 4) {
+                for (; X < Input->Width - 4; X += 4, LinePS += Input->Channels * 4) {
                     LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                     LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
                     LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
                     LinePD[X + 3] = (unsigned char)((B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8);
                 }
-                for (; X < Width; X++, LinePS += Channels) {
+                for (; X < Input->Width; X++, LinePS += Input->Channels) {
                     LinePD[X] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                 }
             }
-        } else if (Channels == 1) {
+        } else if (Input->Channels == 1) {
             if (Output != Input) {
-                memcpy(Output, Input, Height * Stride);
+                memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
             }
         }
     }
@@ -3173,6 +3186,52 @@ extern "C" {
         ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
 
         free(kernel);
+    }
+
+    OC_STATUS ocularCreateImage(int Width, int Height, int Depth, int Channels, OcImage** image) {
+
+        if (Width < 1 || Height < 1)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        if (Channels != 1 && Channels != 2 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        *image = (OcImage*)AllocMemory(sizeof(OcImage), false);
+        (*image)->Width = Width;
+        (*image)->Height = Height;
+        (*image)->Depth = Depth;
+        (*image)->Channels = Channels;
+        (*image)->Stride = WIDTHBYTES(Width * Channels * OC_ELEMENT_SIZE(Depth));
+        (*image)->Data = (unsigned char*)AllocMemory((*image)->Height * (*image)->Stride, true);
+        if ((*image)->Data == NULL) {
+            FreeMemory(*image);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        (*image)->Reserved = 0;
+        return OC_STATUS_OK;
+    }
+
+    OC_STATUS ocularFreeImage(OcImage** image) {
+        if ((*image) == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if ((*image)->Data == NULL) {
+            FreeMemory((*image));
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        } else {
+            // Release in proper order
+            FreeMemory((*image)->Data);
+            FreeMemory((*image));
+            return OC_STATUS_OK;
+        }
+    }
+
+    OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output) {
+        if (Input == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Input->Data == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        OC_STATUS ret = ocularCreateImage(Input->Width, Input->Height, Input->Depth, Input->Channels, Output);
+        if (ret == OC_STATUS_OK)
+            memcpy((*Output)->Data, Input->Data, (*Output)->Height * (*Output)->Stride);
+        return ret;
     }
 #ifdef __cplusplus
 }
