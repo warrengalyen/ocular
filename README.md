@@ -1,8 +1,8 @@
 <br />
-<p style="text-align: center;">
-  <h1 style="text-align: center;">Ocular</h1>
+<p align="center">
+  <h1 align="center">Ocular</h1>
 
-  <p style="text-align: center;">
+  <p align="center">
     An image processing library implemented in pure-C
   </p>
 </p>
@@ -17,7 +17,7 @@ algorithms, without the use of any external dependencies. Suggestions for new fe
 ## Documentation
 
 The documentation of the exported functions can be found
-in [`ocular.h`](https://github.com/warrengalyen/improcc/blob/main/lib/ocular.h) and in
+in [`ocular.h`](https://github.com/warrengalyen/ocular/blob/main/lib/ocular.h) and in
 the [wiki](https://github.com/warrengalyen/ocular/wiki/Documentation).
 
 ## Features

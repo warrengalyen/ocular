@@ -2960,6 +2960,9 @@ extern "C" {
 
     bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size) {
 
+        // Based on work by Paulo Scardine
+        // https://github.com/scardine/image_size
+
         bool has_image_size = false;
         *height = -1;
         *width = -1;
@@ -3064,7 +3067,7 @@ extern "C" {
                 unsigned short num = 0;
                 fread(&num, 2, 1, fp);
                 if (num > 1) {
-                    printf("this is a muti-ico file.");
+                    printf("this is a multi-ico file.");
                 } else {
                     char w = 0, h = 0;
                     fread(&w, 1, 1, fp);
