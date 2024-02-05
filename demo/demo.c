@@ -188,7 +188,10 @@ int main(int argc, char** argv) {
         //
         //        ocularConvolution2DFilter(inputImage, outputImg, Width, Height, Channels, Blurfilter, 10, 13, 0);
 
-        ocularMotionBlurFilter(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Channels, 5, 30);
+        // ocularMotionBlurFilter(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Channels, 5, 30);
+
+        status = ocularGrayscaleFilter(SrcImg, DstImg);
+
         if (status != OC_STATUS_OK)
             printf("Image processing failed!");
 
@@ -206,7 +209,8 @@ int main(int argc, char** argv) {
         printf("Load file: %s fail!\n", filename);
     }
 
-    printf("press any key to exit. \n");
     getchar();
+    printf("press any key to exit. \n");
+
     return EXIT_SUCCESS;
 }

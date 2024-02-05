@@ -67,7 +67,18 @@ extern "C" {
         return Size;
     }
 
-    void ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
+    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Input->Data == NULL || Output->Data == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Input->Width != Output->Width || Input->Height != Output->Height || Input->Depth != Output->Depth)
+            return OC_STATUS_ERR_PARAMISMATCH;
+        if (Input->Depth != OC_DEPTH_8U || Output->Depth != OC_DEPTH_8U)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        if (Input->Channels != 3 || (Output->Channels != 3 && Output->Channels != 1))
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
@@ -77,7 +88,7 @@ extern "C" {
                 unsigned char* LinePS = Input->Data + Y * Input->Stride;
                 unsigned char* LinePD = Output->Data + Y * Output->Width;
                 int X = 0;
-                for (; X < Input->Width - 4; X += 4, LinePS += Input->Channels * 4) {
+                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
                     LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                     LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
                     LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
@@ -92,7 +103,7 @@ extern "C" {
                 unsigned char* LinePS = Input->Data + Y * Input->Stride;
                 unsigned char* LinePD = Output->Data + Y * Output->Stride;
                 int X = 0;
-                for (; X < Input->Width - 4; X += 4, LinePS += Input->Channels * 4) {
+                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
                     LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
                     LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
                     LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
@@ -107,6 +118,9 @@ extern "C" {
                 memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
             }
         }
+
+        // Reset channels
+        Output->Channels = 1;
     }
 
     void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,

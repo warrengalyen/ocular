@@ -119,7 +119,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
+    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
 
     /** @brief Adjusts the individual RGB channels of an image
      *  @param Input The image input data buffer.
