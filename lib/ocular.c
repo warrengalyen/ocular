@@ -2611,8 +2611,8 @@ extern "C" {
         }
     }
 
-    void ocularCropFilter(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
-                          int dstWidth, int dstHeight, int dstStride) {
+    void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
+                         int dstWidth, int dstHeight, int dstStride) {
 
         int Channels = srcStride / Width;
 
@@ -2623,6 +2623,33 @@ extern "C" {
             memcpy(dst, src, dstStride);
             src += srcStride;
             dst += dstStride;
+        }
+    }
+
+    void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcDirection direction) {
+
+        if (direction == OC_DIRECTION_HORIZONTAL) {
+            int channels = Stride / Width;
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width / 2; x++) {
+                    for (int c = 0; c < channels; c++) {
+                        unsigned char temp = Input[y * Stride + x * channels + c];
+                        Output[y * Stride + x * channels + c] = Input[y * Stride + (Width - x - 1) * channels + c];
+                        Output[y * Stride + (Width - x - 1) * channels + c] = temp;
+                    }
+                }
+            }
+        } else if (direction == OC_DIRECTION_VERTICAL) {
+            int channels = Stride / Width;
+            for (int y = 0; y < Height / 2; y++) {
+                for (int x = 0; x < Width; x++) {
+                    for (int c = 0; c < channels; c++) {
+                        unsigned char temp = Input[y * Stride + x * channels + c];
+                        Output[y * Stride + x * channels + c] = Input[(Height - y - 1) * Stride + x * channels + c];
+                        Output[(Height - y - 1) * Stride + x * channels + c] = temp;
+                    }
+                }
+            }
         }
     }
 

@@ -183,8 +183,10 @@ extern "C" {
     DLIB_EXPORT void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
                                             unsigned char* Output, int newWidth, int newHeight, int dstStride);
 
-    DLIB_EXPORT void ocularCropFilter(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX,
-                                      int cropY, int dstWidth, int dstHeight, int dstStride);
+    DLIB_EXPORT void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX,
+                                     int cropY, int dstWidth, int dstHeight, int dstStride);
+
+    DLIB_EXPORT void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int type);
 
     DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
 

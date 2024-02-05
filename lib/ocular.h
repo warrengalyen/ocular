@@ -91,6 +91,11 @@ extern "C" {
         bool Enable;
     } ocularLevelParams;
 
+    typedef enum {
+        OC_DIRECTION_HORIZONTAL,
+        OC_DIRECTION_VERTICAL
+    } OcDirection;
+
     // RGB to YIQ color space conversion.
     void rgb2yiq(unsigned char* R, unsigned char* G, unsigned char* B, short* Y, short* I, short* Q);
 
@@ -619,8 +624,19 @@ extern "C" {
      *  @param dstHeight The crop height of the image.
      *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
      */
-    void ocularCropFilter(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
-                          int dstWidth, int dstHeight, int dstStride);
+    void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
+                         int dstWidth, int dstHeight, int dstStride);
+
+    /**
+     * @brief Flip image horizontally or vertically.
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Channels The number of color channels in the image.
+     * @param direction The direction of transformation to perform.
+     */
+    void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
 
     //--------------------------Misc--------------------------
 
@@ -650,6 +666,7 @@ extern "C" {
      */
     void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
                         unsigned char G, unsigned char B);
+
 
     /**
      * @brief Allocates a new image data structure in memory.

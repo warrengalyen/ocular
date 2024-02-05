@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 
         // ocularMotionBlurFilter(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Channels, 5, 30);
 
-        status = ocularGrayscaleFilter(SrcImg, DstImg);
+        ocularFlipImage(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, OC_DIRECTION_VERTICAL);
 
         if (status != OC_STATUS_OK)
             printf("Image processing failed!");
