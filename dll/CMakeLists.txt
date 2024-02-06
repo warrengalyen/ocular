@@ -32,12 +32,12 @@ set_target_properties(ocular_dll PROPERTIES PREFIX "")
 set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
 
 # Copy compiled dll to demo_ui for testing
-#if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
-#    add_custom_command(
-#            TARGET ocular_dll POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui"
-#            COMMAND_EXPAND_LISTS)
-#endif ()
+if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
+    add_custom_command(
+            TARGET ocular_dll POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui"
+            COMMAND_EXPAND_LISTS)
+endif ()
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to

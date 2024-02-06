@@ -241,9 +241,9 @@ extern "C" {
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param gamma The gamma adjustment to apply. Range [0.0-3.0]. Default 1.0.
+     *  @param gamma The gamma adjustment to apply to each channel. Range [> 0 to ~4 or 5]. Supports 1 or 3 channels.
      */
-    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma);
+    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
     /** @brief Adjusts the contrast of the image
      *  @param Input The image input data buffer.

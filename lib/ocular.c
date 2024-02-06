@@ -612,22 +612,35 @@ extern "C" {
         }
     }
 
-    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma) {
+    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]) {
 
         int Channels = Stride / Width;
-        if (Channels == 1)
+        if (Channels != 1 && Channels != 3)
             return;
-        unsigned char GammasMap[256] = { 0 };
-        for (int pixel = 0; pixel < 256; pixel++) {
-            GammasMap[pixel] = ClampToByte(pow(pixel, gamma));
+
+        // check for valid parameter values
+        for (int i = 0; i < Channels; i++) {
+            if (gamma[i] <= 0)
+                return;
+        }
+
+        // Create lookup tables to speed up calculation
+        unsigned char GammaMap[256][Channels];
+        for (int i = 0; i < 256; i++) {
+            for (int c = 0; c < Channels; c++) {
+                // calculate gamma
+                GammaMap[i][c] = ClampToByte(pow((float)i / 255.0, gamma[c]) * 255.0f);
+                GammaMap[i][c] = ClampToByte(pow((float)i / 255.0, gamma[c]) * 255.0f);
+                GammaMap[i][c] = ClampToByte(pow((float)i / 255.0, gamma[c]) * 255.0f);
+            }
         }
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                pOutput[0] = GammasMap[pInput[0]];
-                pOutput[1] = GammasMap[pInput[1]];
-                pOutput[2] = GammasMap[pInput[2]];
+                for (int c = 0; c < Channels; c++) {
+                    pOutput[c] = GammaMap[pInput[c]][c];
+                }
                 pInput += Channels;
                 pOutput += Channels;
             }
