@@ -1,13 +1,11 @@
 <br />
 <p align="center">
-  <h1 align="center">Ocular</h1>
+  <img src="docs/images/ocular-logo-main.png" align="center"></img>
 
   <p align="center">
     An image processing library implemented in pure-C
   </p>
 </p>
-
-[![Documentation Status](https://readthedocs.org/projects/ansicolortags/badge/?version=latest)](https://github.com/warrengalyen/ocular/wiki/Documentation)
 
 ## About
 
@@ -17,8 +15,7 @@ algorithms, without the use of any external dependencies. Suggestions for new fe
 ## Documentation
 
 The documentation of the exported functions can be found
-in [`ocular.h`](https://github.com/warrengalyen/ocular/blob/main/lib/ocular.h) and in
-the [wiki](https://github.com/warrengalyen/ocular/wiki/Documentation).
+at [Library Documentation](https://warrengalyen.github.io/ocular/).
 
 ## Features
 
@@ -69,7 +66,12 @@ the [wiki](https://github.com/warrengalyen/ocular/wiki/Documentation).
 - Retrieve average color
 - Retrieve image size
 - Crop
+- Flip (Vertical/Horizontal)
 - Hough transform line detection
+
+### Color Conversion
+
+-
 
 ## Running
 
