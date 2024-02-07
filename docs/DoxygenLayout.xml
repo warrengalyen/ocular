@@ -1,0 +1,18 @@
+<doxygenlayout version="1.0">
+    <!-- Navigation index tabs for HTML output -->
+    <navindex>
+        <tab type="mainpage" visible="yes" title=""/>
+        <tab type="modules" visible="yes" title="Categories" intro=""/>
+    </navindex>
+
+    <!-- Layout definition for a directory page -->
+    <directory>
+        <briefdescription visible="yes"/>
+        <directorygraph visible="yes"/>
+        <detaileddescription title=""/>
+        <memberdecl>
+            <dirs visible="yes"/>
+            <files visible="yes"/>
+        </memberdecl>
+    </directory>
+</doxygenlayout>

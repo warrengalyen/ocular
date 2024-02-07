@@ -11,5 +11,6 @@ CMakeCache.txt
 Makefile
 /bin
 demo/test_filters.h
-
+*.log
 /demo_ui
+/docs/out/html/

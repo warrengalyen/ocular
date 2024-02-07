@@ -1,6 +1,11 @@
 #ifndef OCULAR_H
 #define OCULAR_H
 
+/**
+ * @file ocular.h
+ * @brief Contains exported filter function definitions
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,8 +45,19 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-    // TODO: Implement these within the filters
-    // Return status codes for filter exported functions
+
+    /** @defgroup ip_filters Image Processing Filters */
+
+    /** @defgroup ip_general General Image Processing Functions */
+
+    /** @defgroup ip_utility Utility functions for handling image data structures */
+
+    /** @defgroup color_convert Color conversion functions */
+
+    /**
+     * @todo Implement these within the filters
+     * @brief Return status codes for filter exported functions
+     */
     typedef enum {
         OC_STATUS_OK = 0,                   //	Normal, no errors
         OC_STATUS_ERR_OUTOFMEMORY = 1,      //	Out of memory
@@ -56,6 +72,10 @@ extern "C" {
         OC_STATUS_ERR_UNKNOWN
     } OC_STATUS;
 
+    /**
+     * @enum OC_BITDEPTH
+     * @brief  Image bit depth data types
+     */
     typedef enum {
         OC_DEPTH_8U = 0,  //	unsigned char
         OC_DEPTH_8S = 1,  //	char
@@ -65,59 +85,88 @@ extern "C" {
         OC_DEPTH_64F = 5, //	double
     } OC_BITDEPTH;
 
+    /**
+     * @struct OcImage Image data structure
+     * @var Width The width of the image
+     * @var Height The height of the image
+     * @var Stride The number of bytes occupied by a line element
+     * @var Channels Number of color channels
+     * @var Depth The image bit depth data type
+     * @var Data image buffer data
+     * @var Reserved Reserved use (not yet used)
+     */
     typedef struct {
-        int Width;           // The width of the image
-        int Height;          // The height of the image
-        int Stride;          // The number of bytes occupied by a line element
-        int Channels;        // Number of color channels
-        int Depth;           // The data type used
-        unsigned char* Data; // Data of the image
-        int Reserved;        // Reserved use (not yet used)
+        int Width;
+        int Height;
+        int Stride;
+        int Channels;
+        int Depth;
+        unsigned char* Data;
+        int Reserved;
     } OcImage;
 
-    // Parameters for Levels filter
+    /**
+     * @struct Parameters for Levels filter
+     * @var levelMinimum color level minimum
+     * @var levelMiddle color scale median
+     * @var levelMaximum maximum value of color scale
+     * @var minOutput minimum output value
+     * @var maxOutput maximum output value
+     * @var Enable Flag used to determine if to apply
+     */
     typedef struct {
-        // color level minimum
         int levelMinimum;
-        // color scale median
         int levelMiddle;
-        // maximum value of color scale
         int levelMaximum;
-        // minimum output value
         int minOutput;
-        // maximum output value
         int maxOutput;
-        // whether to apply
         bool Enable;
     } ocularLevelParams;
 
+    /**
+     * @enum OcDirection
+     * @brief Parameter for image flip function
+     */
     typedef enum {
         OC_DIRECTION_HORIZONTAL,
         OC_DIRECTION_VERTICAL
     } OcDirection;
 
-    // RGB to YIQ color space conversion.
+    /** @brief RGB to YIQ color space conversion.
+     * @ingroup color_convert
+     */
     void rgb2yiq(unsigned char* R, unsigned char* G, unsigned char* B, short* Y, short* I, short* Q);
 
-    // YIQ to RGB color space conversion.
+    /** @brief YIQ to RGB color space conversion.
+     * @ingroup color_convert
+     */
     void yiq2rgb(short* Y, short* I, short* Q, unsigned char* R, unsigned char* G, unsigned char* B);
 
-    // RGB to HSV color space conversion.
+    /** @brief RGB to HSV color space conversion.
+     * @ingroup color_convert
+     */
     void rgb2hsv(const unsigned char* R, const unsigned char* G, const unsigned char* B, unsigned char* H, unsigned char* S, unsigned char* V);
 
-    // HSV to RGB color space conversion.
+    /** @brief HSV to RGB color space conversion.
+     * @ingroup color_convert
+     */
     void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char* V, unsigned char* R, unsigned char* G, unsigned char* B);
 
-    // RGB to YCbCr color space conversion.
+    /** @brief RGB to YCbCr color space conversion.
+     * @ingroup color_convert
+     */
     void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char* y, unsigned char* cb, unsigned char* cr);
 
-    // YCbCr to RGB color space conversion.
+    /** @brief YCbCr to RGB color space conversion.
+     * @ingroup color_convert
+     */
     void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned char* R, unsigned char* G, unsigned char* B);
 
     //--------------------------Color adjustments--------------------------
 
     /** @brief Converts an RGB image to single channel grayscale (a slightly faster implementation of the saturation filter,
      *  without the ability to vary the color contribution)
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -127,6 +176,7 @@ extern "C" {
     OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
 
     /** @brief Adjusts the individual RGB channels of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -143,6 +193,7 @@ extern "C" {
                          float greenAdjustment, float blueAdjustment);
 
     /** @brief Applies a thresholding operation where the threshold is continually adjusted based on the average luminance of the image.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -154,6 +205,7 @@ extern "C" {
     void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier);
 
     /** @brief Determines the average color, by averaging the RGBA components for each each pixel in an image.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -168,6 +220,7 @@ extern "C" {
                             unsigned char* AverageB, unsigned char* AverageA);
 
     /** @brief Reduces an image to its average luminosity.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
@@ -189,6 +242,7 @@ extern "C" {
     void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity);
 
     /** @brief Applies a simple sepia tone filter
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -199,6 +253,7 @@ extern "C" {
     void ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
 
     /** @brief For a given color in the image, sets the alpha channel to 0.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -214,6 +269,7 @@ extern "C" {
                                unsigned char colorToReplaceG, unsigned char colorToReplaceB, float thresholdSensitivity, float smoothing);
 
     /** @brief Uses an RGB color lookup image to remap the colors in an image.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param lookupTable A matrix used to lookup each replacement color.
@@ -225,6 +281,7 @@ extern "C" {
     void ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity);
 
     /** @brief Adjusts the saturation of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -236,6 +293,7 @@ extern "C" {
     void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation);
 
     /** @brief Adjusts the gamma of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -246,6 +304,7 @@ extern "C" {
     void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
     /** @brief Adjusts the contrast of the image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -256,6 +315,7 @@ extern "C" {
     void ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast);
 
     /** @brief Adjusts the exposure of the image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -266,6 +326,7 @@ extern "C" {
     void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);
 
     /** @brief Adjusts the brightness of the image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -276,6 +337,7 @@ extern "C" {
     void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness);
 
     /** @brief Uses the luminance of the image to mix between two specified colors
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -294,6 +356,7 @@ extern "C" {
                                 unsigned char secondColorG, unsigned char secondColorB, int intensity);
 
     /** @brief Used to add or remove haze (similar to a UV filter)
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -306,6 +369,7 @@ extern "C" {
     void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity);
 
     /** @brief Adjusts the alpha channel of the image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -319,6 +383,7 @@ extern "C" {
      *  If you have parameters from Photoshop in the range[0, 255] you must first convert them to be [0 - 1]. The gamma / mid
      *  parameter is a float >= 0. This matches the value from Photoshop. If you want to apply levels to RGB as well as
      *  individual channels you need to use this filter twice, first for the individual channels and then for all channels.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -332,6 +397,7 @@ extern "C" {
                             ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams);
 
     /** @brief Adjust the hue of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -342,6 +408,7 @@ extern "C" {
     void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjust);
 
     /** @brief Allows you to tint the shadows and highlights of an image independently using a color and intensity.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -361,6 +428,7 @@ extern "C" {
                                          float highlightTintB, float shadowTintIntensity, float highlightTintIntensity);
 
     /** @brief Adjusts the shadows and highlights of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -372,6 +440,7 @@ extern "C" {
     void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights);
 
     /** @brief Converts the image to a single color version, based on the luminance of each pixel
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -387,6 +456,7 @@ extern "C" {
                                 unsigned char filterColorG, unsigned char filterColorB, int intensity);
 
     /** @brief Inverts the colors of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -396,6 +466,7 @@ extern "C" {
     void ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /** @brief Outputs a generated image with a solid color.
+     *  @ingroup ip_general
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
@@ -410,6 +481,7 @@ extern "C" {
 
     /** @brief Converts an image to black and white based on a luminance threshold.
      *  Pixels with a luminance above the threshold will appear white, and those below will be black.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -420,6 +492,7 @@ extern "C" {
     void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
 
     /** @brief Automatically applies a neutral white balance to an image.
+     *  @ingroup color_filters
      *  @param input The image input data buffer.
      *  @param output The image output data buffer.
      *  @param width The width of the image in pixels.
@@ -434,6 +507,7 @@ extern "C" {
                                 int colorCoeff, float cutLimit, float contrast);
 
     /** @brief Adjust the white balance of of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -448,6 +522,7 @@ extern "C" {
     void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint);
 
     /** @brief Adjusts the vibrance of an image
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -460,6 +535,7 @@ extern "C" {
 
     /** @brief A skin-tone adjustment filter that affects a unique range of light  skin-tone colors and adjusts the pink/green
      *  or pink/orange range accordingly. Default values are targeted at fair caucasian skin, but can be adjusted as required.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -476,6 +552,7 @@ extern "C" {
                               float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
 
     /** @brief Automatically calculates levels of an image.
+     *  @ingroup color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -491,6 +568,7 @@ extern "C" {
     //--------------------------Blur filters--------------------------
 
     /** @brief A hardware-optimized, variable radius box blur
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -503,6 +581,7 @@ extern "C" {
     /** @brief Performs a smoothing of an image using a discrete Gaussian kernel.
      *  Reduces noise by averaging it out, but will also reduce edges.
      *  Note: This is a radius-independent fast gaussian blur implementation.
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -513,6 +592,7 @@ extern "C" {
     void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
 
     /** @brief Performs a convolution blurring that simulates the effect of shooting a moving object on film.
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -529,6 +609,7 @@ extern "C" {
     //-------------------------- Edge detection --------------------------
 
     /** @brief Applies a sobel edge detection filter
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer (assumes grayscale image).
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -542,6 +623,7 @@ extern "C" {
 
     /** @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
      *  This is a fast implementation, like gaussian blur, that performs vertical/horizontal passes independently.
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -555,6 +637,7 @@ extern "C" {
     void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
 
     /** @brief Applies an unsharp mask
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -568,6 +651,7 @@ extern "C" {
     void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
 
     /** @brief Applies a Gaussian sharpening filter to an image.
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -585,6 +669,7 @@ extern "C" {
     //--------------------------Misc--------------------------
 
     /** @brief Applies a 2D convolution to an image using a kernel.
+     *  @ingroup ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -600,6 +685,7 @@ extern "C" {
 
     /** @brief Resizes an image using Lanczos interpolation. This lets you up or down-sample an image using Lanczos
      *  resampling, which results in noticeably better quality than the standard linear or trilinear interpolation.
+     *  @ingroup ip_general
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -613,6 +699,7 @@ extern "C" {
                                 int newWidth, int newHeight, int dstStride);
 
     /** @brief Outputs only a selected portion of an image.
+     *  @ingroup ip_general
      *  @param Input The image input data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
@@ -629,6 +716,7 @@ extern "C" {
 
     /**
      * @brief Flip image horizontally or vertically.
+     *  @ingroup ip_general
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -652,6 +740,7 @@ extern "C" {
 
     /**
      * @brief Simply draws a straight line. More of a utility function.
+     * @ingroup ip_general
      * @param canvas The image input data buffer.
      * @param width The width of the image in pixels.
      * @param height The height of the image in pixels.
@@ -670,6 +759,7 @@ extern "C" {
 
     /**
      * @brief Allocates a new image data structure in memory.
+     * @ingroup ip_utility
      * @param Width The width of the image.
      * @param Height The height of the image.
      * @param Depth The color depth of the image.
@@ -681,6 +771,7 @@ extern "C" {
 
     /**
      * @brief Releases a created image data structure from memory.
+     * @ingroup ip_utility
      * @param image The image data structure that needs to be released.
      * @return 0 if success, otherwise fail.
      */
@@ -688,6 +779,7 @@ extern "C" {
 
     /**
      * @brief Clone an existing image.
+     * @ingroup ip_utility
      * @param Input The image data structure to copy.
      * @param[out] Output The returned image data structure. This should be empty and not previously allocated.
      * @return 0 if success, otherwise fail.
@@ -700,6 +792,7 @@ extern "C" {
 
     /**
      * @brief Quickly retrieve width and height from an image file without processing image. Supports PNG/GIF/JPEG/BMP/ICO files.
+     * @ingroup ip_utility
      * @param file_path The absolute file path of the image file.
      * @param[out] width The returned image file width.
      * @param[out] height The returned image file height.

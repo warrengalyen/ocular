@@ -1,0 +1,13 @@
+/////////////////////////////////////////////////////////////////////////////
+// Name:        func_color_filters.h
+// Purpose:     Main function group docs
+// Author:      Warren Galyen
+// Licence:     Ocular licence
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+
+ @defgroup color_filters Color Adjustment Filters
+ @ingroup group_func
+
+ */

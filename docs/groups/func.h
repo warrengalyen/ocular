@@ -1,0 +1,14 @@
+/////////////////////////////////////////////////////////////////////////////
+// Name:        func.h
+// Purpose:     Main function group docs
+// Author:      Warren Galyen
+// Licence:     Ocular licence
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+
+@defgroup group_func Functions by Category
+
+This group defines all major function groups.
+
+*/
