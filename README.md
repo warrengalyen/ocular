@@ -69,9 +69,13 @@ at [Library Documentation](https://warrengalyen.github.io/ocular/).
 - Flip (Vertical/Horizontal)
 - Hough transform line detection
 
-### Color Conversion
+### Color Space Conversion
 
--
+Note: These are primarly used for included filters and added on as needed basis.
+
+- RGB <--> YIQ
+- RGB <--> HSV
+- RGB <---> YCbCr
 
 ## Running
 
@@ -90,8 +94,14 @@ This will out the following 3 files:
 
 ## TODO
 
-Planned features include:
+### GUI Demo Application
 
-Bokeh effect, deskewing, retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
+I'm working on a full-featured image viewer app in C# for showing-casing library features using the compiled DLL.
+
+### Library
+
+I have a very long list of features to implement, some advanced features include:
+
+deskewing, retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
 
 

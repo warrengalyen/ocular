@@ -17,10 +17,10 @@
 @showdate "%B %d, %Y" <br>
 
 Categories:
-- @ref color_filters "Color Adjustment Filters"
-- @ref ip_filters "Image Processing Filters"
-- @ref ip_general "General Image Processing Functions"
-- @ref color_convert "Color Conversion Functions"
-- @ref ip_utility "Utility functions for handling image data structures"
+- @ref group_color_filters "Color Adjustment Filters"
+- @ref group_ip_filters "Image Processing Filters"
+- @ref group_ip_general "General Image Processing Functions"
+- @ref group_color_convert "Color Conversion Functions"
+- @ref group_ip_utility "Utility functions for handling image data structures"
 
 */
