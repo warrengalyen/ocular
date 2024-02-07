@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: DenverCoder1/doxygen-github-pages-action@v1.3.0
-        branch: docs
-        folder: out/html
-        config_file: docs/Doxyfile
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: docs
+          folder: out/html
+          config_file: docs/Doxyfile
