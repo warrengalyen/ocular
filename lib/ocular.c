@@ -2624,6 +2624,138 @@ extern "C" {
         }
     }
 
+    void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
+                              float angle, int fillColorR, int fillColorG, int fillColorB) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        float oldXradius = (float)(Width - 1) / 2;
+        float oldYradius = (float)(Height - 1) / 2;
+
+        // The radius size of the output image
+        float newXradius = (float)(outWidth - 1) / 2;
+        float newYradius = (float)(outHeight - 1) / 2;
+
+        // Calculate sine and cosign of the rotation angle
+        float angleRad = -angle * M_PI / 180.0f;
+        float angleCos = fastCos(angleRad);
+        float angleSin = fastSin(angleRad);
+        int Channels = Stride / Width;
+        int dstOffset = outWidth * Channels - ((Channels == 1) ? outWidth : outWidth * Channels);
+
+        // Background color
+        unsigned char fillR = fillColorR;
+        unsigned char fillG = fillColorG;
+        unsigned char fillB = fillColorB;
+
+        int lastHeight = Height - 1;
+        int lastWidth = Width - 1;
+
+        unsigned char* src = (unsigned char*)Input;
+        unsigned char* dst = (unsigned char*)Output;
+
+        // cx, cy coordinates of the target pixel relative to the center of the image
+        if (Channels == 1) {
+            float cy = -newYradius;
+            for (int y = 0; y < outHeight; y++) {
+                const float tx = angleSin * cy + oldXradius;
+                const float ty = angleCos * cy + oldYradius;
+
+                float cx = -newXradius;
+                for (int x = 0; x < outWidth; x++, dst++) {
+
+                    // initial starting position
+                    const float ox = tx + angleCos * cx;
+                    const float oy = ty - angleSin * cx;
+
+                    const int ox1 = (int)ox;
+                    const int oy1 = (int)oy;
+
+                    // determine if we are in a valid area
+                    if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
+                        // Invalid area fill background
+                        *dst = fillG;
+                    } else {
+                        // boundary point processing
+                        const int ox2 = (ox1 == lastWidth) ? ox1 : ox1 + 1;
+                        const int oy2 = (oy1 == lastHeight) ? oy1 : oy1 + 1;
+                        float dx1 = ox - (float)ox1;
+                        if (dx1 < 0)
+                            dx1 = 0;
+                        const float dx2 = 1.0f - dx1;
+                        float dy1 = oy - (float)oy1;
+                        if (dy1 < 0)
+                            dy1 = 0;
+                        const float dy2 = 1.0f - dy1;
+
+                        unsigned char* p1 = src + oy1 * Stride;
+                        unsigned char* p2 = src + oy2 * Stride;
+                        // perform four point interpolation
+                        *dst = (unsigned char)(dy2 * (dx2 * p1[ox1] + dx1 * p1[ox2]) + dy1 * (dx2 * p2[ox1] + dx1 * p2[ox2]));
+                    }
+                    cx++;
+                }
+                cy++;
+                dst += dstOffset;
+            }
+        } else {
+            float cy = -newYradius;
+            for (int y = 0; y < outHeight; y++) {
+                const float tx = angleSin * cy + oldXradius;
+                const float ty = angleCos * cy + oldYradius;
+
+                float cx = -newXradius;
+                for (int x = 0; x < outWidth; x++, dst += Channels) {
+                    // initial starting position
+                    const float ox = tx + angleCos * cx;
+                    const float oy = ty - angleSin * cx;
+                    const int ox1 = (int)ox;
+                    const int oy1 = (int)oy;
+
+                    // determine if we are in a valid area
+                    if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
+                        // invalid area fill background
+                        dst[0] = fillR;
+                        dst[1] = fillG;
+                        dst[2] = fillB;
+                    } else {
+                        // boundary point processing
+                        const int ox2 = (ox1 == lastWidth) ? ox1 : ox1 + 1;
+                        const int oy2 = (oy1 == lastHeight) ? oy1 : oy1 + 1;
+                        float dx1 = ox - (float)ox1;
+                        if (dx1 < 0)
+                            dx1 = 0;
+                        const float dx2 = 1.0f - dx1;
+                        float dy1 = oy - (float)oy1;
+                        if (dy1 < 0)
+                            dy1 = 0;
+                        const float dy2 = 1.0f - dy1;
+
+                        // calculate the coordinates of four points
+                        unsigned char* p1 = src + oy1 * Stride;
+                        unsigned char* p2 = p1;
+                        p1 += ox1 * Channels;
+                        p2 += ox2 * Channels;
+
+                        unsigned char* p3 = src + oy2 * Stride;
+                        unsigned char* p4 = p3;
+                        p3 += ox1 * Channels;
+                        p4 += ox2 * Channels;
+
+                        // perform four point interpolation
+                        dst[0] = (unsigned char)(dy2 * (dx2 * p1[0] + dx1 * p2[0]) + dy1 * (dx2 * p3[0] + dx1 * p4[0]));
+                        dst[1] = (unsigned char)(dy2 * (dx2 * p1[1] + dx1 * p2[1]) + dy1 * (dx2 * p3[1] + dx1 * p4[1]));
+                        dst[2] = (unsigned char)(dy2 * (dx2 * p1[2] + dx1 * p2[2]) + dy1 * (dx2 * p3[2] + dx1 * p4[2]));
+                    }
+                    cx++;
+                }
+                cy++;
+                dst += dstOffset;
+            }
+        }
+    }
+
     void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
                          int dstWidth, int dstHeight, int dstStride) {
 

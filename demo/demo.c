@@ -190,7 +190,10 @@ int main(int argc, char** argv) {
 
         // ocularMotionBlurFilter(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Channels, 5, 30);
 
-        ocularFlipImage(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, OC_DIRECTION_VERTICAL);
+        // ocularFlipImage(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, OC_DIRECTION_VERTICAL);
+
+        ocularRotateBilinear(SrcImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, DstImg->Data, SrcImg->Width, SrcImg->Height, 120,
+                             255, 255, 255);
 
         if (status != OC_STATUS_OK)
             printf("Image processing failed!");

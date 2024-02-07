@@ -12,6 +12,7 @@ Makefile
 /bin
 demo/test_filters.h
 *.log
+*.sh
 /demo_ui
 /docs/out/html/
-*.sh
+

@@ -689,6 +689,24 @@ extern "C" {
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
                                 int newWidth, int newHeight, int dstStride);
 
+    /**
+     * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color.
+     * @ingroup group_ip_general
+     * @param Input The image input data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param Output The image output data buffer.
+     * @param outWidth The width of the output image in pixels.
+     * @param outHeight The height of the output image in pixels.
+     * @param angle The angle to rotate in degrees. Range [0 - 359].
+     * @param fillColorR The blue channel value to use for filling non-image area.
+     * @param fillColorG The blue channel value to use for filling non-image area.
+     * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
+     */
+    void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
+                              float angle, int fillColorR, int fillColorG, int fillColorB);
+
     /** @brief Outputs only a selected portion of an image.
      *  @ingroup group_ip_general
      *  @param Input The image input data buffer.
