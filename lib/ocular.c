@@ -67,60 +67,104 @@ extern "C" {
         return Size;
     }
 
-    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
+    //    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
+    //
+    //        if (Input == NULL || Output == NULL)
+    //            return OC_STATUS_ERR_NULLREFERENCE;
+    //        if (Input->Data == NULL || Output->Data == NULL)
+    //            return OC_STATUS_ERR_NULLREFERENCE;
+    //        if (Input->Width != Output->Width || Input->Height != Output->Height || Input->Depth != Output->Depth)
+    //            return OC_STATUS_ERR_PARAMISMATCH;
+    //        if (Input->Depth != OC_DEPTH_8U || Output->Depth != OC_DEPTH_8U)
+    //            return OC_STATUS_ERR_NOTSUPPORTED;
+    //        if (Input->Channels != 3 || (Output->Channels != 3 && Output->Channels != 1))
+    //            return OC_STATUS_ERR_INVALIDPARAMETER;
+    //
+    //        const int B_WT = (int)(0.114 * 256 + 0.5);
+    //        const int G_WT = (int)(0.587 * 256 + 0.5);
+    //        const int R_WT = 256 - B_WT - G_WT;
+    //        if (Input->Channels == 3) {
+    //            for (int Y = 0; Y < Input->Height; Y++) {
+    //                unsigned char* LinePS = Input->Data + Y * Input->Stride;
+    //                unsigned char* LinePD = Output->Data + Y * Output->Width;
+    //                int X = 0;
+    //                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
+    //                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+    //                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
+    //                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
+    //                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8);
+    //                }
+    //                for (; X < Input->Width; X++, LinePS += Input->Channels) {
+    //                    LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
+    //                }
+    //            }
+    //        } else if (Input->Channels == 4) {
+    //            for (int Y = 0; Y < Input->Height; Y++) {
+    //                unsigned char* LinePS = Input->Data + Y * Input->Stride;
+    //                unsigned char* LinePD = Output->Data + Y * Output->Stride;
+    //                int X = 0;
+    //                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
+    //                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+    //                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
+    //                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
+    //                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8);
+    //                }
+    //                for (; X < Input->Width; X++, LinePS += Input->Channels) {
+    //                    LinePD[X] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+    //                }
+    //            }
+    //        } else if (Input->Channels == 1) {
+    //            if (Output != Input) {
+    //                memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
+    //            }
+    //        }
+    //
+    //        // Reset channels
+    //        Output->Channels = 1;
+    //    }
 
-        if (Input == NULL || Output == NULL)
-            return OC_STATUS_ERR_NULLREFERENCE;
-        if (Input->Data == NULL || Output->Data == NULL)
-            return OC_STATUS_ERR_NULLREFERENCE;
-        if (Input->Width != Output->Width || Input->Height != Output->Height || Input->Depth != Output->Depth)
-            return OC_STATUS_ERR_PARAMISMATCH;
-        if (Input->Depth != OC_DEPTH_8U || Output->Depth != OC_DEPTH_8U)
-            return OC_STATUS_ERR_NOTSUPPORTED;
-        if (Input->Channels != 3 || (Output->Channels != 3 && Output->Channels != 1))
-            return OC_STATUS_ERR_INVALIDPARAMETER;
+    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+        int Channels = Stride / Width;
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
-        const int R_WT = 256 - B_WT - G_WT;
-        if (Input->Channels == 3) {
-            for (int Y = 0; Y < Input->Height; Y++) {
-                unsigned char* LinePS = Input->Data + Y * Input->Stride;
-                unsigned char* LinePD = Output->Data + Y * Output->Width;
+        const int R_WT = 256 - B_WT - G_WT; //     int(0.299 * 256 + 0.5);
+        int Channel = Stride / Width;
+        if (Channel == 3) {
+            for (int Y = 0; Y < Height; Y++) {
+                unsigned char* LinePS = Input + Y * Stride;
+                unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
-                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
-                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
-                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
-                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
-                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8);
+                for (; X < Width - 4; X += 4, LinePS += Channel * 4) {
+                    LinePD[X + 0] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
+                    LinePD[X + 1] = (B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8;
+                    LinePD[X + 2] = (B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8;
+                    LinePD[X + 3] = (B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8;
                 }
-                for (; X < Input->Width; X++, LinePS += Input->Channels) {
-                    LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
+                for (; X < Width; X++, LinePS += Channel) {
+                    LinePD[X] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                 }
             }
-        } else if (Input->Channels == 4) {
-            for (int Y = 0; Y < Input->Height; Y++) {
-                unsigned char* LinePS = Input->Data + Y * Input->Stride;
-                unsigned char* LinePD = Output->Data + Y * Output->Stride;
+        } else if (Channel == 4) {
+            for (int Y = 0; Y < Height; Y++) {
+                unsigned char* LinePS = Input + Y * Stride;
+                unsigned char* LinePD = Output + Y * Width;
                 int X = 0;
-                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
-                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
-                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
-                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
-                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8);
+                for (; X < Width - 4; X += 4, LinePS += Channel * 4) {
+                    LinePD[X + 0] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
+                    LinePD[X + 1] = (B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8;
+                    LinePD[X + 2] = (B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8;
+                    LinePD[X + 3] = (B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8;
                 }
-                for (; X < Input->Width; X++, LinePS += Input->Channels) {
-                    LinePD[X] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
+                for (; X < Width; X++, LinePS += Channel) {
+                    LinePD[X] = (B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
                 }
             }
-        } else if (Input->Channels == 1) {
+        } else if (Channel == 1) {
             if (Output != Input) {
-                memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
+                memcpy(Output, Input, Height * Stride);
             }
         }
-
-        // Reset channels
-        Output->Channels = 1;
     }
 
     void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
@@ -2625,26 +2669,26 @@ extern "C" {
     }
 
     void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
-                              float angle, int fillColorR, int fillColorG, int fillColorB) {
-
+                              float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB) {
+        
         if (Input == NULL || Output == NULL)
             return;
 
         float oldXradius = (float)(Width - 1) / 2;
         float oldYradius = (float)(Height - 1) / 2;
 
-        // The radius size of the output image
+        // the radius size of the output image
         float newXradius = (float)(outWidth - 1) / 2;
         float newYradius = (float)(outHeight - 1) / 2;
 
-        // Calculate sine and cosign of the rotation angle
+        // sine and cosine of angle
         float angleRad = -angle * M_PI / 180.0f;
         float angleCos = fastCos(angleRad);
         float angleSin = fastSin(angleRad);
         int Channels = Stride / Width;
         int dstOffset = outWidth * Channels - ((Channels == 1) ? outWidth : outWidth * Channels);
 
-        // Background color
+        // background color
         unsigned char fillR = fillColorR;
         unsigned char fillG = fillColorG;
         unsigned char fillB = fillColorB;
@@ -2654,7 +2698,6 @@ extern "C" {
 
         unsigned char* src = (unsigned char*)Input;
         unsigned char* dst = (unsigned char*)Output;
-
         // cx, cy coordinates of the target pixel relative to the center of the image
         if (Channels == 1) {
             float cy = -newYradius;
@@ -2664,7 +2707,6 @@ extern "C" {
 
                 float cx = -newXradius;
                 for (int x = 0; x < outWidth; x++, dst++) {
-
                     // initial starting position
                     const float ox = tx + angleCos * cx;
                     const float oy = ty - angleSin * cx;
@@ -2672,9 +2714,9 @@ extern "C" {
                     const int ox1 = (int)ox;
                     const int oy1 = (int)oy;
 
-                    // determine if we are in a valid area
+                    // determine whether it is a valid area
                     if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
-                        // Invalid area fill background
+                        // invalid area fill background
                         *dst = fillG;
                     } else {
                         // boundary point processing
@@ -2713,7 +2755,7 @@ extern "C" {
                     const int ox1 = (int)ox;
                     const int oy1 = (int)oy;
 
-                    // determine if we are in a valid area
+                    // determine whether it is a valid area
                     if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
                         // invalid area fill background
                         dst[0] = fillR;
@@ -2796,6 +2838,37 @@ extern "C" {
                 }
             }
         }
+    }
+
+    bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        if (Input == NULL || Output == NULL || Input == Output)
+            return false;
+        int Channels = Stride / Width;
+        // maximum tilt angle
+        int maxSkewToDetect = 89;
+
+        OcRect rect = { 0 };
+        rect.Width = Width;
+        rect.Height = Height;
+        // calculate the tilt angle based on the two straight lines with the largest weight
+        int nLineCount = 2;
+        // number of angle steps
+        int stepsPerDegree = 1;
+        // local critical radius
+        int localPeakRadius = 10;
+        ocularGrayscaleFilter(Input, Output, Width, Height, Stride);
+        if (!isTextImage(Output, Width, Height)) {
+            ocularColorInvertFilter(Output, Output, Width, Height, Width);
+        }
+        float skewAngle = calcSkewAngle(Output, Width, Height, &rect, maxSkewToDetect, stepsPerDegree, localPeakRadius, nLineCount);
+        if ((skewAngle == 0) || (skewAngle < -maxSkewToDetect || skewAngle > maxSkewToDetect)) {
+            memcpy(Output, Input, Height * Stride * sizeof(unsigned char));
+            return false;
+        } else {
+            ocularRotateBilinear(Input, Width, Height, Stride, Output, Width, Height, -skewAngle, true, 255, 255, 255);
+        }
+        return true;
     }
 
     void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction) {

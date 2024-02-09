@@ -1,11 +1,18 @@
-#include "browse.h"
+#if defined(_MSC_VER)
+    #define _CRT_SECURE_NO_WARNINGS
+    #include <windows.h>
+    #define access _access
+#else
+
+    #include <unistd.h>
+
+#endif
+
 #include "../lib/ocular.h"
 
 #if __has_include("test_filters.h")
     #include "test_filters.h"
 #endif
-
-#define USE_SHELL_OPEN
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
@@ -14,14 +21,8 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 
-#define SFD_IMPLEMENTATION
-
-#include "sfd.h"
-#include <stdbool.h>
-#include <math.h>
 #include <stdio.h>
 #include "timing.h"
-#include <stdint.h>
 
 static const char* calculateSize(uint64_t bytes) {
     char* suffix[] = { "B", "KB", "MB", "GB", "TB" };
@@ -40,19 +41,17 @@ static const char* calculateSize(uint64_t bytes) {
     return output;
 }
 
-unsigned char* loadImage(const char* filename, int* Width, int* Height, int* Channels) {
+char saveFile[1024];
+
+uint8_t* loadImage(const char* filename, int32_t* Width, int32_t* Height, int32_t* Channels) {
     return stbi_load(filename, Width, Height, Channels, 0);
 }
 
-void saveImage(const char* filename, int Width, int Height, int Channels, unsigned char* Output) {
-
+void saveImage(const char* filename, int32_t Width, int32_t Height, int32_t Channels, uint8_t* Output) {
     if (!stbi_write_jpg(filename, Width, Height, Channels, Output, 100)) {
-        fprintf(stderr, "Writing to JPEG file failed.\n");
+        fprintf(stderr, "save file fail.\n");
         return;
     }
-#ifdef USE_SHELL_OPEN
-    browse(filename);
-#endif
 }
 
 void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
@@ -99,121 +98,81 @@ int main(int argc, char** argv) {
     printf("Ocular Image Processing library\n");
     printf("https://github.com/warrengalyen/ocular/ \n");
 
-    char* filename = NULL;
     if (argc < 2) {
-        printf("usage: %s   image \n ", argv[0]);
-        printf("e.g.: %s   d:\\image.jpg \n ", argv[0]);
-        sfd_Options opt = {
-            .title = "Open Image File",
-            .filter_name = "Image File",
-            .filter = "*.png|*.jpg",
-        };
-
-        filename = (char*)sfd_open_dialog(&opt);
-        if (filename) {
-            printf("Retrieved file: '%s'\n", filename);
-        } else {
-            printf("Open canceled\n");
-            return -1;
-        }
-    } else
-        filename = argv[1];
-
-
+        printf("usage: \n ");
+        printf("%s filename \n ", argv[0]);
+        printf("%s image.jpg \n ", argv[0]);
+        getchar();
+        return 0;
+    }
+    char* in_file = argv[1];
+    if (access(in_file, 0) == -1) {
+        printf("load file: %s fail!\n", in_file);
+        return -1;
+    }
     char drive[3];
     char dir[256];
     char fname[256];
     char ext[256];
     char out_file[1024];
-    splitpath(filename, drive, dir, fname, ext);
-    sprintf(out_file, "%s%s%s_processed.jpg", drive, dir, fname);
+    splitpath(in_file, drive, dir, fname, ext);
+    sprintf(out_file, "%s%s%s_out.jpg", drive, dir, fname);
 
-    int Width = 0;  // Image width
-    int Height = 0; // Image height
-    int filesize = 0;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    unsigned char* input = NULL;
+    input = loadImage(in_file, &width, &height, &channels);
+    int stride = width * channels;
 
-    ocularGetImageSize(filename, &Width, &Height, &filesize);
-    printf("file: %s\nfilesize: %s\nwidth: %d\nheight: %d\n", filename, calculateSize(filesize), Width, Height);
+    if (input) {
+        unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
+        if (output) {
+            double startTime = now();
 
-    OcImage* SrcImg;
 
-    double startTime = now();
-    SrcImg->Data = loadImage(filename, &SrcImg->Width, &SrcImg->Height, &SrcImg->Channels);
-    SrcImg->Stride = SrcImg->Width * SrcImg->Channels;
-    SrcImg->Depth = OC_DEPTH_8U;
-    SrcImg->Reserved = 0;
+            // ocularRotateBilinear(input, width, height, stride, output, width, height, 30, true, 255, 255, 255);
 
-    double nLoadTime = calcElapsed(startTime, now());
-    printf("Load time: %d ms.\n", (int)(nLoadTime * 1000));
-    if ((SrcImg->Channels != 0) && (SrcImg->Width != 0) && (SrcImg->Height != 0)) {
-        if (SrcImg->Data == NULL) {
-            printf("Load file: %s fail!\n", filename);
-            return -1;
+            // ocularBilateralFilter(input, output, width, Height, stride, 0.08, 0.12);
+
+            //        int colorCoeff = 15;
+            //        float cutLimit = 0.01;
+            //        float contrast = 0.9;
+            //        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, width, Height, channels, stride
+            //        colorCoeff, cutLimit, contrast); if (colorCast) {
+            //            printf("[✓] ColorCast\n");
+            //        } else {
+            //            printf("[x] ColorCast\n");
+            //        }
+
+
+            //        float Blurfilter[25] = {
+            //            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+            //        };
+            //
+            //        ocularConvolution2DFilter(inputImage, outputImg, width, Height, Channels, Blurfilter, 10, 13, 0);
+
+            // ocularMotionBlurFilter(input, output, width, height, channels, 5, 30);
+
+            // ocularFlipImage(input, output, width, height, stride, OC_DIRECTION_VERTICAL);
+
+            if (ocularDocumentDeskew(input, output, width, height, stride)) {
+                printf("[✔] Document deskewed\n");
+            } else {
+                printf("[x] Document deskewed\n");
+            }
+
+            double elapsed = calcElapsed(startTime, now());
+            printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+            saveImage(out_file, width, height, channels, output);
+            free(output);
         }
-
-        int status;
-
-        // Create new image data structure for output
-        OcImage* DstImg;
-        status = ocularCreateImage(SrcImg->Width, SrcImg->Height, SrcImg->Depth, SrcImg->Channels, &DstImg);
-        if (status != OC_STATUS_OK)
-            printf("Failed to create new image!");
-
-        // draw lines detected using linear hough transformation
-        //        ocularGrayscaleFilter(inputImage, outputImg, Width, Height, Width * Channels);
-        //        ocularSobelEdgeFilter(outputImg, outputImg, Width, Height);
-
-        //        int nLines = 0;
-        //        LineParameter lineParams;
-        //
-        //        ocularHoughLineDetection(outputImg, nLines, lineParams, Width, Height, 100);
-
-
-        // ocularBilateralFilter(inputImage, outputImg, Width, Height, Width * Channels, 0.08, 0.12);
-
-        //        int colorCoeff = 15;
-        //        float cutLimit = 0.01;
-        //        float contrast = 0.9;
-        //        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, Width, Height, Channels, Width * Channels,
-        //        colorCoeff, cutLimit, contrast); if (colorCast) {
-        //            printf("[✓] ColorCast \n");
-        //        } else {
-        //            printf("[x] ColorCast \n");
-        //        }
-
-
-        //        float Blurfilter[25] = {
-        //            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-        //        };
-        //
-        //        ocularConvolution2DFilter(inputImage, outputImg, Width, Height, Channels, Blurfilter, 10, 13, 0);
-
-        // ocularMotionBlurFilter(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Channels, 5, 30);
-
-        // ocularFlipImage(SrcImg->Data, DstImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, OC_DIRECTION_VERTICAL);
-
-        ocularRotateBilinear(SrcImg->Data, SrcImg->Width, SrcImg->Height, SrcImg->Stride, DstImg->Data, SrcImg->Width, SrcImg->Height, 120,
-                             255, 255, 255);
-
-        if (status != OC_STATUS_OK)
-            printf("Image processing failed!");
-
-        double nProcessTime = calcElapsed(startTime, now());
-        printf("Processing time: %d ms.\n", (int)(nProcessTime * 1000));
-        startTime = now();
-        saveImage(out_file, DstImg->Width, DstImg->Height, DstImg->Channels, DstImg->Data);
-        double nSaveTime = calcElapsed(startTime, now());
-        printf("Save time: %d ms\n", (int)(nSaveTime * 1000));
-
-        // Release occupied memory
-        ocularFreeImage(&SrcImg);
-        ocularFreeImage(&DstImg);
+        free(input);
     } else {
-        printf("Load file: %s fail!\n", filename);
+        printf("load file: %s fail!\n", in_file);
     }
 
-    getchar();
     printf("press any key to exit. \n");
-
-    return EXIT_SUCCESS;
+    getchar();
+    return 0;
 }

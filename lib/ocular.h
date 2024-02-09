@@ -155,6 +155,17 @@ extern "C" {
 
     //--------------------------Color adjustments--------------------------
 
+    //    /** @brief Converts an RGB image to single channel grayscale (a slightly faster implementation of the saturation filter,
+    //     *  without the ability to vary the color contribution)
+    //     *  @ingroup group_color_filters
+    //     *  @param Input The image input data buffer.
+    //     *  @param Output The image output data buffer.
+    //     *  @param Width The width of the image in pixels.
+    //     *  @param Height The height of the image in pixels.
+    //     *  @param Stride The number of bytes in one row of pixels.
+    //     */
+    //    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
+
     /** @brief Converts an RGB image to single channel grayscale (a slightly faster implementation of the saturation filter,
      *  without the ability to vary the color contribution)
      *  @ingroup group_color_filters
@@ -164,7 +175,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output);
+    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /** @brief Adjusts the individual RGB channels of an image
      *  @ingroup group_color_filters
@@ -705,7 +716,7 @@ extern "C" {
      * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
      */
     void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
-                              float angle, int fillColorR, int fillColorG, int fillColorB);
+                              float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB);
 
     /** @brief Outputs only a selected portion of an image.
      *  @ingroup group_ip_general
@@ -734,6 +745,18 @@ extern "C" {
      * @param direction The direction of transformation to perform.
      */
     void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
+
+    /**
+     * @brief Performs deskewing of an image, useful for scanned documents.
+     * @ingroup group_ip_general
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @return True, if valid text image found and deskew performed. Otherwise false.
+     */
+    bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     //--------------------------Misc--------------------------
 

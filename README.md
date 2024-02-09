@@ -12,6 +12,8 @@
 Ocular is a library for common and advanced image processing
 algorithms, without the use of any external dependencies. Suggestions for new features are welcome.
 
+Note: RGBA byte-order is expected for all pixel data.
+
 ## Documentation
 
 The documentation of the exported functions can be found
@@ -59,6 +61,7 @@ at [Library Documentation](https://warrengalyen.github.io/ocular/).
 - Sharpen
 - Lanczos resampling (resize)
 - Sobel Edge
+- Deskewing
 
 ### General
 
@@ -67,6 +70,7 @@ at [Library Documentation](https://warrengalyen.github.io/ocular/).
 - Retrieve image size
 - Crop
 - Flip (Vertical/Horizontal)
+- Bilinear image rotation
 - Hough transform line detection
 
 ### Color Space Conversion
