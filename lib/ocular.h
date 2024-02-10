@@ -338,7 +338,7 @@ extern "C" {
      */
     void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness);
 
-    /** @brief Uses the luminance of the image to mix between two specified colors
+    /** @brief Detects the dark and bright areas of an image, and replaces them with respective colors.
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
@@ -604,6 +604,17 @@ extern "C" {
      *  @param angle The angle of the blur. Range [0 - 360]
      */
     void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
+
+    /** @brief Applies a median (average) blur to an image, which is good for removing salt and pepper noise.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param Radius A radius in pixels to use for the blur, >= 0.0
+     */
+    void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     //--------------------------Blur filters--------------------------
 

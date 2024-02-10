@@ -16,3 +16,4 @@ demo/test_filters.h
 /demo_ui
 /docs/out/html/
 gen_dll_header.py
+/docs/*.pdi
