@@ -15,5 +15,4 @@ demo/test_filters.h
 *.sh
 /demo_ui
 /docs/out/html/
-gen_dll_header.py
 /docs/*.pdi

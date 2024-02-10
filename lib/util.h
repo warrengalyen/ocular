@@ -478,7 +478,7 @@ static void SplitRGB(unsigned char* Src, unsigned char* Blue, unsigned char* Gre
     }
 }
 
-//	Convert single-channel data to RGB data
+// Convert single-channel data to RGB data
 static void CombineRGB(unsigned char* Blue, unsigned char* Green, unsigned char* Red, unsigned char* Dest, int Width, int Height, int Stride) {
     for (int Y = 0; Y < Height; Y++) {
         unsigned char* PointerD = Dest + Y * Stride;

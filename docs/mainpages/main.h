@@ -16,11 +16,12 @@
 <b>Date</b><br>
 @showdate "%B %d, %Y" <br>
 
-Categories:
-- @ref group_color_filters "Color Adjustment Filters"
-- @ref group_ip_filters "Image Processing Filters"
-- @ref group_ip_general "General Image Processing Functions"
-- @ref group_color_convert "Color Conversion Functions"
-- @ref group_ip_utility "Utility functions for handling image data structures"
+@section manual_reference Reference
+
+ @li @subpage group_func
+
+ @section manual_misc Other Information
+
+ @li @subpage page_examples
 
 */

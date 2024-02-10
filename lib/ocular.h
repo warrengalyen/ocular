@@ -619,7 +619,7 @@ extern "C" {
     //--------------------------Blur filters--------------------------
 
 
-    //-------------------------- Edge detection --------------------------
+    //-------------------------- Edge detection -----------------`---------
 
     /** @brief Applies a sobel edge detection filter
      *  @ingroup group_ip_filters
