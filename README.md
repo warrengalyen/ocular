@@ -12,7 +12,7 @@
 Ocular is a library for common and advanced image processing
 algorithms, without the use of any external dependencies. Suggestions for new features are welcome.
 
-Note: RGBA byte-order is expected for all pixel data.
+Note: Big-Endian RGBA byte-order is expected for all pixel data.
 
 ## Documentation
 
@@ -57,6 +57,7 @@ at [Library Documentation](https://warrengalyen.github.io/ocular/).
 - Gaussian Blur
 - Box Blur
 - Motion Blur
+- Median Blur
 - Unsharp Mask
 - Sharpen
 - Lanczos resampling (resize)
@@ -79,7 +80,7 @@ Note: These are primarly used for included filters and added on as needed basis.
 
 - RGB <--> YIQ
 - RGB <--> HSV
-- RGB <---> YCbCr
+- RGB <--> YCbCr
 
 ## Running
 
@@ -106,6 +107,6 @@ I'm working on a full-featured image viewer app in C# for showing-casing library
 
 I have a very long list of features to implement, some advanced features include:
 
-deskewing, retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
+retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
 
 

@@ -33,7 +33,6 @@ extern "C" {
     #define M_PI 3.14159265358979323846f
 #endif
 
-#include "fastmath.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -153,8 +152,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance);
 
-    DLIB_EXPORTvoid ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
-                                         float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
+    DLIB_EXPORT void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
+                                          float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
 
     DLIB_EXPORT void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
@@ -166,6 +165,8 @@ extern "C" {
                                                float* kernel, unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
     DLIB_EXPORT void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
+
+    DLIB_EXPORT void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     DLIB_EXPORT void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                            float sigmaSpatial, float sigmaRange);
@@ -187,6 +188,8 @@ extern "C" {
                                      int cropY, int dstWidth, int dstHeight, int dstStride);
 
     DLIB_EXPORT void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int type);
+
+    DLIB_EXPORT bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
 

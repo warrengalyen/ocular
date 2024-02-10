@@ -2670,7 +2670,7 @@ extern "C" {
 
     void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
                               float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB) {
-        
+
         if (Input == NULL || Output == NULL)
             return;
 
@@ -3445,6 +3445,99 @@ extern "C" {
         ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
 
         free(kernel);
+    }
+
+    void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+        const int Level = 256;
+
+        int Channel = Stride / Width;
+        if ((Channel != 1) && (Channel != 3))
+            return;
+
+        if (Channel == 1) {
+
+            int* histogram = (int*)malloc(Level * sizeof(int));
+            for (int Y = 0; Y < Height; Y++) {
+                unsigned char* LinePS = Input + Y * Stride;
+                unsigned char* LinePD = Output + Y * Stride;
+                memset(histogram, 0, Level * sizeof(int)); // all assigned values are 0
+                int CutPoint = -1;
+                int Balance = 0;
+
+                for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) {
+                    int Index = J * Stride;
+                    for (int I = max(0 - Radius, 0); I <= min(0 + Radius, Width - 1); I++) {
+                        int Value = Input[J * Stride + I];
+                        // Calculate the two-dimensional histogram of the first point in each row.
+                        // The horizontal direction of the histogram is the Feature coordinate and
+                        // the vertical direction is the Value coordinate.
+                        histogram[Value]++;
+                        Balance--;
+                    }
+                }
+                for (int X = 0; X < Width; X++) {
+
+                    if (Balance < 0) // the balance of the first point must be less than 0
+                    {
+                        for (; Balance < 0 && CutPoint != Level - 1; CutPoint++) {
+                            Balance += 2 * histogram[CutPoint + 1];
+                        }
+                    } else if (Balance > 0) //    If the balance value is greater than 0, move the middle value to the left
+                    {
+                        for (; Balance > 0 && CutPoint != 0; CutPoint--) {
+                            Balance -= 2 * histogram[CutPoint];
+                        }
+                    }
+                    LinePD[X] = CutPoint;
+                    if ((X - Radius) >= 0) {
+                        for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) //    the column of data to be moved out
+                        {
+                            int Value = Input[J * Stride + X - Radius];
+                            histogram[Value]--;
+                            if (Value <= CutPoint) // If the value moved out is less than the current median value
+                                Balance--;
+                            else
+                                Balance++;
+                        }
+                    }
+                    if ((X + Radius + 1) <= Width - 1) {
+                        for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) {
+                            int Value = Input[J * Stride + X + Radius + 1];
+                            histogram[Value]++;
+                            if (Value <= CutPoint) // If the value moved out is less than the current median value
+                                Balance++;
+                            else
+                                Balance--;
+                        }
+                    }
+                }
+            }
+            free(histogram);
+        } else {
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+
+            // TODO: Investigate using parallel processing here
+            ocularMedianBlur(SrcR, DstR, Width, Height, Width, Radius);
+            ocularMedianBlur(SrcG, DstG, Width, Height, Width, Radius);
+            ocularMedianBlur(SrcB, DstB, Width, Height, Width, Radius);
+
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcR);
+            free(SrcG);
+            free(SrcB);
+            free(DstR);
+            free(DstG);
+            free(DstB);
+        }
     }
 
     OC_STATUS ocularCreateImage(int Width, int Height, int Depth, int Channels, OcImage** image) {

@@ -51,6 +51,8 @@ void saveImage(const char* filename, int32_t Width, int32_t Height, int32_t Chan
     if (!stbi_write_jpg(filename, Width, Height, Channels, Output, 100)) {
         fprintf(stderr, "save file fail.\n");
         return;
+    } else {
+        printf("file saved to: %s\n", filename);
     }
 }
 
@@ -130,37 +132,7 @@ int main(int argc, char** argv) {
         if (output) {
             double startTime = now();
 
-
-            // ocularRotateBilinear(input, width, height, stride, output, width, height, 30, true, 255, 255, 255);
-
-            // ocularBilateralFilter(input, output, width, Height, stride, 0.08, 0.12);
-
-            //        int colorCoeff = 15;
-            //        float cutLimit = 0.01;
-            //        float contrast = 0.9;
-            //        bool colorCast = ocularAutoWhiteBalance(inputImage, outputImg, width, Height, channels, stride
-            //        colorCoeff, cutLimit, contrast); if (colorCast) {
-            //            printf("[✓] ColorCast\n");
-            //        } else {
-            //            printf("[x] ColorCast\n");
-            //        }
-
-
-            //        float Blurfilter[25] = {
-            //            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            //        };
-            //
-            //        ocularConvolution2DFilter(inputImage, outputImg, width, Height, Channels, Blurfilter, 10, 13, 0);
-
-            // ocularMotionBlurFilter(input, output, width, height, channels, 5, 30);
-
-            // ocularFlipImage(input, output, width, height, stride, OC_DIRECTION_VERTICAL);
-
-            if (ocularDocumentDeskew(input, output, width, height, stride)) {
-                printf("[✔] Document deskewed\n");
-            } else {
-                printf("[x] Document deskewed\n");
-            }
+            ocularMedianBlur(input, output, width, height, stride, 5);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
@@ -169,7 +141,7 @@ int main(int argc, char** argv) {
         }
         free(input);
     } else {
-        printf("load file: %s fail!\n", in_file);
+        printf("load file: %s fail !\n", in_file);
     }
 
     printf("press any key to exit. \n");

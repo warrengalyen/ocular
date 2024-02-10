@@ -462,6 +462,38 @@ static float calcSkewAngle(unsigned char* Input, int Width, int Height, OcRect* 
     return skewAngle;
 }
 
+// Convert RGB data to single channel
+static void SplitRGB(unsigned char* Src, unsigned char* Blue, unsigned char* Green, unsigned char* Red, int Width, int Height, int Stride) {
+    for (int Y = 0; Y < Height; Y++) {
+        unsigned char* PointerS = Src + Y * Stride;
+        unsigned char* PointerB = Blue + Y * Width;
+        unsigned char* PointerG = Green + Y * Width;
+        unsigned char* PointerR = Red + Y * Width;
+        for (int X = 0; X < Width; X++) {
+            PointerR[X] = PointerS[0];
+            PointerG[X] = PointerS[1];
+            PointerB[X] = PointerS[2];
+            PointerS += 3;
+        }
+    }
+}
+
+//	Convert single-channel data to RGB data
+static void CombineRGB(unsigned char* Blue, unsigned char* Green, unsigned char* Red, unsigned char* Dest, int Width, int Height, int Stride) {
+    for (int Y = 0; Y < Height; Y++) {
+        unsigned char* PointerD = Dest + Y * Stride;
+        unsigned char* PointerB = Blue + Y * Width;
+        unsigned char* PointerG = Green + Y * Width;
+        unsigned char* PointerR = Red + Y * Width;
+        for (int X = 0; X < Width; X++) {
+            PointerD[0] = PointerR[X];
+            PointerD[1] = PointerG[X];
+            PointerD[2] = PointerB[X];
+            PointerD += 3;
+        }
+    }
+}
+
 // Add extra rows and columns of zeroes to the edges of an image.
 // The zeros are added to the borders of the image so that the size of the image is increased,
 // but the original content remains unchanged. This is commonly used in convolution.
@@ -518,6 +550,7 @@ static void houghTransformLine(unsigned char* input, float minAngle, float angle
         }
     }
 }
+
 
 static void* AllocMemory(unsigned int Size, bool ZeroMemory) {
     void* ptr = _mm_malloc(Size, 32);
