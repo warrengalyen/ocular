@@ -131,6 +131,7 @@ int main(int argc, char** argv) {
         unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
         if (output) {
             double startTime = now();
+            printf("Processing image...\n");
 
             ocularMedianBlur(input, output, width, height, stride, 5);
 

@@ -17,7 +17,7 @@ Note: Big-Endian RGBA byte-order is expected for all pixel data.
 ## Documentation
 
 The documentation of the exported functions can be found
-at [Library Documentation](https://warrengalyen.github.io/ocular/).
+at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 ## Features
 
