@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8.2) # 3.8.0 is minimum version that allow Linux remote building and debugging
-
+cmake_minimum_required(VERSION 3.9)
+project(ocular)
 
 # Remove trailing '\' and '/' at the end of the path, so can reliably compare
 STRING(REGEX REPLACE "[/\\]+$" "" CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
@@ -15,15 +15,12 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
     message(FATAL_ERROR "ERROR: CMAKE_CXX_STANDARD is not set or it is too low. Minimum C v17 is required to compile \"Ocular\" library.")
 endif ()
 
-
 set(MODULE_FILES
         ocular.c
         ocular.h
 )
 
-
 add_library(ocular STATIC ${MODULE_FILES})
-
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to it
