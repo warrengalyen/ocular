@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8.2) # 3.8.0 is minimum version that allow Linux remote building and debugging
-
+cmake_minimum_required(VERSION 3.9)
+project(ocular)
 
 # Remove trailing '\' and '/' at the end of the path, so can reliably compare
 STRING(REGEX REPLACE "[/\\]+$" "" CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
@@ -21,7 +21,7 @@ set(MODULE_FILES
         dlib_export.h
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/demo_ui")
 
 add_library(ocular_dll SHARED ${MODULE_FILES})
 
@@ -32,12 +32,12 @@ set_target_properties(ocular_dll PROPERTIES PREFIX "")
 set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
 
 # Copy compiled dll to demo_ui for testing
-if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
-    add_custom_command(
-            TARGET ocular_dll POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui"
-            COMMAND_EXPAND_LISTS)
-endif ()
+#if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
+#    add_custom_command(
+#            TARGET ocular_dll POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui"
+#            COMMAND_EXPAND_LISTS)
+#endif ()
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to

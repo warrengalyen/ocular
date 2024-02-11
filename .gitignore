@@ -14,5 +14,5 @@ demo/test_filters.h
 *.log
 *.sh
 /demo_ui
-/docs/out/html/
+/docs/out/html
 /docs/*.pdi

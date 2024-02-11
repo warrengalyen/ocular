@@ -3447,6 +3447,76 @@ extern "C" {
         free(kernel);
     }
 
+    void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
+
+        int channels = Stride / Width;
+
+        if (channels != 1 && channels != 3)
+            return;
+
+        centerX = min(Width - 1, max(0, centerX));
+        centerY = min(Height - 1, max(0, centerY));
+
+        unsigned char* pIn = NULL;
+        unsigned char* pOut = Output;
+        int newX, newY = 0;
+        float angle = 0;
+
+        if (channels == 1) {
+            int stride = Stride - Width;
+            float g;
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    g = 0;
+
+                    float distance = sqrt((y - centerY) * (y - centerY) + (x - centerX) * (x - centerX));
+                    angle = atan2((double)(y - centerY), (double)(x - centerX));
+                    for (int n = 0; n < intensity; n++) {
+                        angle = angle + 0.005;
+                        newX = (int)(distance * fastCos(angle) + (double)centerX);
+                        newY = (int)(distance * fastSin(angle) + (double)centerY);
+                        newX = min(Width - 1, max(0, newX));
+                        newY = min(Height - 1, max(0, newY));
+                        pIn = Input + newY * Stride + newX;
+                        g = g + pIn[0];
+                    }
+                    pOut[0] = ClampToByte(g / intensity);
+                    pOut++;
+                }
+                pOut += stride;
+            }
+        }
+        if (channels == 3) {
+            int stride = Stride - Width * 3;
+            float r, g, b;
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    float distance = sqrt((y - centerY) * (y - centerY) + (x - centerX) * (x - centerX));
+                    angle = atan2((double)(y - centerY), (double)(x - centerX));
+                    for (int n = 0; n < intensity; n++) {
+                        angle = angle + 0.005;
+                        newX = (int)(distance * fastCos(angle) + (double)centerX);
+                        newY = (int)(distance * fastSin(angle) + (double)centerY);
+                        newX = min(Width - 1, max(0, newX));
+                        newY = min(Height - 1, max(0, newY));
+                        pIn = Input + newY * Stride + newX * 3;
+                        r = r + pIn[0];
+                        g = g + pIn[1];
+                        b = b + pIn[2];
+                    }
+                    pOut[0] = ClampToByte(r / intensity);
+                    pOut[1] = ClampToByte(g / intensity);
+                    pOut[2] = ClampToByte(b / intensity);
+                    pOut += 3;
+                }
+                pOut += stride;
+            }
+        }
+    }
+
     void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
         const int Level = 256;
 

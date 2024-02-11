@@ -605,6 +605,20 @@ extern "C" {
      */
     void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
 
+    /**
+     * @brief Performs a rotational blur on an image centered on a point.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param centerX The x coordinate to center the blur at. Centered: image width / 2.
+     * @param centerY The y coordinate to center the blur at. Centered: image height / 2.
+     * @param intensity The strength of the blur to apply. Range [0 - 100]
+     */
+    void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity);
+
     /** @brief Applies a median (average) blur to an image, which is good for removing salt and pepper noise.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.
