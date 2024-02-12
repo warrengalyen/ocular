@@ -54,6 +54,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 - 2D Convolution
 - Bilateral (selectively blurs preserving edges and other details)
+- Average (Mean) Blur
 - Gaussian Blur
 - Box Blur
 - Motion Blur

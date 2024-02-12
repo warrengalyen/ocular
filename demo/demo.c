@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
             double startTime = now();
             printf("Processing image...\n");
 
-            ocularRadialBlur(input, output, width, height, stride, width / 2, height / 2, 20);
+            ocularAverageBlur(input, output, width, height, stride, 5, OC_EDGE_MIRROR);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

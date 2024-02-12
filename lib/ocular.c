@@ -3377,6 +3377,62 @@ extern "C" {
         }
     }
 
+    void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
+
+        Radius = Radius != 0 ? Radius : 3;
+
+        int Channels = Stride / Width;
+
+        int count = pow(Radius, 2);
+        int sumR, sumG, sumB;
+        int avgR, avgG, avgB;
+        int pPos;
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                sumR = 0, sumG = 0, sumB = 0;
+                for (int dx = 0; dx < Radius; dx++) {
+                    for (int dy = 0; dy < Radius; dy++) {
+                        int xOffset = x + dx;
+                        int yOffset = y + dy;
+
+                        // Apply edge handling mode
+                        if (edgeMode == OC_EDGE_WRAP) {
+                            // wrap around edges
+                            xOffset = (xOffset + Height) % Height;
+                            yOffset = (yOffset + Width) % Width;
+                        } else if (edgeMode == OC_EDGE_MIRROR) {
+                            // Mirror at edges
+                            if (xOffset < 0) {
+                                xOffset = -xOffset;
+                            } else if (xOffset >= Height) {
+                                xOffset = 2 * Height - xOffset - 1;
+                            }
+
+                            if (yOffset < 0) {
+                                yOffset = -yOffset;
+                            } else if (yOffset >= Width) {
+                                yOffset = 2 * Width - yOffset - 1;
+                            }
+                        }
+
+                        pPos = xOffset * Channels + yOffset * Stride;
+                        sumR += Input[pPos + 0];
+                        sumG += Input[pPos + 1];
+                        sumB += Input[pPos + 2];
+                    }
+                }
+
+                pPos = x * Channels + y * Stride;
+                avgR = sumR / count;
+                avgG = sumG / count;
+                avgB = sumB / count;
+                Output[pPos + 0] = ClampToByte(avgR);
+                Output[pPos + 1] = ClampToByte(avgG);
+                Output[pPos + 2] = ClampToByte(avgB);
+            }
+        }
+    }
+
     void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
         const int Level = 256;
 

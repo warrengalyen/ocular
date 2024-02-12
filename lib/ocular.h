@@ -100,9 +100,12 @@ extern "C" {
         OC_DIRECTION_VERTICAL
     } OcDirection;
 
+    /** @num OcEdgeMode
+     * @brief Edge handling mode to apply when certain filters radius' are out of image bounds.
+     */
     typedef enum {
-        Repeat = 0,
-        Mirror = 1
+        OC_EDGE_WRAP = 0,  // repeat edge pixel
+        OC_EDGE_MIRROR = 1 // mirror edge pixel
     } OcEdgeMode;
 
 
@@ -572,7 +575,20 @@ extern "C" {
      */
     void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity);
 
-    /** @brief Applies a median (average) blur to an image, which is good for removing salt and pepper noise.
+    /**
+     * @brief Applies a average (mean) blur to an image that that replaces each pixel with the average of of all values in the local area.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param Radius A radius in pixels to use for the blur, >= 0.0
+     * @param edgeMode Edge handling mode when out of bounds. OC_EDGE_WRAP or OC_EDGE_MIRROR.
+     */
+    void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
+
+    /** @brief Applies a median blur to an image, which is good for removing salt and pepper noise.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
