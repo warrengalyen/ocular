@@ -80,6 +80,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 Note: These are primarly used for included filters and added on as needed basis.
 
 - RGB <--> YIQ
+- RGB <--> HSL
 - RGB <--> HSV
 - RGB <--> YCbCr
 

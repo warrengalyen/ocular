@@ -5,6 +5,30 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fastmath.h"
+
+#ifndef clamp
+    #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
+#endif
+#ifndef ClampToByte
+    #define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
+#endif
+#ifndef min
+    #define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef min3
+    #define min3(a, b, c) min(min((a), (b)), (c))
+#endif
+#ifndef max
+    #define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef max3
+    #define max3(a, b, c) max(max((a), (b)), (c))
+#endif
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846f
+#endif
 
 #define WIDTHBYTES(bytes) (((bytes * 8) + 31) / 32 * 4)
 
