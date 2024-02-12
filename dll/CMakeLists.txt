@@ -16,6 +16,7 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
 endif ()
 
 set(MODULE_FILES
+        ../lib/color.c
         ../lib/ocular.c
         ocular.h
         dlib_export.h

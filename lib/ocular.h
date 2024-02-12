@@ -15,29 +15,6 @@ extern "C" {
 // standard C so unusable here
 #endif /*_MSC_VER */
 
-#ifndef clamp
-    #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
-#endif
-#ifndef ClampToByte
-    #define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
-#endif
-#ifndef min
-    #define min(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-#ifndef min3
-    #define min3(a, b, c) min(min((a), (b)), (c))
-#endif
-#ifndef max
-    #define max(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-#ifndef max3
-    #define max3(a, b, c) max(max((a), (b)), (c))
-#endif
-
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846f
-#endif
-
 #include "fastmath.h"
 #include "util.h"
 #include <math.h>
@@ -123,35 +100,11 @@ extern "C" {
         OC_DIRECTION_VERTICAL
     } OcDirection;
 
-    /** @brief RGB to YIQ color space conversion.
-     * @ingroup group_color_convert
-     */
-    void rgb2yiq(unsigned char* R, unsigned char* G, unsigned char* B, short* Y, short* I, short* Q);
+    typedef enum {
+        Repeat = 0,
+        Mirror = 1
+    } OcEdgeMode;
 
-    /** @brief YIQ to RGB color space conversion.
-     * @ingroup group_color_convert
-     */
-    void yiq2rgb(short* Y, short* I, short* Q, unsigned char* R, unsigned char* G, unsigned char* B);
-
-    /** @brief RGB to HSV color space conversion.
-     * @ingroup group_color_convert
-     */
-    void rgb2hsv(const unsigned char* R, const unsigned char* G, const unsigned char* B, unsigned char* H, unsigned char* S, unsigned char* V);
-
-    /** @brief HSV to RGB color space conversion.
-     * @ingroup group_color_convert
-     */
-    void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char* V, unsigned char* R, unsigned char* G, unsigned char* B);
-
-    /** @brief RGB to YCbCr color space conversion.
-     * @ingroup group_color_convert
-     */
-    void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char* y, unsigned char* cb, unsigned char* cr);
-
-    /** @brief YCbCr to RGB color space conversion.
-     * @ingroup group_color_convert
-     */
-    void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned char* R, unsigned char* G, unsigned char* B);
 
     //--------------------------Color adjustments--------------------------
 
