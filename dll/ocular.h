@@ -34,6 +34,11 @@ extern "C" {
         bool Enable;
     } ocularLevelParams;
 
+    typedef enum {
+        OC_EDGE_WRAP = 0,  // repeat edge pixel
+        OC_EDGE_MIRROR = 1 // mirror edge pixel
+    } OcEdgeMode;
+
 
     //--------------------------Color adjustments--------------------------
 
@@ -127,6 +132,9 @@ extern "C" {
 
     DLIB_EXPORT void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX,
                                       int centerY, int intensity);
+
+    DLIB_EXPORT void
+    ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
 
     DLIB_EXPORT void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
