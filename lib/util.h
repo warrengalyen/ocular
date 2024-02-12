@@ -1,3 +1,13 @@
+/**
+ * @file: util.h
+ * @author Warren Galyen
+ * Created: 12-2-2024
+ * Last Updated: 2-12-2024
+ * Last update: moved clamping functions from ocular.h
+ *
+ * @brief Ocular utility functions that support primary image processing features.
+ */
+
 #ifndef OCULAR_UTIL_H
 #define OCULAR_UTIL_H
 

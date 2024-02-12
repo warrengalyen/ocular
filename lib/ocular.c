@@ -1,3 +1,13 @@
+/**
+ * @file: ocular.c
+ * @author Warren Galyen
+ * Created: 1-29-2024
+ * Last Updated: 2-12-2024
+ * Last update: added average blur filter
+ *
+ * @brief Contains exported primary filter function implementations
+ */
+
 #include <math.h>
 #include <string.h>
 #include <sys/stat.h>

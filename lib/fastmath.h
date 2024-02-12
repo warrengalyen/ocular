@@ -1,3 +1,13 @@
+/**
+ * @file: fastmath.h
+ * @author Warren Galyen
+ * Created: 1-29-2024
+ * Last Updated: 1-30-2024
+ * Last update: cleanup functions
+ *
+ * @brief Ocular optimized fast version of math functions
+ */
+
 #ifndef FASTMATH_H
 #define FASTMATH_H
 

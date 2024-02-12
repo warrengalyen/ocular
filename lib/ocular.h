@@ -1,8 +1,20 @@
+/**
+ * @file: ocular.h
+ * @author Warren Galyen
+ * Created: 1-29-2024
+ * Last Updated: 2-12-2024
+ * Last update: added average blur filter and edge mode definition
+ *
+ * @brief Contains exported primary filter function definitions
+ */
+
 #ifndef OCULAR_H
 #define OCULAR_H
 
 /**
- * @file ocular.h
+ * @file: ocular.h
+ * @author Warren Galyen
+ * @Date 2-12-204
  * @brief Contains exported filter function definitions
  */
 

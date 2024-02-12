@@ -1,5 +1,16 @@
+/**
+ * @file: color.h
+ * @author Warren Galyen
+ * Created: 2-12-2024
+ * Last Updated: 2-12-2024
+ * Last update: migrate functions
+ *
+ * @brief Ocular color conversion definitions
+ */
+
 #ifndef OCULAR_COLOR_H
 #define OCULAR_COLOR_H
+
 
 /** @brief RGB to YIQ color space conversion.
  * @ingroup group_color_convert
