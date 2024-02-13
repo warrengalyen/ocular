@@ -25,6 +25,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 - Grayscale
 - RGB
+- HSL
 - Average Luminance Threshold
 - Color matrix
 - Sepia

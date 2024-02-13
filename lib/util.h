@@ -531,7 +531,7 @@ static void CombineRGB(unsigned char* Blue, unsigned char* Green, unsigned char*
 // Add extra rows and columns of zeroes to the edges of an image.
 // The zeros are added to the borders of the image so that the size of the image is increased,
 // but the original content remains unchanged. This is commonly used in convolution.
-static void zeroPadding(unsigned char* input, unsigned char* output, int row, int col) {
+static void zeroPadding(const unsigned char* input, unsigned char* output, int row, int col) {
     int inputCols = col - 2; // input number of column
 
     for (int i = 1; i < row - 1; i++) {
@@ -541,7 +541,7 @@ static void zeroPadding(unsigned char* input, unsigned char* output, int row, in
     }
 }
 
-static int FindArrayMax(unsigned int* Array, int numElements) {
+static int FindArrayMax(const unsigned int* Array, int numElements) {
     int N = 0; // N is used to indicate the order of the element int the array which has the max value: Array[N] is the maximum in Array
     for (int i = 1; i < numElements; i++) {
         if (Array[N] >= Array[i])

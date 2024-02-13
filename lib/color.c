@@ -72,16 +72,16 @@ float hue2rgb(float p, float q, float t) {
     return p;
 }
 
-void hsl2rgb(float h, float s, float l, unsigned char* r, unsigned char* g, unsigned* b) {
+void hsl2rgb(float h, float s, float l, float* r, float* g, float* b) {
 
     if (s == 0) {
         *r = *g = *b = l; // achromatic
     } else {
         float q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         float p = 2 * l - q;
-        *r = hue2rgb(p, q, h + 1. / 3) * 255;
-        *g = hue2rgb(p, q, h) * 255;
-        *b = hue2rgb(p, q, h - 1. / 3) * 255;
+        *r = hue2rgb(p, q, h + 1. / 3) * 255 + 0.5;
+        *g = hue2rgb(p, q, h) * 255 + 0.5;
+        *b = hue2rgb(p, q, h - 1. / 3) * 255 + 0.5;
     }
 }
 
