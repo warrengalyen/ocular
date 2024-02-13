@@ -162,6 +162,20 @@ extern "C" {
     void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
                          float greenAdjustment, float blueAdjustment);
 
+    /**
+     * @brief Adjusts the Hue, Saturation and Luminance of an image.
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param hueAdjustment The hue modifier to apply. Range [-0.5 - 0.5]
+     * @param satAdjustment The saturation modifier to apply.  Range [-2.0 - 2.0]
+     * @param lightAdjustment The lightness modifier to apply. Range [-1.0 - 1.0]
+     */
+    void ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
+                         float satAdjustment, float lightAdjustment);
+
     /** @brief Applies a thresholding operation where the threshold is continually adjusted based on the average luminance of the image.
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.

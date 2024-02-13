@@ -47,6 +47,9 @@ extern "C" {
     DLIB_EXPORT void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
                                      float greenAdjustment, float blueAdjustment);
 
+    DLIB_EXPORT void ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
+                                     float satAdjustment, float lightAdjustment);
+
     DLIB_EXPORT void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                                            float thresholdMultiplier);
 

@@ -32,7 +32,7 @@ void rgb2hsl(float r, float g, float b, float* h, float* s, float* l);
  * @brief HSL to RGB color space conversion.
  * @ingroup group_color_convert
  */
-void hsl2rgb(float h, float s, float l, unsigned char* r, unsigned char* g, unsigned* b);
+void hsl2rgb(float h, float s, float l, float* r, float* g, float* b);
 
 /** @brief RGB to HSV color space conversion.
  * @ingroup group_color_convert

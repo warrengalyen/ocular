@@ -206,6 +206,57 @@ extern "C" {
         }
     }
 
+    void ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
+                         float satAdjustment, float lightAdjustment) {
+
+        int channels = Stride / Width;
+        if (channels == 1)
+            return;
+
+        float r, g, b;
+        float h, s, l;
+        for (int Y = 0; Y < Height; Y++) {
+            unsigned char* pOutput = Output + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
+            for (int X = 0; X < Width; X++) {
+                r = pInput[0];
+                g = pInput[1];
+                b = pInput[2];
+
+                // get the hue and saturation
+                rgb2hsl(r, g, b, &h, &s, &l);
+
+                // Apply modifiers
+                h = h + hueAdjustment;
+                if (h > 1)
+                    h -= 1;
+                if (h < 0.0)
+                    h += 1;
+
+                s = s * satAdjustment;
+                if (s < 0)
+                    s = 0;
+                if (s > 1)
+                    s = 1;
+
+                l = l + lightAdjustment;
+                if (l < 0)
+                    l = 0;
+                if (l > 1)
+                    l = 1;
+
+                hsl2rgb(h, s, l, &r, &g, &b);
+
+                pOutput[0] = ClampToByte(r);
+                pOutput[1] = ClampToByte(g);
+                pOutput[2] = ClampToByte(b);
+
+                pInput += channels;
+                pOutput += channels;
+            }
+        }
+    }
+
     void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier) {
 
         int Channels = Stride / Width;
@@ -3391,7 +3442,10 @@ extern "C" {
 
         Radius = Radius != 0 ? Radius : 3;
 
-        int Channels = Stride / Width;
+        int channels = Stride / Width;
+
+        if (channels != 3)
+            return;
 
         int count = pow(Radius, 2);
         int sumR, sumG, sumB;
@@ -3425,14 +3479,14 @@ extern "C" {
                             }
                         }
 
-                        pPos = xOffset * Channels + yOffset * Stride;
+                        pPos = xOffset * channels + yOffset * Stride;
                         sumR += Input[pPos + 0];
                         sumG += Input[pPos + 1];
                         sumB += Input[pPos + 2];
                     }
                 }
 
-                pPos = x * Channels + y * Stride;
+                pPos = x * channels + y * Stride;
                 avgR = sumR / count;
                 avgG = sumG / count;
                 avgB = sumB / count;
