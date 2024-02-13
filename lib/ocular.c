@@ -3590,6 +3590,59 @@ extern "C" {
         }
     }
 
+    void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
+
+        int channels = Stride / Width;
+
+        if (channels != 1 && channels != 3)
+            return;
+
+        int pPos;
+        for (int y = 0; y < Height; y += blockSize) {
+            for (int x = 0; x < Width; x += blockSize) {
+
+                // Find the average color value of the pixels in a block
+                int numPix = 0;
+                int avg[channels];
+                int blockAvg[channels];
+                memset(avg, 0, sizeof avg);
+                for (int dy = 0; dy < blockSize; dy++) {
+                    for (int dx = 0; dx < blockSize; dx++) {
+                        int xOffset = x + dx;
+                        int yOffset = y + dy;
+
+                        // If possible, add the pixel value to the average
+                        if (yOffset < Height && xOffset < Width) {
+                            pPos = xOffset * channels + yOffset * Stride;
+                            for (int c = 0; c < channels; c++) {
+                                avg[c] += Input[pPos + c];
+                            }
+                            numPix++;
+                        }
+                    }
+                }
+                for (int c = 0; c < channels; c++) {
+                    blockAvg[c] = avg[c] / numPix;
+                }
+
+                for (int dy = 0; dy < blockSize; dy++) {
+                    for (int dx = 0; dx < blockSize; dx++) {
+                        int xOffset = x + dx;
+                        int yOffset = y + dy;
+
+                        // The pixel is the value of the upper left pixel in the block
+                        if (yOffset < Height - 1 && xOffset < Width - 1) {
+                            pPos = xOffset * channels + yOffset * Stride;
+                            for (int c = 0; c < channels; c++) {
+                                Output[pPos + c] = blockAvg[c];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     OC_STATUS ocularCreateImage(int Width, int Height, int Depth, int Channels, OcImage** image) {
 
         if (Width < 1 || Height < 1)

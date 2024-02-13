@@ -164,6 +164,7 @@ extern "C" {
 
     /**
      * @brief Adjusts the Hue, Saturation and Luminance of an image.
+     *  @ingroup group_color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -777,6 +778,22 @@ extern "C" {
      * @return True, if valid text image found and deskew performed. Otherwise false.
      */
     bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    //------------------------Distort-------------------------
+
+    /**
+     * @brief Applies a pixelate effect (sometimes called "mosaic") to an image.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param blockSize The width and height of the desired pixelation block (in pixels).
+     */
+    void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
+
+    //------------------------Distort-------------------------
 
     //--------------------------Misc--------------------------
 
