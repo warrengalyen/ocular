@@ -15,6 +15,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+
 add_executable(demo demo.c)
 
 # Demo application require both libraries, so add them

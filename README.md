@@ -66,6 +66,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Lanczos resampling (resize)
 - Sobel Edge
 - Deskewing
+- Pixelate (Mosaic)
 
 ### General
 
