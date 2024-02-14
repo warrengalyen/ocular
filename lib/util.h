@@ -585,6 +585,42 @@ static void houghTransformLine(unsigned char* input, float minAngle, float angle
     }
 }
 
+static void calculateNewSize(int Width, int Height, int* newWidth, int* newHeight, bool keepSize, float angle) {
+    if (keepSize) {
+        *newWidth = Width;
+        *newHeight = Height;
+        return;
+    }
+
+    // angle's sine and cosine
+    float angleRad = -angle * M_PI / 180;
+    float angleCos = fastCos(angleRad);
+    float angleSin = fastSin(angleRad);
+
+    // calculate half size
+    float halfWidth = Width / 2;
+    float halfHeight = Height / 2;
+
+    // rotate corners
+    float cx1 = halfWidth * angleCos;
+    float cy1 = halfWidth * angleSin;
+
+    float cx2 = halfWidth * angleCos - halfHeight * angleSin;
+    float cy2 = halfWidth * angleSin + halfHeight * angleCos;
+
+    float cx3 = -halfHeight * angleSin;
+    float cy3 = halfHeight * angleCos;
+
+    float cx4 = 0;
+    float cy4 = 0;
+
+    // recalculate image size
+    halfWidth = max(max(cx1, cx2), max(cx3, cx4)) - min(min(cx1, cx2), min(cx3, cx4));
+    halfHeight = max(max(cy1, cy2), max(cy3, cy4)) - min(min(cy1, cy2), min(cy3, cy4));
+
+    *newWidth = (int)(halfWidth * 2 + 0.5);
+    *newHeight = (int)(halfHeight * 2 + 0.5);
+}
 
 static void* AllocMemory(unsigned int Size, bool ZeroMemory) {
     void* ptr = _mm_malloc(Size, 32);

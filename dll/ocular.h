@@ -164,7 +164,9 @@ extern "C" {
 
     DLIB_EXPORT bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
-    DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
+    DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+
+    DLIB_EXPORT void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
     DLIB_EXPORT void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
