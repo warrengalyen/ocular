@@ -3123,6 +3123,10 @@ extern "C" {
                 }
             }
         }
+
+        free(G_);
+        free(M_);
+        free(s_);
     }
 
     void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
@@ -3160,7 +3164,6 @@ extern "C" {
         memcpy(Third + Width + 1, Input + Width + Width - 1, 1);
 
         for (int Y = 0; Y < Height; Y++) {
-            unsigned char* LinePS = Input + Y * Width;
             unsigned char* LinePD = Output + Y * Width;
             if (Y != 0) {
                 unsigned char* Temp = First;
@@ -3236,7 +3239,7 @@ extern "C" {
                 memcpy(Third + (Width + 1) * Channels, Input + (y + 1) * Width * Channels + (Width - 1) * Channels, Channels);
             }
             for (int x = 0; x < Width; x++) {
-                int GradientH, GradientV;
+                int GradientH = 0, GradientV = 0;
                 if (x == 0) {
                     GradientH = First[x + 0] + First[x + 1] + First[x + 2] - (Third[x + 0] + Third[x + 1] + Third[x + 2]);
                 } else {
@@ -3770,7 +3773,6 @@ extern "C" {
                 int Balance = 0;
 
                 for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) {
-                    int Index = J * Stride;
                     for (int I = max(0 - Radius, 0); I <= min(0 + Radius, Width - 1); I++) {
                         int Value = Input[J * Stride + I];
                         // Calculate the two-dimensional histogram of the first point in each row.
