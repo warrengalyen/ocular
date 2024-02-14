@@ -633,12 +633,24 @@ extern "C" {
 
     /** @brief Applies a sobel edge detection filter
      *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer (assumes grayscale image).
+     *  @param Input The image input data buffer (expects grayscale image).
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
+     *  @param Channels The numbers of color channels in the image.
      */
-    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height);
+    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+
+    /**
+     * @brief Performs edge detection on an image based on the Sobel operator.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer (expects grayscale image).
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Channels The numbers of color channels in the image.
+     */
+    void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
     //-------------------------- Edge detection --------------------------
 

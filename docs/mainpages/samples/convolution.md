@@ -1,7 +1,7 @@
 ## 2D Convolution Examples {#page_examples_convolution}
 
 ```c
-int Blurfilter[25] = {
+float Blurfilter[25] = {
    0, 0, 1, 0, 0,
    0, 1, 1, 1, 0,
    1, 1, 1, 1, 1,

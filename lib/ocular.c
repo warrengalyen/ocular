@@ -2592,8 +2592,11 @@ extern "C" {
     void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
                               float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB) {
 
+
         if (Input == NULL || Output == NULL)
             return;
+
+        int Channels = Stride / Width;
 
         float oldXradius = (float)(Width - 1) / 2;
         float oldYradius = (float)(Height - 1) / 2;
@@ -2606,7 +2609,6 @@ extern "C" {
         float angleRad = -angle * M_PI / 180.0f;
         float angleCos = fastCos(angleRad);
         float angleSin = fastSin(angleRad);
-        int Channels = Stride / Width;
         int dstOffset = outWidth * Channels - ((Channels == 1) ? outWidth : outWidth * Channels);
 
         // background color
@@ -2619,6 +2621,7 @@ extern "C" {
 
         unsigned char* src = (unsigned char*)Input;
         unsigned char* dst = (unsigned char*)Output;
+
         // cx, cy coordinates of the target pixel relative to the center of the image
         if (Channels == 1) {
             float cy = -newYradius;
@@ -2937,11 +2940,14 @@ extern "C" {
         }
     }
 
-    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height) {
+    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
         if ((Input == NULL) || (Output == NULL))
             return;
         if ((Width <= 0) || (Height <= 0))
+            return;
+
+        if (Channels != 1)
             return;
 
         unsigned char* SqrLut = (unsigned char*)malloc(65026 * sizeof(unsigned char));
@@ -2997,6 +3003,70 @@ extern "C" {
         if (SqrLut) {
             free(SqrLut);
         }
+    }
+
+    void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+
+        if ((Input == NULL) || (Output == NULL))
+            return;
+        if ((Width <= 0) || (Height <= 0))
+            return;
+
+        if (Channels != 1)
+            return;
+
+        unsigned char* RowCopy = (unsigned char*)malloc((Width + 2) * 3 * Channels);
+        unsigned char* SqrValue = (unsigned char*)malloc(65026 * sizeof(unsigned char));
+        unsigned char* First = RowCopy;
+        unsigned char* Second = RowCopy + (Width + 2) * Channels;
+        unsigned char* Third = RowCopy + (Width + 2) * 2 * Channels;
+
+        for (int y = 0; y < 65026; y++)
+            SqrValue[y] = (int)(sqrtf(y * 1.0) + 0.49999f);
+
+        memcpy(Second, Input, Channels);
+        memcpy(Second + Channels, Input, Width * Channels); //     Copy data to the middle position
+        memcpy(Second + (Width + 1) * Channels, Input + (Width - 1) * Channels, Channels);
+
+        memcpy(First, Second, (Width + 2) * Channels); //     The first row is the same as the second row
+
+        memcpy(Third, Input + Width * Channels, Channels); //     Copy the second row of data
+        memcpy(Third + Channels, Input + Width * Channels, Width * Channels);
+        memcpy(Third + (Width + 1) * Channels, Input + Width * Channels + (Width - 1) * Channels, Channels);
+
+        for (int y = 0; y < Height; y++) {
+            unsigned char* LinePD = Output + y * Width;
+            if (y != 0) {
+                unsigned char* Temp = First;
+                First = Second;
+                Second = Third;
+                Third = Temp;
+            }
+            if (y == Height - 1) {
+                memcpy(Third, Second, (Width + 2) * Channels);
+            } else {
+                memcpy(Third, Input + (y + 1) * Width * Channels, Channels);
+                memcpy(Third + Channels, Input + (y + 1) * Width * Channels,
+                       Width * Channels); //     Since the data of the previous row is backed up, there is no problem even if Src and Dest are the same
+                memcpy(Third + (Width + 1) * Channels, Input + (y + 1) * Width * Channels + (Width - 1) * Channels, Channels);
+            }
+            for (int x = 0; x < Width; x++) {
+                int GradientH, GradientV;
+                if (x == 0) {
+                    GradientH = First[x + 0] + First[x + 1] + First[x + 2] - (Third[x + 0] + Third[x + 1] + Third[x + 2]);
+                } else {
+                    GradientH = GradientH - First[x - 1] + First[x + 2] + Third[x - 1] - Third[x + 2];
+                }
+                GradientV = First[x + 0] + Second[x + 0] * 2 + Third[x + 0] - (First[x + 2] + Second[x + 2] * 2 + Third[x + 2]);
+                int Value = (GradientH * GradientH + GradientV * GradientV) >> 1;
+                if (Value > 65025)
+                    LinePD[x] = 255;
+                else
+                    LinePD[x] = SqrValue[Value];
+            }
+        }
+        free(RowCopy);
+        free(SqrValue);
     }
 
     void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold) {
