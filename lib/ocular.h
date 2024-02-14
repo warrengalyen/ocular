@@ -33,6 +33,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
     /**
      * @todo Implement these within the filters
@@ -630,6 +631,39 @@ extern "C" {
 
 
     //-------------------------- Edge detection -----------------`---------
+
+    // -------------------------- Used for Canny Edge Detection ---------------------------
+
+    typedef enum {
+        CannyGaus3x3,
+        CannyGaus5x5
+    } CannyNoiseFilter;
+
+    // Gaussian blur
+    // 3 x 3 kernel
+    static const int8_t Gaus3x3[] = { 1, 2, 1, 2, 4, 2, // * 1/16
+                                      1, 2, 1 };
+    static const int Gaus3x3Div = 16;
+
+    static const int8_t Gaus5x5[] = { 2, 4, 5,  4, 2, 4, 9, 12, 9, 4, 5, 12, 15, 12, 5, // * 1/159
+                                      4, 9, 12, 9, 4, 2, 4, 5,  4, 2 };
+    static const int Gaus5x5Div = 159;
+
+    // -------------------------- Used for Canny Edge Detection ---------------------------
+
+    /**
+     * @brief Performs Canny edge detection on an image.
+     * This is one of the most reliable methods of edge detection.
+     *  @param Input The image input data buffer (expects grayscale image).
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     * @param kernel_size The type of gaussian noise to apply. Gaus3x3 or Gaus5x5. Good default Gaus3x3
+     * @param weak_threshold Pixel values below this limit are discarded. Range [0 - 255]. Good default 200.
+     * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. Good default 200.
+     */
+    void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+                               CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
     /** @brief Applies a sobel edge detection filter
      *  @ingroup group_ip_filters

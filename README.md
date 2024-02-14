@@ -64,7 +64,9 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Unsharp Mask
 - Sharpen
 - Lanczos resampling (resize)
-- Sobel Edge
+- Canny Edge Detect
+- Gradient Edge Detect
+- Sobel Edge Detect
 - Deskewing
 - Pixelate (Mosaic)
 
