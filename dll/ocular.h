@@ -39,6 +39,11 @@ extern "C" {
         OC_EDGE_MIRROR = 1 // mirror edge pixel
     } OcEdgeMode;
 
+    typedef enum {
+        CannyGaus3x3,
+        CannyGaus5x5
+    } CannyNoiseFilter;
+
 
     //--------------------------Color adjustments--------------------------
 
@@ -163,6 +168,9 @@ extern "C" {
     DLIB_EXPORT void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int type);
 
     DLIB_EXPORT bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    DLIB_EXPORT void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+                                           CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
     DLIB_EXPORT void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 

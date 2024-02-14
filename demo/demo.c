@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 
             ocularGrayscaleFilter(input, input, width, height, stride);
             channels = 1;
-            ocularGradientEdgeDetect(input, output, width, height, channels);
+            ocularCannyEdgeDetect(input, output, width, height, channels, CannyGaus3x3, 30, 100);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

@@ -2940,6 +2940,191 @@ extern "C" {
         }
     }
 
+    void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+                               CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold) {
+
+        if (Channels != 1)
+            return;
+
+        // Sobel, as for why this can be used instead of Gaussian derivative, see
+        // https://medium.com/@haidarlina4/sobel-vs-canny-edge-detection-techniques-step-by-step-implementation-11ae6103a56a
+        const int8_t Gx[] = { -1, 0, 1, -2, 0, 2, -1, 0, 1 };
+
+        // Upward minus downward, to achieve the difference in the y direction, dy
+        const int8_t Gy[] = { 1, 2, 1, 0, 0, 0, -1, -2, -1 };
+
+        int offset_xy = 1; // for kernel = 3
+        int8_t* kernel = (int8_t*)Gaus3x3;
+        int kernel_div = Gaus3x3Div;
+
+        if (kernel_size == CannyGaus5x5) {
+            offset_xy = 2;
+            kernel = (int8_t*)Gaus5x5;
+            kernel_div = Gaus5x5Div;
+        }
+
+        float* G_ = (float*)calloc(Width * Height, sizeof(double));
+        float* M_ = (float*)calloc(Width * Height, sizeof(double));
+        unsigned char* s_ = (unsigned char*)calloc(Width * Height, sizeof(unsigned char));
+
+        // gaussian filter
+        for (int x = 0; x < Width; x++) {
+            for (int y = 0; y < Height; y++) {
+                int pos = x + (y * Width);
+                if (x < offset_xy || x >= (Width - offset_xy) || y < offset_xy || y >= (Height - offset_xy)) {
+                    // The first and last rows, the first and last columns, get the source value
+                    Output[pos] = Input[pos];
+                    continue;
+                }
+                int convolve = 0;
+                int k = 0;
+                // Calculate convolution using relevant methods
+                for (int kx = -offset_xy; kx <= offset_xy; kx++) {
+                    for (int ky = -offset_xy; ky <= offset_xy; ky++) {
+                        convolve += (Input[pos + (kx + (ky * Width))] * kernel[k]);
+                        k++;
+                    }
+                }
+
+                Output[pos] = (unsigned char)((double)convolve / (double)kernel_div);
+            }
+        }
+
+        // apply sobel kernels
+        offset_xy = 1; // 3x3
+        for (int x = offset_xy; x < Width - offset_xy; x++) {
+            for (int y = offset_xy; y < Height - offset_xy; y++) {
+                // The first and last rows, the first and last columns are skipped and not processed.
+                double convolve_X = 0.0;
+                double convolve_Y = 0.0;
+                int k = 0;
+                int src_pos = x + (y * Width);
+
+                for (int ky = -offset_xy; ky <= offset_xy; ky++) {
+                    for (int kx = -offset_xy; kx <= offset_xy; kx++) {
+                        convolve_X += Output[src_pos + (kx + (ky * Width))] * Gx[k];
+                        convolve_Y += Output[src_pos + (kx + (ky * Width))] * Gy[k];
+
+                        k++;
+                    }
+                }
+
+                // gradient hypot & direction
+                int segment = 0;
+
+                if (convolve_X == 0.0 || convolve_Y == 0.0) {
+                    G_[src_pos] = 0;
+                } else {
+                    // calculate the intensity
+                    G_[src_pos] = ((sqrt((convolve_X * convolve_X) + (convolve_Y * convolve_Y))));
+                    // direction
+                    double theta = atan2(convolve_Y, convolve_X); // radians. atan2 range: -PI,+PI,
+                                                                  // theta : 0 - 2PI
+                    // convert to degrees
+                    theta = theta * (360.0 / (2.0 * M_PI)); // degrees
+
+                    if ((theta <= 22.5 && theta >= -22.5) || (theta <= -157.5) || (theta >= 157.5)) {
+                        // close the horizontal line
+                        segment = 1; // "-"
+                    } else if ((theta > 22.5 && theta <= 67.5) || (theta > -157.5 && theta <= -112.5)) {
+                        // close to the 45 degree diagonal
+                        segment = 2; // "/"
+                    } else if ((theta > 67.5 && theta <= 112.5) || (theta >= -112.5 && theta < -67.5)) {
+                        // close vertical line
+                        segment = 3; // "|"
+                    } else if ((theta >= -67.5 && theta < -22.5) || (theta > 112.5 && theta < 157.5)) {
+                        // another diagonal line close to 135 degrees
+                        segment = 4; // "\"
+                    } else {
+                        // std::cout << "error " << theta << std::endl;
+                    }
+                }
+
+                s_[src_pos] = (unsigned char)segment;
+            }
+        }
+
+        // The 9-square grid range is set to 0 if it is not the largest in the direction.
+        // local maxima: non maxima suppression
+        memcpy(M_, G_, Width * Height * sizeof(double));
+
+        for (int x = 1; x < Width - 1; x++) {
+            for (int y = 1; y < Height - 1; y++) {
+                // The first and last rows, the first and last columns are skipped and not processed.
+                int pos = x + (y * Width);
+
+                switch (s_[pos]) {
+                case 1:
+                    // close to the horizontal line
+                    if (G_[pos - 1] >= G_[pos] || G_[pos + 1] > G_[pos]) {
+                        // If there is one on the left and right that is larger than itself, set it to 0
+                        M_[pos] = 0;
+                    }
+                    break;
+                case 2:
+                    // close to the 45 degree diagonal
+                    if (G_[pos - (Width - 1)] >= G_[pos] || G_[pos + (Width - 1)] > G_[pos]) {
+                        M_[pos] = 0;
+                    }
+                    break;
+                case 3:
+                    // close to vertical line
+                    if (G_[pos - (Width)] >= G_[pos] || G_[pos + (Width)] > G_[pos]) {
+                        // If there is one above or below that is larger than itself, set it to 0
+                        M_[pos] = 0;
+                    }
+                    break;
+                case 4:
+                    // another diagonal line close to 135 degrees
+                    if (G_[pos - (Width + 1)] >= G_[pos] || G_[pos + (Width + 1)] > G_[pos]) {
+                        M_[pos] = 0;
+                    }
+                    break;
+                default: M_[pos] = 0; break;
+                }
+            }
+        }
+
+
+        // double threshold
+        for (int x = 0; x < Width; x++) {
+            for (int y = 0; y < Height; y++) {
+                int src_pos = x + (y * Width);
+                if (M_[src_pos] > strong_threshold) {
+                    Output[src_pos] = 255;
+                } else if (M_[src_pos] > weak_threshold) {
+                    Output[src_pos] = 100;
+                } else {
+                    Output[src_pos] = 0;
+                }
+            }
+        }
+
+        // Connect the border
+        // edges with hysteresis
+        for (int x = 1; x < Width - 1; x++) {
+            for (int y = 1; y < Height - 1; y++) {
+                // The first and last rows, the first and last columns are skipped and not processed.
+                int src_pos = x + (y * Width);
+                if (Output[src_pos] == 255) {
+                    Output[src_pos] = 255;
+                } else if (Output[src_pos] == 100) {
+                    if (Output[src_pos - 1] == 255 || Output[src_pos + 1] == 255 || Output[src_pos - 1 - Width] == 255 ||
+                        Output[src_pos + 1 - Width] == 255 || Output[src_pos + Width] == 255 || Output[src_pos + Width - 1] == 255 ||
+                        Output[src_pos + Width + 1] == 255) {
+                        Output[src_pos] = 255;
+                        // In the 9-square grid range of 100, if there is 255, adjust it to 255
+                    } else {
+                        // Otherwise return to 0
+                        Output[src_pos] = 0;
+                    }
+                } else {
+                    Output[src_pos] = 0;
+                }
+            }
+        }
+    }
+
     void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
         if ((Input == NULL) || (Output == NULL))
