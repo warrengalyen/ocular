@@ -654,6 +654,7 @@ extern "C" {
     /**
      * @brief Performs Canny edge detection on an image.
      * This is one of the most reliable methods of edge detection.
+     *  @ingroup group_ip_filters
      *  @param Input The image input data buffer (expects grayscale image).
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
