@@ -528,6 +528,22 @@ static void CombineRGB(unsigned char* Blue, unsigned char* Green, unsigned char*
     }
 }
 
+void applyCurve(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride, unsigned char* TableR,
+                unsigned char* TableG, unsigned char* TableB) {
+
+    for (int y = 0; y < height; y++) {
+        unsigned char* scanIn = input + y * stride;
+        unsigned char* scanOut = output + y * stride;
+        for (int x = 0; x < width; x++) {
+            scanOut[0] = TableR[scanIn[0]];
+            scanOut[1] = TableG[scanIn[1]];
+            scanOut[2] = TableB[scanIn[2]];
+            scanIn += channels;
+            scanOut += channels;
+        }
+    }
+}
+
 // Add extra rows and columns of zeroes to the edges of an image.
 // The zeros are added to the borders of the image so that the size of the image is increased,
 // but the original content remains unchanged. This is commonly used in convolution.

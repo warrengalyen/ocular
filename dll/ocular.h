@@ -131,6 +131,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
+    DLIB_EXPORT void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Image processing--------------------------

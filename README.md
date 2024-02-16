@@ -48,6 +48,8 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - White Balance
 - Vibrance
 - Skin Tone
+- Auto Contrast
+- Auto Gamma Correction
 - Auto Level
 - Auto White Balance
 
