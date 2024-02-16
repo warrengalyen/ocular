@@ -11,13 +11,6 @@
 #ifndef OCULAR_H
 #define OCULAR_H
 
-/**
- * @file: ocular.h
- * @author Warren Galyen
- * @Date 2-12-204
- * @brief Contains exported filter function definitions
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -476,6 +469,18 @@ extern "C" {
      *  @param threshold The luminance threshold. Range [0.0 - 1.0]. Default. 0.5.
      */
     void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
+
+    /**
+     * @brief Performs an automatic contrast enhancement on an image based on local and image-dependent exponential correction.
+     * This method helps correct images that have both overexposed and underexposed regions.
+     *  @ingroup group_color_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Channels The numbers of color channels in the image.
+     */
+    void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
     /** @brief Automatically applies a neutral white balance to an image.
      *  @ingroup group_color_filters
