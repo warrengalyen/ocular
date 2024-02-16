@@ -528,8 +528,8 @@ static void CombineRGB(unsigned char* Blue, unsigned char* Green, unsigned char*
     }
 }
 
-void applyCurve(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride, unsigned char* TableR,
-                unsigned char* TableG, unsigned char* TableB) {
+static void applyCurve(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride, unsigned char* TableR,
+                       unsigned char* TableG, unsigned char* TableB) {
 
     for (int y = 0; y < height; y++) {
         unsigned char* scanIn = input + y * stride;
