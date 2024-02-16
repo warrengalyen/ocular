@@ -1234,6 +1234,43 @@ extern "C" {
         }
     }
 
+    void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+
+        // implementation of Local Color Correction using Non-Linear Masking published by Nathan Moroney Hewlett-Packard
+        // Laboratories, Palo Alto, California.
+
+        unsigned char* Luminance = (unsigned char*)malloc(Width * Height * 2 * sizeof(unsigned char));
+        unsigned char* Mask = Luminance + (Width * Height);
+        if (Luminance == NULL)
+            return;
+        unsigned char LocalLut[256 * 256];
+        for (int mask = 0; mask < 256; mask++) {
+            unsigned char* pLocalLut = LocalLut + (mask << 8);
+            for (int pix = 0; pix < 256; pix++) {
+                pLocalLut[pix] = ClampToByte(255.0f * powf(pix / 255.0f, powf(2.0f, (128.0f - (255.0f - mask)) / 128.0f)));
+            }
+        }
+        ocularGrayscaleFilter(Input, Luminance, Width, Height, Width * Channels);
+        int Radius = (max(Width, Height) / 512) + 1;
+        ocularBoxBlurFilter(Luminance, Mask, Width, Height, Width, Radius);
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pOutput = Output + (y * Width * Channels);
+            unsigned char* pInput = Input + (y * Width * Channels);
+            unsigned char* pMask = Mask + (y * Width);
+            unsigned char* pLuminance = Luminance + (y * Width);
+            for (int x = 0; x < Width; x++) {
+                unsigned char* pLocalLut = LocalLut + (pMask[x] << 8);
+                for (int c = 0; c < Channels; c++) {
+                    pOutput[c] = ClampToByte(
+                            (pLocalLut[pLuminance[x]] * (pInput[c] + pLuminance[x]) / (pLuminance[x] + 1) + pInput[c] - pLuminance[x]) >> 1);
+                }
+                pOutput += Channels;
+                pInput += Channels;
+            }
+        }
+        free(Luminance);
+    }
+
     bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride,
                                 int colorCoeff, float cutLimit, float contrast) {
 

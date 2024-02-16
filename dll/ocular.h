@@ -129,6 +129,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
+    DLIB_EXPORT void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Image processing--------------------------

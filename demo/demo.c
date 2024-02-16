@@ -138,9 +138,7 @@ int main(int argc, char** argv) {
             // ocularPixelateFilter(input, output, width, height, stride, 10);
             // ocularGrayscaleFilter(input, output, width, height, stride);
 
-            ocularGrayscaleFilter(input, input, width, height, stride);
-            channels = 1;
-            ocularCannyEdgeDetect(input, output, width, height, channels, CannyGaus3x3, 30, 100);
+            ocularAutoContrast(input, output, width, height, channels);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
