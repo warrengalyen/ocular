@@ -1271,6 +1271,40 @@ extern "C" {
         free(Luminance);
     }
 
+    void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        int Channels = Stride / Width;
+        if ((Input == NULL) || (Output == NULL))
+            return;
+        if ((Width <= 0) || (Height <= 0))
+            return;
+        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
+            return;
+
+        unsigned char AvgR, AvgG, AvgB, AvgA;
+        ocularAverageColor(Input, Width, Height, Stride, &AvgR, &AvgG, &AvgB, &AvgA);
+        if (Channels == 1) {
+            float Gamma = -0.3 / (log10(AvgB));
+            unsigned char Table[256] = { 0 };
+            for (int y = 0; y < 256; y++) {
+                Table[y] = ClampToByte((int)(pow(y / 255.0f, Gamma) * 255.0f));
+            }
+            applyCurve(Input, Output, Width, Height, Stride, Channels, Table, Table, Table);
+        } else {
+            float GammaR = -0.3 / (log10(AvgR / 256.0f));
+            float GammaG = -0.3 / (log10(AvgG / 256.0f));
+            float GammaB = -0.3 / (log10(AvgB / 256.0f));
+
+            unsigned char TableR[256], TableG[256], TableB[256] = { 0 };
+            for (int y = 0; y < 256; y++) {
+                TableR[y] = ClampToByte((int)(pow(y / 255.0f, GammaR) * 255.0f));
+                TableG[y] = ClampToByte((int)(pow(y / 255.0f, GammaG) * 255.0f));
+                TableB[y] = ClampToByte((int)(pow(y / 255.0f, GammaB) * 255.0f));
+            }
+            applyCurve(Input, Output, Width, Height, Channels, Stride, TableR, TableG, TableB);
+        }
+    }
+
     bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride,
                                 int colorCoeff, float cutLimit, float contrast) {
 

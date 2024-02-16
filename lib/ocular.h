@@ -482,6 +482,17 @@ extern "C" {
      */
     void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
+    /**
+     * @brief Performs automatic gamma correction based on average brightness.
+     *  @ingroup group_color_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     */
+    void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
     /** @brief Automatically applies a neutral white balance to an image.
      *  @ingroup group_color_filters
      *  @param input The image input data buffer.
