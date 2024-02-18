@@ -856,6 +856,19 @@ extern "C" {
      */
     void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
+    /**
+     * @brief Applies an "oil painting" effect to an image.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param radius The radius of the effect. Range >= 1.
+     * @param intensity The smoothness of the effect. Smaller values indicate less smoothness (less bins are used to calculate luminance).
+     */
+    void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
+
     //------------------------Distort-------------------------
 
     //--------------------------Misc--------------------------

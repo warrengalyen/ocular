@@ -71,6 +71,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Sobel Edge Detect
 - Deskewing
 - Pixelate (Mosaic)
+- Oil Paint
 
 ### General
 
