@@ -182,6 +182,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
+    DLIB_EXPORT void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
+
     DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
                                              int numLine, float* Radius, float* Theta);
 

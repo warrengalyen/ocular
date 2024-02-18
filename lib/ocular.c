@@ -3971,6 +3971,93 @@ extern "C" {
         }
     }
 
+    void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        int Channels = Stride / Width;
+
+        if (Channels != 3)
+            return;
+
+        int intensityCount[256];
+        int sumR[256];
+        int sumG[256];
+        int sumB[256];
+
+        int currentIntensity = 0;
+        unsigned char red, green, blue;
+        int currentMax = 0;
+        int maxIndex = 0;
+        int byteOffset = 0;
+
+        // radius pixels are avoided from left, right top, and bottom edges
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+
+                // Reset calculations of last pixel
+                memset(intensityCount, 0, sizeof(intensityCount));
+                memset(sumR, 0, sizeof(sumR));
+                memset(sumG, 0, sizeof(sumG));
+                memset(sumB, 0, sizeof(sumB));
+
+                // calculate the highest intensity of neighboring pixels
+                for (int dy = 0; dy < radius; dy++) {
+                    for (int dx = 0; dx < radius; dx++) {
+                        int xOffset = x + dx;
+                        int yOffset = y + dy;
+
+                        // Mirror at edges
+                        if (xOffset < 0) {
+                            xOffset = -xOffset;
+                        } else if (xOffset >= Height) {
+                            xOffset = 2 * Height - xOffset - 1;
+                        }
+
+                        if (yOffset < 0) {
+                            yOffset = -yOffset;
+                        } else if (yOffset >= Width) {
+                            yOffset = 2 * Width - yOffset - 1;
+                        }
+
+                        byteOffset = xOffset * Channels + yOffset * Stride;
+                        red = Input[byteOffset];
+                        green = Input[byteOffset + 1];
+                        blue = Input[byteOffset + 2];
+
+                        // find intensity and apply
+                        currentIntensity = (((red + green + blue) / 3.0) * intensity) / 255;
+
+                        intensityCount[currentIntensity]++;
+
+                        sumR[currentIntensity] = sumR[currentIntensity] + red;
+                        sumG[currentIntensity] = sumG[currentIntensity] + green;
+                        sumB[currentIntensity] = sumB[currentIntensity] + blue;
+                    }
+                }
+
+                byteOffset = x * Channels + y * Stride;
+
+                // the highest intensity neighboring pixels are averaged out to get our exact color
+                maxIndex = 0;
+                currentMax = intensityCount[maxIndex];
+                for (int i = 0; i < intensity; i++) {
+                    if (intensityCount[i] > currentMax) {
+                        currentMax = intensityCount[i];
+                        maxIndex = i;
+                    }
+                }
+
+                if (currentMax > 0) {
+                    Output[byteOffset] = ClampToByte(sumR[maxIndex] / currentMax);
+                    Output[byteOffset + 1] = ClampToByte(sumG[maxIndex] / currentMax);
+                    Output[byteOffset + 2] = ClampToByte(sumB[maxIndex] / currentMax);
+                }
+            }
+        }
+    }
+
     OC_STATUS ocularCreateImage(int Width, int Height, int Depth, int Channels, OcImage** image) {
 
         if (Width < 1 || Height < 1)
