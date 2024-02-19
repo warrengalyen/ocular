@@ -138,7 +138,8 @@ int main(int argc, char** argv) {
             // ocularPixelateFilter(input, output, width, height, stride, 10);
             // ocularGrayscaleFilter(input, output, width, height, stride);
 
-            ocularOilPaintFilter(input, output, width, height, stride, 10, 20);
+            //            ocularOilPaintFilter(input, output, width, height, stride, 10, 20);
+            ocularEqualizeFilter(input, output, width, height, stride);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

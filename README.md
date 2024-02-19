@@ -52,6 +52,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Auto Gamma Correction
 - Auto Level
 - Auto White Balance
+- Equalize (like Photoshop)
 
 ### Image Processing Filters
 

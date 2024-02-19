@@ -3011,6 +3011,46 @@ extern "C" {
         }
     }
 
+    void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        int Channels = Stride / Width;
+
+        if (Channels != 3)
+            return;
+
+        int histogram[256] = { 0 };
+        unsigned char Lut[256] = { 0 };
+
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                histogram[pInput[0]]++;
+                histogram[pInput[1]]++;
+                histogram[pInput[2]]++;
+                pInput += Channels;
+            }
+        }
+
+        long total = Width * Height * Channels;
+        int curr = 0;
+        for (int i = 0; i < 256; i++) {
+            // cumulative frequency
+            curr += histogram[i];
+            Lut[i] = round((((float)curr) * 255) / total);
+        }
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            unsigned char* pOutput = Output + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                pOutput[0] = ClampToByte(Lut[pInput[0]]);
+                pOutput[1] = ClampToByte(Lut[pInput[1]]);
+                pOutput[2] = ClampToByte(Lut[pInput[2]]);
+                pInput += Channels;
+                pOutput += Channels;
+            }
+        }
+    }
+
     void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
                                CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold) {
 
