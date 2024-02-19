@@ -83,6 +83,8 @@ static inline unsigned short byteswap_ushort(unsigned short i) {
     return j;
 }
 
+static inline float mixColor(float a, float b, float t) { return a * (1.0f - t) + b * t; }
+
 static inline unsigned char step(unsigned char edge, unsigned char x) { return (unsigned char)(x < edge ? 0 : 255); }
 
 static inline int Abs(int x) { return (x ^ (x >> 31)) - (x >> 31); }

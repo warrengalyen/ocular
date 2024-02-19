@@ -17,6 +17,7 @@ endif ()
 
 set(MODULE_FILES
         ../lib/color.c
+        ../lib/threshold.c
         ../lib/ocular.c
         ocular.h
         dlib_export.h

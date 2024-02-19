@@ -53,6 +53,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Auto Level
 - Auto White Balance
 - Equalize (like Photoshop)
+- Auto Threshold (with 13 methods)
 
 ### Image Processing Filters
 
