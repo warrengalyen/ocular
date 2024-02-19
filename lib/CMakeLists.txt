@@ -17,6 +17,7 @@ endif ()
 
 set(MODULE_FILES
         color.c
+        threshold.c
         ocular.c
         ocular.h
 )

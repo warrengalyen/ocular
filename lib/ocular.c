@@ -2,8 +2,8 @@
  * @file: ocular.c
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 2-12-2024
- * Last update: added average blur filter
+ * Last Updated: 2-19-2024
+ * Last update: added auto threshold filter
  *
  * @brief Contains exported primary filter function implementations
  */
@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include "threshold.h"
 #include "color.h"
 #include "ocular.h"
 
@@ -3045,6 +3046,58 @@ extern "C" {
                 pOutput[0] = ClampToByte(Lut[pInput[0]]);
                 pOutput[1] = ClampToByte(Lut[pInput[1]]);
                 pOutput[2] = ClampToByte(Lut[pInput[2]]);
+                pInput += Channels;
+                pOutput += Channels;
+            }
+        }
+    }
+
+    void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method) {
+
+        int Channels = Stride / Width;
+
+        if (Channels != 1)
+            return;
+
+        int histogram[256] = { 0 };
+        int* histogramSmooth[256] = { 0 }; // for future use
+        int threshold;
+
+        // get histogram
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                histogram[pInput[0]]++;
+                pInput++;
+            }
+        }
+
+        switch (method) {
+
+        case OC_AUTO_THRESHOLD_MEAN: threshold = GetMeanThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_HUANG: threshold = GetHuangFuzzyThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_MIN: threshold = GetMinimumThreshold(histogram, histogramSmooth); break;
+        case OC_AUTO_THRESHOLD_INTERMODES: threshold = GetIntermodesThreshold(histogram, histogramSmooth); break;
+        case OC_AUTO_THRESHOLD_PTILE: threshold = GetPTileThreshold(histogram, 50); break;
+        case OC_AUTO_THRESHOLD_ITERBEST: threshold = GetIterativeBestThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_OTSU: threshold = GetOSTUThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_1DMAX: threshold = Get1DMaxEntropyThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_MOMENT: threshold = GetMomentPreservingThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_KITTLER: threshold = GetKittlerMinError(histogram); break;
+        case OC_AUTO_THRESHOLD_ISODATA: threshold = GetIsoDataThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_SHANBHAG: threshold = GetShanbhagThreshold(histogram); break;
+        case OC_AUTO_THRESHOLD_YEN: threshold = GetYenThreshold(histogram); break;
+        default: break;
+        }
+
+        if (threshold <= 0)
+            return; // selected method failed to calculate a threshold for whatever reason
+
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            unsigned char* pOutput = Output + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                pOutput[0] = pInput[0] > threshold ? 255 : 0;
                 pInput += Channels;
                 pOutput += Channels;
             }

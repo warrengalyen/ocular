@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 2-12-2024
- * Last update: added average blur filter and edge mode definition
+ * Last Updated: 2-19-2024
+ * Last update: added auto threshold filter
  *
  * @brief Contains exported primary filter function definitions
  */
@@ -106,13 +106,32 @@ extern "C" {
         OC_DIRECTION_VERTICAL
     } OcDirection;
 
-    /** @num OcEdgeMode
+    /** @enum OcEdgeMode
      * @brief Edge handling mode to apply when certain filters radius' are out of image bounds.
      */
     typedef enum {
         OC_EDGE_WRAP = 0,  // repeat edge pixel
         OC_EDGE_MIRROR = 1 // mirror edge pixel
     } OcEdgeMode;
+
+    /** @enum OcAutoThresholdMethod
+     * @brief Thresholding method to use for auto threshold filter
+     */
+    typedef enum {
+        OC_AUTO_THRESHOLD_MEAN,
+        OC_AUTO_THRESHOLD_HUANG,
+        OC_AUTO_THRESHOLD_MIN,
+        OC_AUTO_THRESHOLD_INTERMODES,
+        OC_AUTO_THRESHOLD_PTILE,
+        OC_AUTO_THRESHOLD_ITERBEST,
+        OC_AUTO_THRESHOLD_OTSU,
+        OC_AUTO_THRESHOLD_1DMAX,
+        OC_AUTO_THRESHOLD_MOMENT,
+        OC_AUTO_THRESHOLD_KITTLER,
+        OC_AUTO_THRESHOLD_ISODATA,
+        OC_AUTO_THRESHOLD_SHANBHAG,
+        OC_AUTO_THRESHOLD_YEN,
+    } OcAutoThresholdMethod;
 
 
     //--------------------------Color adjustments--------------------------
@@ -576,6 +595,19 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      */
     void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    /**
+     * @brief Performs global thresholding using various methods.
+     * Pixels above calculated threshold value are turned to white, else black.
+     *  @ingroup group_color_filters
+     *  @param Input The image input data buffer. Requires single channel image.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param method The method to use for automatically calculating threshold value. Good default OC_AUTO_THRESHOLD_OTSU.
+     */
+    void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method);
 
     //--------------------------Color adjustments--------------------------
 
