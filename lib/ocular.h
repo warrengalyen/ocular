@@ -565,6 +565,18 @@ extern "C" {
      */
     void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
+    /**
+     * @brief Performs a tone equalization by redistributing the brightness values of the pixels in an image so
+     * that they more evenly represent the entire range of brightness levels.
+     *  @ingroup group_color_filters
+     *  @param Input The image input data buffer. Currently only RGB supported.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     */
+    void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Blur filters--------------------------

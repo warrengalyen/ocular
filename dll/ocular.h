@@ -133,6 +133,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
+    DLIB_EXPORT void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Image processing--------------------------
