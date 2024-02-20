@@ -2,8 +2,8 @@
  * @file: ocular.c
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 2-19-2024
- * Last update: added auto threshold filter
+ * Last Updated: 2-20-2024
+ * Last update: added backlight repair filter
  *
  * @brief Contains exported primary filter function implementations
  */
@@ -3102,6 +3102,109 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+    }
+
+    void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        // Implementation of the paper "Adaptive and integrated neighborhood-dependent approach for nonlinear enhancement of color images",
+        // but it has been deeply improved.
+        // Reference: https://ui.adsabs.harvard.edu/abs/2005JEI....14d3006T/abstract
+
+        int channels = Stride / Width;
+
+        if (channels != 3)
+            return;
+        if ((Input == NULL) || (Output == NULL))
+            return;
+        if ((Width <= 0) || (Height <= 0))
+            return;
+
+        int RadiusS = 5, RadiusM = 20, RadiusL = 120;
+        const int LowLevel = 50, HighLevel = 150;
+        const float MinCDF = 0.1f;
+        const float Inv255 = 1.0f / 255.0f;
+
+        int* Histogram = (int*)calloc(256, sizeof(int));
+        unsigned char* Table = (unsigned char*)malloc(256 * 256 * sizeof(unsigned char));
+        unsigned char* BlurS = (unsigned char*)malloc(Width * Height * sizeof(unsigned char)); //     Blur of each scale
+        unsigned char* BlurM = (unsigned char*)malloc(Width * Height * sizeof(unsigned char)); //     Blur of each scale
+        unsigned char* BlurL = (unsigned char*)malloc(Width * Height * sizeof(unsigned char)); //     Blur of each scale
+        unsigned char* Luminance = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+        float Z = 0, P = 0;
+        ocularGrayscaleFilter(Input, Luminance, Width, Height, Stride); // get the brightness component
+
+        for (int y = 0; y < Height * Width; y++)
+            Histogram[Luminance[y]]++; // histogram of statistical brightness components
+
+        float Sum = 0, Mean = 0, StdDev = 0;
+        for (int y = 0; y < 256; y++)
+            Sum += Histogram[y] * y; // sum of pixels
+        Mean = Sum / (Width * Height);
+        for (int y = 0; y < 256; y++)
+            StdDev += Histogram[y] * (y - Mean) * (y - Mean);
+        StdDev = sqrtf(StdDev / (Width * Height)); // mean square error of the global image
+
+        int CDF = 0, L = 0;
+        for (L = 0; L < 256; L++) {
+            CDF += Histogram[L];
+            if (CDF >= Width * Height * MinCDF)
+                break; // where L is the intensity level corresponding to a cumulative distribution function CDF of 0.1.
+        }
+        // Calculate Z value
+        if (L <= LowLevel)
+            Z = 0;
+        else if (L <= HighLevel)
+            Z = (L - LowLevel) * 1.0f / (HighLevel - LowLevel);
+        else
+            Z = 1;
+
+        // Calculate P value. Also, P is determined by the global standard deviation of the input intensity image I x, y as
+        if (StdDev <= 3)
+            P = 3;
+        else if (StdDev <= 10)
+            P = (27 - 2 * StdDev) / 7.0f;
+        else
+            P = 1;
+
+        // Y represents the convolution value of I
+        for (int y = 0; y < 256; y++) {
+            // X represents I (original brightness value)
+            for (int x = 0; x < 256; x++) {
+                float I = x * Inv255;
+                I = (powf(I, 0.75f * Z + 0.25f) + (1 - I) * 0.4f * (1 - Z) + powf(I, 2 - Z)) * 0.5f;
+                Table[y * 256 + x] = ClampToByte(255 * powf(I, powf((y + 1.0f) / (x + 1.0f), P)) + 0.5f);
+            }
+        }
+
+        ocularGaussianBlurFilter(Luminance, BlurS, Width, Height, Width, RadiusS);
+        ocularGaussianBlurFilter(Luminance, BlurM, Width, Height, Width, RadiusM);
+        ocularGaussianBlurFilter(Luminance, BlurL, Width, Height, Width, RadiusL);
+
+        for (int y = 0; y < Height; y++) {
+            unsigned char* scanIn = Input + y * Stride;
+            unsigned char* scanOut = Output + y * Stride;
+            int index = y * Width;
+            for (int x = 0; x < Width; x++, index++, scanIn += 3, scanOut += 3) {
+                int lum = Luminance[index];
+                if (lum == 0) {
+                    scanOut[0] = 0;
+                    scanOut[1] = 0;
+                    scanOut[2] = 0;
+                } else {
+                    int value = ((Table[lum + (BlurS[index] << 8)] + Table[lum + (BlurM[index] << 8)] + Table[lum + (BlurL[index] << 8)]) / 3);
+                    scanOut[0] = ClampToByte(scanIn[0] * value / lum);
+                    scanOut[1] = ClampToByte(scanIn[1] * value / lum);
+                    scanOut[2] = ClampToByte(scanIn[2] * value / lum);
+                }
+            }
+        }
+        free(Histogram);
+        free(Table);
+        free(BlurS);
+        free(BlurM);
+        free(BlurL);
+        free(Luminance);
     }
 
     void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,

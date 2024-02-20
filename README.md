@@ -54,6 +54,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Auto White Balance
 - Equalize (like Photoshop)
 - Auto Threshold (with 13 methods)
+- Backlight Repair (corrects extremely low or non-uniform lighting)
 
 ### Image Processing Filters
 
