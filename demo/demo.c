@@ -138,9 +138,12 @@ int main(int argc, char** argv) {
             // ocularPixelateFilter(input, output, width, height, stride, 10);
             // ocularGrayscaleFilter(input, output, width, height, stride);
 
-            ocularGrayscaleFilter(input, input, width, height, stride);
-            ocularAutoThreshold(input, output, width, height, width, OC_AUTO_THRESHOLD_OTSU);
-            channels = 1;
+            //            ocularGrayscaleFilter(input, input, width, height, stride);
+            //            ocularAutoThreshold(input, output, width, height, width, OC_AUTO_THRESHOLD_OTSU);
+            //            channels = 1;
+
+
+            ocularBacklightRepair(input, output, width, height, stride);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

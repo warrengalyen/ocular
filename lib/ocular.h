@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 2-19-2024
- * Last update: added auto threshold filter
+ * Last Updated: 2-20-2024
+ * Last update: added backlight repair filter
  *
  * @brief Contains exported primary filter function definitions
  */
@@ -217,7 +217,7 @@ extern "C" {
     void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
                             unsigned char* AverageB, unsigned char* AverageA);
 
-    /** @brief Reduces an image to its average luminosity.
+    /** @brief Calculates the average luminosity for an image.
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.
      *  @param Width The width of the image in pixels.
@@ -608,6 +608,18 @@ extern "C" {
      *  @param method The method to use for automatically calculating threshold value. Good default OC_AUTO_THRESHOLD_OTSU.
      */
     void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method);
+
+    /**
+     * @brief Attempts to correct images that were captured under extremely low or non-uniform lighting conditions.
+     * This is an excellent non-linear color enhancement that combines global curve adjustment and local information.
+     *  @ingroup group_color_filters
+     *  @param Input The image input data buffer. Requires RGB image.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     */
+    void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     //--------------------------Color adjustments--------------------------
 
