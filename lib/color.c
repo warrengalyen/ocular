@@ -86,10 +86,10 @@ void hsl2rgb(float h, float s, float l, float* r, float* g, float* b) {
 }
 
 
-void rgb2hsv(const unsigned char* R, const unsigned char* G, const unsigned char* B, unsigned char* H, unsigned char* S, unsigned char* V) {
-    int r = *R;
-    int g = *G;
-    int b = *B;
+void rgb2hsv(const unsigned char R, const unsigned char G, const unsigned char B, unsigned char* H, unsigned char* S, unsigned char* V) {
+    int r = R;
+    int g = G;
+    int b = B;
 
     int h, s;
     int nMax = max3(r, g, b);
@@ -127,17 +127,17 @@ void rgb2hsv(const unsigned char* R, const unsigned char* G, const unsigned char
     *V = (unsigned char)nMax;     // 0-255
 }
 
-void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char* V, unsigned char* R, unsigned char* G, unsigned char* B) {
+void hsv2rgb(const unsigned char H, const unsigned char S, const unsigned char V, unsigned char* R, unsigned char* G, unsigned char* B) {
 
     if (S > 0) {
         int r, g, b;
-        r = *V;
-        g = *V;
-        b = *V;
-        float h = *H * (6.0f / 180.0f); // 0-180° -> 0.0-1.0
+        r = V;
+        g = V;
+        b = V;
+        float h = H * (6.0f / 180.0f); // 0-180° -> 0.0-1.0
         int i = (int)h;
         int f = (int)(256 * (h - (float)i));
-        int VS = (*V * *S) >> 8;
+        int VS = (V * S) >> 8;
         int VSF = VS * f;
         switch (i) {
         case 0:
@@ -145,7 +145,7 @@ void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char
             g = b + (VSF >> 8);
             break;
         case 1:
-            r = *V - (VSF >> 8);
+            r = V - (VSF >> 8);
             b -= VS;
             break;
         case 2:
@@ -170,9 +170,9 @@ void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char
         *G = (unsigned char)(g);
         *B = (unsigned char)(b);
     } else {
-        *R = *V;
-        *G = *V;
-        *B = *V;
+        *R = V;
+        *G = V;
+        *B = V;
     }
 }
 

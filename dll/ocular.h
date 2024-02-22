@@ -16,6 +16,7 @@ extern "C" {
 #include <stdlib.h>
 
 #include "../lib/color.h"
+#include "../lib/blend.h"
 #include "dlib_export.h"
 
     // Parameters for Levels filter
@@ -138,6 +139,9 @@ extern "C" {
     DLIB_EXPORT void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     DLIB_EXPORT void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    DLIB_EXPORT void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth,
+                                      int mHeight, int mStride, OcBlendMode blendMode, int alpha);
 
     //--------------------------Color adjustments--------------------------
 

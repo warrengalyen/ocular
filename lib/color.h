@@ -37,12 +37,12 @@ void hsl2rgb(float h, float s, float l, float* r, float* g, float* b);
 /** @brief RGB to HSV color space conversion.
  * @ingroup group_color_convert
  */
-void rgb2hsv(const unsigned char* R, const unsigned char* G, const unsigned char* B, unsigned char* H, unsigned char* S, unsigned char* V);
+void rgb2hsv(unsigned char R, unsigned char G, unsigned char B, unsigned char* H, unsigned char* S, unsigned char* V);
 
 /** @brief HSV to RGB color space conversion.
  * @ingroup group_color_convert
  */
-void hsv2rgb(const unsigned char* H, const unsigned char* S, const unsigned char* V, unsigned char* R, unsigned char* G, unsigned char* B);
+void hsv2rgb(unsigned char H, unsigned char S, unsigned char V, unsigned char* R, unsigned char* G, unsigned char* B);
 
 /** @brief RGB to YCbCr color space conversion.
  * @ingroup group_color_convert
