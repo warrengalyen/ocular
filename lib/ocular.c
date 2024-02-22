@@ -1501,10 +1501,10 @@ extern "C" {
                 unsigned char G = pInput[1];
                 unsigned char B = pInput[2];
                 // Convert color to HSV, extract hue
-                rgb2hsv(&R, &G, &B, &H, &S, &V);
+                rgb2hsv(R, G, B, &H, &S, &V);
                 // final color
                 _S = (unsigned char)(S + satMap[H]);
-                hsv2rgb(&hueMap[H], &_S, &V, &pOutput[0], &pOutput[1], &pOutput[2]);
+                hsv2rgb(hueMap[H], _S, V, &pOutput[0], &pOutput[1], &pOutput[2]);
 
                 pInput += Channels;
                 pOutput += Channels;
@@ -3205,6 +3205,31 @@ extern "C" {
         free(BlurM);
         free(BlurL);
         free(Luminance);
+    }
+
+    void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
+                          int mStride, OcBlendMode blendMode, int alpha) {
+
+        for (int y = 0; y < bHeight; y++) {
+            unsigned char* pBaseInput = baseInput + (y * bStride);
+            unsigned char* pMixInput = mixInput + (y * bStride);
+            for (int x = 0; x < bWidth; x++) {
+                int baseR = pBaseInput[0];
+                int baseG = pBaseInput[1];
+                int baseB = pBaseInput[2];
+                int mixR = pMixInput[0];
+                int mixG = pMixInput[1];
+                int mixB = pMixInput[2];
+                int resR = 0;
+                int resG = 0;
+                int resB = 0;
+                layerBlend(baseR, baseG, baseB, mixR, mixG, mixB, &resR, &resG, &resB, blendMode, alpha);
+                pBaseInput[0] = resR;
+                pBaseInput[1] = resG;
+                pBaseInput[2] = resB;
+                pBaseInput += 3;
+            }
+        }
     }
 
     void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,

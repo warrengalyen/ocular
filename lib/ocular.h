@@ -22,6 +22,7 @@ extern "C" {
 
 #include "fastmath.h"
 #include "util.h"
+#include "blend.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -620,6 +621,22 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      */
     void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    /**
+     * @brief Applies a Photoshop-style layer blending mode to an image using a secondary image to mix with.
+     * @param baseInput The base image input data buffer. Effect is applied to this data.
+     * @param bWidth The width of the base image in pixels.
+     * @param bHeight The height of the base image in pixels.
+     * @param bStride The number of bytes in one row of pixels for base image.
+     * @param mixInput The mix image input data buffer.
+     * @param mWidth The width of the base image in pixels.
+     * @param mHeight The height of the base image in pixels.
+     * @param mStride The number of bytes in one row of pixels for mix image.
+     * @param blendMode The blending mode to apply. All 27 Photoshop blend are available.
+     * @param alpha The transparency to apply. Range [0 - 100].
+     */
+    void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
+                          int mStride, OcBlendMode blendMode, int alpha);
 
     //--------------------------Color adjustments--------------------------
 
