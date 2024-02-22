@@ -624,6 +624,7 @@ extern "C" {
 
     /**
      * @brief Applies a Photoshop-style layer blending mode to an image using a secondary image to mix with.
+     * @ingroup group_color_filters
      * @param baseInput The base image input data buffer. Effect is applied to this data.
      * @param bWidth The width of the base image in pixels.
      * @param bHeight The height of the base image in pixels.
