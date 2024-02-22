@@ -55,6 +55,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Equalize (like Photoshop)
 - Auto Threshold (with 13 methods)
 - Backlight Repair (corrects extremely low or non-uniform lighting)
+- Image Blending (supports 27 Photoshop modes)
 
 ### Image Processing Filters
 
