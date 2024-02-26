@@ -3878,44 +3878,52 @@ extern "C" {
         }
     }
 
-    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle) {
+    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle) {
 
-        // enforce odd width kernel which ensures a center pixel is always available
-        int kernelSize = ceil(2 * radius + 1);
+        if (Input == NULL || Output == NULL)
+            return;
 
-        // allocate memory for the kernel
-        float* kernel = (float*)malloc(kernelSize * kernelSize * sizeof(float));
+        int channels = Stride / Width;
 
-        // calculate motion blur weights based on the angle
-        float angleRadians = angle * M_PI / 180.0; // convert angle to radians
-        float dx = fastCos(angleRadians);
-        float dy = fastSin(angleRadians);
+        Angle = Angle % 360;
+        Distance = clamp(Distance, 1, 200);
 
-        // set weights for the kernel
-        for (int i = 0; i < kernelSize; i++) {
-            for (int j = 0; j < kernelSize; j++) {
-                float distance = fabs(round((float)(i - radius) * dx + (float)(j - radius) * dy));
-                kernel[i * kernelSize + j] = (int)((radius - distance) / radius); // linear interpolate
-                if (kernel[i * kernelSize + j] < 0) {
-                    kernel[i * kernelSize + j] = 0;
+        float radian = ((float)Angle + 180.0) / 180.0 * M_PI;
+        int dx = (int)((float)Distance * fastCos(radian) + 0.5);
+        int dy = (int)((float)Distance * fastSin(radian) + 0.5);
+
+        int sign;
+        if (dx < 0)
+            sign = -1;
+        if (dx > 0)
+            sign = 1;
+
+        int sum, count;
+        int xOffset, yOffset;
+        unsigned char* pOffset;
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            unsigned char* pOutput = Output + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < channels; c++) {
+                    sum = 0, count = 0;
+                    for (int p = 0; p < abs(dx); p++) {
+                        yOffset = y + p * sign;
+                        xOffset = x + p * sign;
+                        if (yOffset >= 0 && yOffset < Height && xOffset >= 0 && xOffset < Width) {
+                            pOffset = Input + (yOffset * Stride);
+                            count++;
+                            sum += pOffset[xOffset * channels + c];
+                        }
+                    }
+                    if (count == 0) {
+                        pOutput[x * channels + c] = pInput[x * channels + c];
+                    } else {
+                        pOutput[x * channels + c] = ClampToByte(sum / (float)count + 0.5);
+                    }
                 }
             }
         }
-
-        // Calculate the sum of all the weights in the kernel
-        float sumWeights = 0.0;
-        for (int i = 0; i < kernelSize * kernelSize; i++) {
-            sumWeights += kernel[i];
-        }
-
-        // Normalize the kernel so the sum of all weights is equal to 1
-        //        for (int i = 0; i < kernelSize * kernelSize; i++) {
-        //            kernel[i] /= sumWeights;
-        //        }
-
-        ocularConvolution2DFilter(Input, Output, Width, Height, Channels, kernel, kernelSize, sumWeights, 0);
-
-        free(kernel);
     }
 
     void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
