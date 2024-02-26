@@ -673,11 +673,11 @@ extern "C" {
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
-     *  @param Channels The numbers of color channels in the image.
-     *  @param radius A radius in pixels to use for the blur, >= 0.0
-     *  @param angle The angle of the blur. Range [0 - 360]
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param distance The distance in pixels to use for the blur, >= 0.0
+     *  @param angle The angle of the blur. Range [-180 - 180]
      */
-    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int radius, int angle);
+    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle);
 
     /**
      * @brief Performs a rotational blur on an image centered on a point.
