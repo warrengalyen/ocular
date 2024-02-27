@@ -717,6 +717,20 @@ extern "C" {
      */
     void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
+    /**
+     * @brief Performs an optimized blurring of an image, maintaining edges while reducing and smoothing out noise.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param Radius The size of the sampling area. Range [1 - 127].
+     * @param Threshold Controls how much the tonal values of neighboring pixels must diverge from the center pixel before being
+     * included in the blur. Range [2 - 255].
+     */
+    void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold);
+
     //--------------------------Blur filters--------------------------
 
 

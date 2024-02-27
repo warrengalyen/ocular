@@ -170,6 +170,9 @@ extern "C" {
 
     DLIB_EXPORT void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
+    DLIB_EXPORT void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold);
+
+
     DLIB_EXPORT void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
                                          float sharpness, int intensity);
 
