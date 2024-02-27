@@ -67,6 +67,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Motion Blur
 - Median Blur
 - Radial Blur
+- Surface Blur
 - Unsharp Mask
 - Sharpen
 - Lanczos resampling (resize)

@@ -2520,6 +2520,112 @@ extern "C" {
         free(temp);
     }
 
+    void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold) {
+
+        int Channel = Stride / Width;
+        if ((Channel != 1) && (Channel != 3))
+            return;
+        if (Radius < 1 || Radius >= 127 || Threshold < 2 || Threshold > 255)
+            return;
+
+        if (Channel == 1) {
+            unsigned short* ColHist = (unsigned short*)_aligned_malloc(256 * (Width + Radius + Radius) * sizeof(unsigned short), 32);
+            unsigned short* Hist = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
+
+            unsigned short* Intensity = (unsigned short*)_aligned_malloc(511 * sizeof(unsigned short), 32); // Avoid abs when a negative value is used
+            unsigned short* Level = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
+
+            int* RowOffset = (int*)malloc((Width + Radius + Radius) * sizeof(int));
+            int* ColOffset = (int*)malloc((Height + Radius + Radius) * sizeof(int));
+
+            GetOffsetPos(RowOffset, Width, Radius, Radius);
+            GetOffsetPos(ColOffset, Height, Radius, Radius);
+
+            memset(ColHist, 0, 256 * (Width + Radius + Radius) * sizeof(unsigned short)); //	Make sure to clear
+
+            for (int Y = 0; Y < 256; Y++)
+                Level[Y] = Y;
+
+            for (int Y = -255; Y <= 255; Y++) {
+                int Factor = (255 - abs(Y) * 100 / Threshold);
+                if (Factor < 0)
+                    Factor = 0;
+                Intensity[Y + 255] = Factor / 2;
+            }
+
+            for (int Y = 0; Y < Height; Y++) {
+                if (Y == 0) //	The first row of column histograms
+                {
+                    for (int K = -Radius; K <= Radius; K++) {
+                        unsigned char* LinePS = Input + ColOffset[K + Radius] * Stride;
+                        for (int X = -Radius; X < Width + Radius; X++) {
+                            ColHist[(X + Radius) * 256 + LinePS[RowOffset[X + Radius]]]++;
+                        }
+                    }
+                } else //	Column histogram for other rows, update it
+                {
+                    unsigned char* LinePS = Input + ColOffset[Y - 1] * Stride;
+                    for (int X = -Radius; X < Width + Radius; X++) // Delete the histogram data for the row that is out of range
+                    {
+                        ColHist[(X + Radius) * 256 + LinePS[RowOffset[X + Radius]]]--;
+                    }
+
+                    LinePS = Input + ColOffset[Y + Radius + Radius] * Stride;
+                    for (int X = -Radius; X < Width + Radius; X++) // Increase the histogram data for the line in the incoming range
+                    {
+                        ColHist[(X + Radius) * 256 + LinePS[RowOffset[X + Radius]]]++;
+                    }
+                }
+
+                memset(Hist, 0, 256 * sizeof(unsigned short)); //	Each row of histogram data is cleared first
+
+                unsigned char* LinePS = Input + Y * Stride;
+                unsigned char* LinePD = Output + Y * Stride;
+
+                for (int X = 0; X < Width; X++) {
+                    if (X == 0) {
+                        for (int K = -Radius; K <= Radius; K++) //	First pixel, needs to be recalculated
+                            HistogramAddShort(ColHist + (K + Radius) * 256, Hist);
+                    } else {
+                        HistogramSubAddShort(ColHist + (RowOffset[X - 1] + Radius) * 256, ColHist + (RowOffset[X + Radius + Radius] + Radius) * 256,
+                                             Hist); //	The other pixels in the line can be deleted and added in turn.
+                    }
+
+                    LinePD[X] = HistogramCalc(Hist, LinePS[X], Intensity);
+                }
+            }
+            _aligned_free(ColHist);
+            _aligned_free(Hist);
+            _aligned_free(Intensity);
+            _aligned_free(Level);
+            free(RowOffset);
+            free(ColOffset);
+        } else {
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+            {
+                SurfaceBlur(SrcB, DstB, Width, Height, Width, Radius, Threshold);
+                SurfaceBlur(SrcG, DstG, Width, Height, Width, Radius, Threshold);
+                SurfaceBlur(SrcR, DstR, Width, Height, Width, Radius, Threshold);
+            }
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcB);
+            free(SrcG);
+            free(SrcR);
+            free(DstB);
+            free(DstG);
+            free(DstR);
+        }
+    }
+
     void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
 
         int Channels = Stride / Width;
