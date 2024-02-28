@@ -2611,9 +2611,9 @@ extern "C" {
 
             SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
             {
-                SurfaceBlur(SrcB, DstB, Width, Height, Width, Radius, Threshold);
-                SurfaceBlur(SrcG, DstG, Width, Height, Width, Radius, Threshold);
-                SurfaceBlur(SrcR, DstR, Width, Height, Width, Radius, Threshold);
+                ocularSurfaceBlurFilter(SrcB, DstB, Width, Height, Width, Radius, Threshold);
+                ocularSurfaceBlurFilter(SrcG, DstG, Width, Height, Width, Radius, Threshold);
+                ocularSurfaceBlurFilter(SrcR, DstR, Width, Height, Width, Radius, Threshold);
             }
             CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
 
