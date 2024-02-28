@@ -7,6 +7,8 @@
 
  @ref page_examples_autowb "Auto White Balance"
 
+ @ref page_examples_backlight "Backlight Repair"
+
  @ref page_examples_bilateral "Bilateral"
 
  @ref page_examples_canny_edge "Canny Edge Detection"
@@ -19,5 +21,6 @@
 
  @ref page_examples_motion_blur "Motion Blur"
 
+ @ref page_examples_surface_blur "Surface Blur"
 
 */

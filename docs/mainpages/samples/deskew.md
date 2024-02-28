@@ -32,3 +32,16 @@ int main(void) {
     stbi_image_free(inputImage);  
 }
 ```
+
+@htmlonly
+<div class="sample-images">
+    <div class="img-with-text">
+        <img src="deskew.jpg"/>
+        <p>Before</p>
+    </div>
+    <div class="img-with-text">
+        <img src="deskew_out.jpg" alt=""/>
+        <p>After</p>
+    </div>
+</div>
+@endhtmlonly

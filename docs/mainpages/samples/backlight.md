@@ -1,4 +1,4 @@
-## Motion Blur Example {#page_examples_motion_blur}
+## Backlight Repair Example {#page_examples_backlight}
 
 ```c
 #include <stdio.h>  
@@ -18,7 +18,7 @@ int main(void) {
   
             int stride = width * channels;  
   
-            ocularMotionBlurFilter(inputImage, outputImage, width, height, stride, 60, 70);  
+            ocularBacklightRepair(inputImage, outputImage, width, height, stride);  
   
             stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
         }  
@@ -32,12 +32,14 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="motion_blur.jpg"/>
+        <img src="backlight.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="motion_blur_out.jpg" alt=""/>
+        <img src="backlight_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>
 @endhtmlonly
+
+
