@@ -1,14 +1,14 @@
-## Auto White Balance Example {#page_examples_autowb}
+## Surface Blur Example {#page_examples_surface_blur}
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image/stb_image_write.h"
-
+#include <stdio.h>  
+#include <stdlib.h>  
+  
+#define STB_IMAGE_IMPLEMENTATION  
+#include "stb_image/stb_image.h"  
+#define STB_IMAGE_WRITE_IMPLEMENTATION  
+#include "stb_image/stb_image_write.h"  
+  
 int main(void) {  
     int width, height, channels;  
     unsigned char* inputImage = stbi_load("test.jpg", &width, &height, &channels, 0);  
@@ -18,15 +18,7 @@ int main(void) {
   
             int stride = width * channels;  
   
-            int colorCoeff = 15;  
-            float cutLimit = 0.01;  
-            float contrast = 0.9;  
-            bool colorCast = ocularAutoWhiteBalance(inputImage, outputImage, width, height, channels, stride, colorCoeff, cutLimit, contrast);  
-            if (colorCast) {  
-                printf("[✓] ColorCast\n");  
-            } else {  
-                printf("[x] ColorCast\n");  
-            }  
+            ocularSurfaceBlurFilter(inputImage, outputImage, width, height, stride, 20, 20);  
   
             stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
         }  
@@ -40,11 +32,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="awb.jpg"/>
+        <img src="surface_blur.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="awb_out.jpg" alt=""/>
+        <img src="surface_blur_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

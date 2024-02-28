@@ -88,3 +88,33 @@ div.eventHandler span {
     padding: 5px;
     font-family: monospace, fixed;
 }
+
+.img-with-text {
+    text-align: center;
+    width: 50%;
+    margin: 10px;
+}
+
+.img-with-text img {
+    display: block;
+    height: auto;
+    max-width: 100%;
+}
+
+.img-with-text p {
+    font-weight: bold;
+}
+
+.sample-images {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    margin: auto 0;
+}
+
+@media screen and (max-width: 768px) {
+    .sample-images {
+        flex-direction: column;
+        padding: 0;
+    }
+}
