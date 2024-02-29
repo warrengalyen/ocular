@@ -16,8 +16,11 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
 endif ()
 
 set(MODULE_FILES
+        auxiliary.c
+        core.c
         color.c
         threshold.c
+        util.c
         ocular.c
         ocular.h
 )

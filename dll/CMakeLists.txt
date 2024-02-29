@@ -16,8 +16,11 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
 endif ()
 
 set(MODULE_FILES
+        ../lib/auxiliary.c
+        ../lib/core.c
         ../lib/color.c
         ../lib/threshold.c
+        ../lib/util.c
         ../lib/ocular.c
         ocular.h
         dlib_export.h
