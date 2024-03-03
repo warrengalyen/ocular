@@ -66,6 +66,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Box Blur
 - Motion Blur
 - Median Blur
+- Erode/Dilate
 - Radial Blur
 - Surface Blur
 - Unsharp Mask

@@ -4181,7 +4181,7 @@ extern "C" {
                         for (; Balance < 0 && CutPoint != Level - 1; CutPoint++) {
                             Balance += 2 * histogram[CutPoint + 1];
                         }
-                    } else if (Balance > 0) //    If the balance value is greater than 0, move the middle value to the left
+                    } else if (Balance > 0) // If the balance value is greater than 0, move the middle value to the left
                     {
                         for (; Balance > 0 && CutPoint != 0; CutPoint--) {
                             Balance -= 2 * histogram[CutPoint];
@@ -4189,7 +4189,7 @@ extern "C" {
                     }
                     LinePD[X] = CutPoint;
                     if ((X - Radius) >= 0) {
-                        for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) //    the column of data to be moved out
+                        for (int J = max(Y - Radius, 0); J <= min(Y + Radius, Height - 1); J++) // the column of data to be moved out
                         {
                             int Value = Input[J * Stride + X - Radius];
                             histogram[Value]--;
@@ -4227,6 +4227,118 @@ extern "C" {
             ocularMedianBlur(SrcR, DstR, Width, Height, Width, Radius);
             ocularMedianBlur(SrcG, DstG, Width, Height, Width, Radius);
             ocularMedianBlur(SrcB, DstB, Width, Height, Width, Radius);
+
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcR);
+            free(SrcG);
+            free(SrcB);
+            free(DstR);
+            free(DstG);
+            free(DstB);
+        }
+    }
+
+    void ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        int Channels = Stride / Width;
+
+        if (Channels == 1) {
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    int minPixelValue = 255;
+                    for (int ky = -Radius; ky <= Radius; ky++) {
+                        for (int kx = -Radius; kx <= Radius; kx++) {
+                            int offsetX = x + kx;
+                            int offsetY = y + ky;
+                            if (offsetX >= 0 && offsetX < Width && offsetY >= 0 && offsetY < Height) {
+                                int pixelValue = Input[offsetY * Width + offsetX];
+                                if (pixelValue < minPixelValue) {
+                                    minPixelValue = pixelValue;
+                                }
+                            }
+                        }
+                    }
+                    for (int c = 0; c < Channels; c++) {
+                        Output[y * Width + x + c] = minPixelValue;
+                    }
+                }
+            }
+        }
+        if (Channels == 3) {
+
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+
+            ocularErodeFilter(SrcR, DstR, Width, Height, Width, Radius);
+            ocularErodeFilter(SrcG, DstG, Width, Height, Width, Radius);
+            ocularErodeFilter(SrcB, DstB, Width, Height, Width, Radius);
+
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcR);
+            free(SrcG);
+            free(SrcB);
+            free(DstR);
+            free(DstG);
+            free(DstB);
+        }
+    }
+
+    void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        int Channels = Stride / Width;
+
+        if (Channels == 1) {
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    int maxPixelValue = 0;
+                    for (int ky = -Radius; ky <= Radius; ky++) {
+                        for (int kx = -Radius; kx <= Radius; kx++) {
+                            int offsetX = x + kx;
+                            int offsetY = y + ky;
+                            if (offsetX >= 0 && offsetX < Width && offsetY >= 0 && offsetY < Height) {
+                                int pixelValue = Input[offsetY * Width + offsetX];
+                                if (pixelValue > maxPixelValue) {
+                                    maxPixelValue = pixelValue;
+                                }
+                            }
+                        }
+                    }
+                    for (int c = 0; c < Channels; c++) {
+                        Output[y * Width + x + c] = maxPixelValue;
+                    }
+                }
+            }
+        }
+        if (Channels == 3) {
+
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+
+            ocularDilateFilter(SrcR, DstR, Width, Height, Width, Radius);
+            ocularDilateFilter(SrcG, DstG, Width, Height, Width, Radius);
+            ocularDilateFilter(SrcB, DstB, Width, Height, Width, Radius);
 
             CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
 
