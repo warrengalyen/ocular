@@ -659,6 +659,30 @@ extern "C" {
     void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
+     * @brief Performs a minimum rank filter that replaces the central pixel with the darkest one in the radius.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param Radius A radius in pixels to use for calculation, >= 0
+     */
+    void ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
+    /**
+     * @brief Performs a maximum rank filter that replaces the central pixel with the lightest one in the radius.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param Radius A radius in pixels to use for calculation, >= 0
+     */
+    void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
+    /**
      * @brief Performs an optimized blurring of an image, maintaining edges while reducing and smoothing out noise.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.

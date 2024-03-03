@@ -4239,6 +4239,118 @@ extern "C" {
         }
     }
 
+    void ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        int Channels = Stride / Width;
+
+        if (Channels == 1) {
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    int minPixelValue = 255;
+                    for (int ky = -Radius; ky <= Radius; ky++) {
+                        for (int kx = -Radius; kx <= Radius; kx++) {
+                            int offsetX = x + kx;
+                            int offsetY = y + ky;
+                            if (offsetX >= 0 && offsetX < Width && offsetY >= 0 && offsetY < Height) {
+                                int pixelValue = Input[offsetY * Width + offsetX];
+                                if (pixelValue < minPixelValue) {
+                                    minPixelValue = pixelValue;
+                                }
+                            }
+                        }
+                    }
+                    for (int c = 0; c < Channels; c++) {
+                        Output[y * Width + x + c] = minPixelValue;
+                    }
+                }
+            }
+        }
+        if (Channels == 3) {
+
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+
+            ocularErodeFilter(SrcR, DstR, Width, Height, Width, Radius);
+            ocularErodeFilter(SrcG, DstG, Width, Height, Width, Radius);
+            ocularErodeFilter(SrcB, DstB, Width, Height, Width, Radius);
+
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcR);
+            free(SrcG);
+            free(SrcB);
+            free(DstR);
+            free(DstG);
+            free(DstB);
+        }
+    }
+
+    void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL)
+            return;
+
+        int Channels = Stride / Width;
+
+        if (Channels == 1) {
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    int maxPixelValue = 0;
+                    for (int ky = -Radius; ky <= Radius; ky++) {
+                        for (int kx = -Radius; kx <= Radius; kx++) {
+                            int offsetX = x + kx;
+                            int offsetY = y + ky;
+                            if (offsetX >= 0 && offsetX < Width && offsetY >= 0 && offsetY < Height) {
+                                int pixelValue = Input[offsetY * Width + offsetX];
+                                if (pixelValue > maxPixelValue) {
+                                    maxPixelValue = pixelValue;
+                                }
+                            }
+                        }
+                    }
+                    for (int c = 0; c < Channels; c++) {
+                        Output[y * Width + x + c] = maxPixelValue;
+                    }
+                }
+            }
+        }
+        if (Channels == 3) {
+
+            unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+            unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
+
+            SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+
+            ocularDilateFilter(SrcR, DstR, Width, Height, Width, Radius);
+            ocularDilateFilter(SrcG, DstG, Width, Height, Width, Radius);
+            ocularDilateFilter(SrcB, DstB, Width, Height, Width, Radius);
+
+            CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
+
+            free(SrcR);
+            free(SrcG);
+            free(SrcB);
+            free(DstR);
+            free(DstG);
+            free(DstB);
+        }
+    }
+
     void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
 
         int channels = Stride / Width;
