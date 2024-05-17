@@ -2713,6 +2713,22 @@ extern "C" {
         }
     }
 
+    void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter) {
+
+        int Channels = Stride / Width;
+        if (Input == NULL | Output == NULL || Width == 0 || Height == 0 || Channels == 1)
+            return;
+        // 1. Detect skin color, adapt radius according to skin color ratio
+        unsigned int skinSum = skinDetection(Input, Width, Height, Channels);
+        float skin_rate = skinSum / (float)(Width * Height) * 100;
+        int radius = min(Width, Height) / skin_rate + 1;
+        // 2. Perform edge detection to obtain an edge map and apply skin denoise using smoothing level
+        skinDenoise(Input, Output, Width, Height, Channels, radius, smoothingLevel);
+        // 3. Re-detect skin color based on the denoise results, filtering non-skin areas
+        if (applySkinFilter)
+            skinFilter(Input, Output, Width, Height, Channels);
+    }
+
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
                                 int newWidth, int newHeight, int dstStride) {
 

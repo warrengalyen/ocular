@@ -78,6 +78,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Deskewing
 - Pixelate (Mosaic)
 - Oil Paint
+- Skin Smoothing
 
 ### General
 
@@ -123,6 +124,6 @@ I'm working on a full-featured image viewer app in C# for showing-casing library
 
 I have a very long list of features to implement, some advanced features include:
 
-retinex, automatic red-eye removal, skin smoothing and possibly deblurring.
+retinex, automatic red-eye removal and possibly deblurring.
 
 

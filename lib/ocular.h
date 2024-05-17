@@ -803,6 +803,19 @@ extern "C" {
      */
     void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity);
 
+    /**
+     * @brief Applies denoising smoothing filter on detected skin region while retaining other details.
+     *  @ingroup group_ip_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param smoothingLevel The amount of skin denoising to apply.
+     * @param applySkinFilter Apply filtering to non-skin areas after initial denoising.
+     */
+    void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter);
+
     //--------------------------Enhancement filters--------------------------
 
     //--------------------------Misc--------------------------

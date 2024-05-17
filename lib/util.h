@@ -168,4 +168,10 @@ void HistogramCalc2(unsigned short* Hist, int Intensity, unsigned char* Pixel, i
 int GetMirrorPos(int Length, int Pos);
 void GetOffsetPos(int* Pos, int Length, int Left, int Right);
 
+// skin smoothing filter
+void getOffsetPos(int* offsetPos, int length, int left, int right, int step);
+unsigned int skinDetection(unsigned char* rgb_src, int width, int height, int channels);
+void skinFilter(unsigned char* input, unsigned char* output, int width, int height, int channels);
+void skinDenoise(unsigned char* input, unsigned char* output, int width, int height, int channels, int radius, int smoothingLevel);
+
 #endif // OCULAR_UTIL_H

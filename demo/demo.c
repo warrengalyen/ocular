@@ -138,11 +138,22 @@ int main(int argc, char** argv) {
             // ocularPixelateFilter(input, output, width, height, stride, 10);
             // ocularGrayscaleFilter(input, output, width, height, stride);
 
-            ocularSurfaceBlurFilter(input, output, width, height, stride, 20, 20);
+            //            int status;
+            //            status = ocularSelectiveBlurFilter(input, output, width, height, stride, 10, 16, OC_EDGE_WRAP);
+            //            if (status != OC_STATUS_OK) {
+            //                printf("Image processing failed!\n");
+            //                goto FreeMemory;
+            //            }
+
+            int smoothingLevel = 8;
+            int applySkinFilter = false;
+            ocularSkinSmoothingFilter(input, output, width, height, stride, smoothingLevel, applySkinFilter);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
             saveImage(out_file, width, height, channels, output);
+
+        FreeMemory:
             free(output);
         }
         free(input);
