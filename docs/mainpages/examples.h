@@ -23,4 +23,6 @@
 
  @ref page_examples_surface_blur "Surface Blur"
 
+ @ref page_examples_skin_smooth "Skin Smoothing"
+
 */
