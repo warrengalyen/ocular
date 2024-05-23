@@ -17,6 +17,7 @@ extern "C" {
 
 #include "../lib/color.h"
 #include "../lib/blend.h"
+#include "../lib/interpolate.h"
 #include "dlib_export.h"
 
     // Parameters for Levels filter
@@ -182,8 +183,8 @@ extern "C" {
     DLIB_EXPORT void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
                                          float sharpness, int intensity);
 
-    DLIB_EXPORT void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
-                                            unsigned char* Output, int newWidth, int newHeight, int dstStride);
+    DLIB_EXPORT void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
+                                            int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
 
     DLIB_EXPORT void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX,
                                      int cropY, int dstWidth, int dstHeight, int dstStride);

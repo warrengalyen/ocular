@@ -23,11 +23,22 @@ extern "C" {
 #include "fastmath.h"
 #include "blend.h"
 #include "core.h"
+#include "interpolate.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+    /** @enum OcInterpolationMode
+     * @brief Interpolation method to use for resampling filter
+     */
+    typedef enum {
+        OC_INTERPOLATE_NEAREST,
+        OC_INTERPOLATE_BILINEAR,
+        OC_INTERPOLATE_BICUBIC,
+        OC_INTERPOLATE_LANZCOS,
+    } OcInterpolationMode;
 
     /**
      * @struct Parameters for Levels filter
@@ -835,8 +846,7 @@ extern "C" {
     void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
                                    unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
-    /** @brief Resizes an image using Lanczos interpolation. This lets you up or down-sample an image using Lanczos
-     *  resampling, which results in noticeably better quality than the standard linear or trilinear interpolation.
+    /** @brief Resizes an image using Nearest-neighbor, Bilinear, Bicubic or Lanczos interpolation.
      *  @ingroup group_ip_general
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
@@ -848,7 +858,7 @@ extern "C" {
      *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
      */
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
-                                int newWidth, int newHeight, int dstStride);
+                                int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
 
     /**
      * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color.

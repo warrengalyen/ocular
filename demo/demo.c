@@ -9,6 +9,7 @@
 #endif
 
 #include "../lib/ocular.h"
+#include "../lib/interpolate.h"
 
 #if __has_include("test_filters.h")
     #include "test_filters.h"
@@ -128,30 +129,20 @@ int main(int argc, char** argv) {
     int stride = width * channels;
 
     if (input) {
-        unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
+        // unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
+        unsigned char* output = (unsigned char*)calloc(width * 1.5 * channels * height * 1.5 * sizeof(unsigned char), 1);
         if (output) {
             double startTime = now();
             printf("Processing image...\n");
 
-            // ocularAverageBlur(input, output, width, height, stride, 5, OC_EDGE_MIRROR);
-            // ocularHSLFilter(input, output, width, height, stride, 0.18f, 1.22f, 0);
-            // ocularPixelateFilter(input, output, width, height, stride, 10);
-            // ocularGrayscaleFilter(input, output, width, height, stride);
-
-            //            int status;
-            //            status = ocularSelectiveBlurFilter(input, output, width, height, stride, 10, 16, OC_EDGE_WRAP);
-            //            if (status != OC_STATUS_OK) {
-            //                printf("Image processing failed!\n");
-            //                goto FreeMemory;
-            //            }
-
-            int smoothingLevel = 8;
-            int applySkinFilter = false;
-            ocularSkinSmoothingFilter(input, output, width, height, stride, smoothingLevel, applySkinFilter);
+            int newWidth = width * 1.5;
+            int newHeight = height * 1.5;
+            int dstStride = newWidth * channels;
+            ocularResamplingFilter(input, width, height, stride, output, newWidth, newHeight, dstStride, OC_INTERPOLATE_BICUBIC);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
-            saveImage(out_file, width, height, channels, output);
+            saveImage(out_file, newWidth, newHeight, channels, output);
 
         FreeMemory:
             free(output);

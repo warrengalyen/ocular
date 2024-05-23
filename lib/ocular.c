@@ -2730,42 +2730,26 @@ extern "C" {
     }
 
     void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
-                                int newWidth, int newHeight, int dstStride) {
+                                int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode) {
 
         int Channels = Stride / Width;
-        int dstOffset = dstStride - Channels * newWidth;
-        float xFactor = (float)Width / newWidth;
-        float yFactor = (float)Height / newHeight;
+        if ((Input == NULL) || (Output == NULL))
+            return;
+        if ((Width <= 0) || (Height <= 0) || (newWidth <= 0) || (newHeight <= 0))
+            return;
+        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
+            return;
 
-        int ymax = Height - 1;
-        int xmax = Width - 1;
+        if ((Width == newWidth) && (Height == newHeight)) {
+            memcpy(Output, Input, Width * Height * Channels * sizeof(unsigned char));
+            return;
+        }
 
-        for (int y = 0; y < newHeight; y++) {
-            float oy = (float)y * yFactor;
-            int oy1 = (int)oy;
-            int oy2 = (oy1 == ymax) ? oy1 : oy1 + 1;
-            float dy1 = oy - (float)oy1;
-            float dy2 = 1.0f - dy1;
-
-            unsigned char* tp1 = Input + oy1 * Stride;
-            unsigned char* tp2 = Input + oy2 * Stride;
-
-            for (int x = 0; x < newWidth; x++) {
-                float ox = (float)x * xFactor;
-                int ox1 = (int)ox;
-                int ox2 = (ox1 == xmax) ? ox1 : ox1 + 1;
-                float dx1 = ox - (float)ox1;
-                float dx2 = 1.0f - dx1;
-                unsigned char* p1 = tp1 + ox1 * Channels;
-                unsigned char* p2 = tp1 + ox2 * Channels;
-                unsigned char* p3 = tp2 + ox1 * Channels;
-                unsigned char* p4 = tp2 + ox2 * Channels;
-
-                for (int i = 0; i < Channels; i++, Output++, p1++, p2++, p3++, p4++) {
-                    *Output = (unsigned char)(dy2 * (dx2 * (*p1) + dx1 * (*p2)) + dy1 * (dx2 * (*p3) + dx1 * (*p4)));
-                }
-            }
-            Output += dstOffset;
+        switch (InterpolationMode) {
+        case OC_INTERPOLATE_NEAREST: nearestNeighborResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+        case OC_INTERPOLATE_BILINEAR: bilinearResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+        case OC_INTERPOLATE_BICUBIC: bicubicResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+        case OC_INTERPOLATE_LANZCOS: lanzcosResize(Input, Width, Height, Stride, Output, newWidth, newHeight, dstStride); break;
         }
     }
 
