@@ -71,7 +71,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Surface Blur
 - Unsharp Mask
 - Sharpen
-- Lanczos resampling (resize)
+- Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
 - Canny Edge Detect
 - Gradient Edge Detect
 - Sobel Edge Detect
