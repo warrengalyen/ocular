@@ -59,26 +59,43 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 ### Image Processing Filters
 
-- 2D Convolution
+#### Blur
+
 - Bilateral (selectively blurs preserving edges and other details)
 - Average (Mean) Blur
 - Gaussian Blur
 - Box Blur
 - Motion Blur
 - Median Blur
-- Erode/Dilate
 - Radial Blur
 - Surface Blur
+- Skin Smoothing
+
+#### Morphology
+
+- Erode/Dilate
+
+#### Sharpening
+
 - Unsharp Mask
 - Sharpen
-- Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
-- Canny Edge Detect
-- Gradient Edge Detect
-- Sobel Edge Detect
-- Deskewing
+
+#### Edge Detection
+
+- Canny Edge
+- Gradient Edge
+- Sobel Edge
+
+#### Artistic
+
 - Pixelate (Mosaic)
 - Oil Paint
-- Skin Smoothing
+
+#### Misc
+
+- 2D Convolution
+- Deskewing
+- Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
 
 ### General
 
