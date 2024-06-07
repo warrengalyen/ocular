@@ -59,7 +59,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 ### Image Processing Filters
 
-#### Blur
+#### Blur/De-noise
 
 - Bilateral (selectively blurs preserving edges and other details)
 - Average (Mean) Blur

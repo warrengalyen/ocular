@@ -2,8 +2,8 @@
  * @file: ocular.c
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 2-20-2024
- * Last update: added backlight repair filter
+ * Last Updated: 5-23-2024
+ * Last update: updated resampling filter
  *
  * @brief Contains exported primary filter function implementations
  */

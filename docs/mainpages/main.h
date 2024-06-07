@@ -13,7 +13,7 @@
 
 @author Warren Galyen
 
-<b>Date</b><br>
+<b>Last Updated</b><br>
 @showdate "%B %d, %Y" <br>
 
 @section manual_reference Reference
