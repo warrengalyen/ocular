@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 5-23-2024
- * Last update: updated resampling filter
+ * Last Updated: 10-15-2024
+ * Last update: added despeckle filter
  *
  * @brief Contains exported primary filter function definitions
  */

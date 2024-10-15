@@ -54,4 +54,4 @@ void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char*
  */
 void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned char* R, unsigned char* G, unsigned char* B);
 
-#endif // OCULAR_COLOR_H
+#endif  /* OCULAR_COLOR_H */

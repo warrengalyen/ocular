@@ -19,6 +19,8 @@
 
  @ref page_examples_deskew "Deskew"
 
+ @ref page_examples_despeckle "Despeckle"
+
  @ref page_examples_flip "Flip/Mirror"
 
  @ref page_examples_motion_blur "Motion Blur"

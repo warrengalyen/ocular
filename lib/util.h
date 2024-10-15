@@ -2,8 +2,8 @@
  * @file: util.h
  * @author Warren Galyen
  * Created: 2-12-2024
- * Last Updated: 2-12-2024
- * Last update: moved clamping functions from ocular.h
+ * Last Updated: 10-15-2024
+ * Last update: moved deskew utility functions to ocr.h
  *
  * @brief Ocular utility functions that support primary image processing features.
  */

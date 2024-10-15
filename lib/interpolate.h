@@ -148,4 +148,4 @@ static void lanzcosResize(unsigned char* Input, unsigned int Width, unsigned int
     }
 }
 
-#endif // OCULAR_INTERPOLATE_H
+#endif  /* OCULAR_INTERPOLATE_H */

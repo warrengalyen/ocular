@@ -105,4 +105,4 @@ OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output);
  */
 OC_STATUS ocularTransposeImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
-#endif // OCULAR_CORE_H
+#endif  /* OCULAR_CORE_H */

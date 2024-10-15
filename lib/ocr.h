@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-15-2024
  * Last Updated: 10-15-2024
- * Last update: moved deskewing support functions from util.h
+ * Last update: added getMedian function for Despeckle filter
  *
  * @brief Ocular utility functions that support OCR pre-processing image processing features.
  */
