@@ -50,20 +50,6 @@ struct LineParameter {
     float distance;
 };
 
-typedef struct {
-    int x;
-    int y;
-    int Width;
-    int Height;
-} OcRect;
-
-typedef struct {
-    float Theta;
-    int Radius;
-    int Intensity;
-    float RelativeIntensity;
-} HoughLine;
-
 #ifndef clamp
     #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))
 #endif
@@ -119,12 +105,6 @@ int getDiffFactor(const unsigned char* color1, const unsigned char* color2, cons
 
 void CalGaussianCoeff(float sigma, float* a0, float* a1, float* a2, float* a3, float* b1, float* b2, float* cprev, float* cnext);
 
-// Determine if an image is primarily text based.
-bool isTextImage(unsigned char* Input, int Width, int Height);
-
-float calcSkewAngle(unsigned char* Input, int Width, int Height, OcRect* CheckRectPtr, int maxSkewToDetect, int stepsPerDegree,
-                    int localPeakRadius, int nLineCount);
-
 // Convert RGB data to single channel
 void SplitRGB(unsigned char* Src, unsigned char* Blue, unsigned char* Green, unsigned char* Red, int Width, int Height, int Stride);
 
@@ -174,4 +154,4 @@ unsigned int skinDetection(unsigned char* rgb_src, int width, int height, int ch
 void skinFilter(unsigned char* input, unsigned char* output, int width, int height, int channels);
 void skinDenoise(unsigned char* input, unsigned char* output, int width, int height, int channels, int radius, int smoothingLevel);
 
-#endif // OCULAR_UTIL_H
+#endif /* OCULAR_UTIL_H */

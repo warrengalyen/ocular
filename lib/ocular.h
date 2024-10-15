@@ -244,7 +244,7 @@ extern "C" {
     void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation);
 
     /** @brief Adjusts the gamma of an image
-     *  @ingroup group_color_filters
+     *  @ingroup group_color_filters group_inplace
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -255,7 +255,7 @@ extern "C" {
     void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
     /** @brief Adjusts the contrast of the image
-     *  @ingroup group_color_filters
+     *  @ingroup group_color_filters group_inplace
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -277,7 +277,7 @@ extern "C" {
     void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);
 
     /** @brief Adjusts the brightness of the image
-     *  @ingroup group_color_filters
+     *  @ingroup group_color_filters group_inplace
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -758,7 +758,7 @@ extern "C" {
 
     /**
      * @brief Performs edge detection on an image based on the Sobel operator.
-     *  @ingroup group_ip_filters
+     *  @ingroup group_ip_filters group_inplace
      *  @param Input The image input data buffer (expects grayscale image).
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
@@ -998,4 +998,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* OCULAR_H */
+#endif  /* OCULAR_H */

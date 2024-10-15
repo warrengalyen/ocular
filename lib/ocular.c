@@ -18,6 +18,7 @@ extern "C" {
 
 #include "threshold.h"
 #include "color.h"
+#include "ocr.h"
 #include "ocular.h"
 #include "util.h"
 

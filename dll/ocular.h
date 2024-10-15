@@ -17,6 +17,7 @@ extern "C" {
 
 #include "../lib/color.h"
 #include "../lib/blend.h"
+#include "../lib/ocr.h"
 #include "../lib/interpolate.h"
 #include "dlib_export.h"
 
@@ -221,4 +222,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* OCULAR_H */
+#endif  /* OCULAR_H */
