@@ -91,10 +91,15 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Pixelate (Mosaic)
 - Oil Paint
 
+#### OCR Pre-preprocessing
+
+- Despeckle (Salt & Pepper Noise Removal)
+- Deskewing
+
+
 #### Misc
 
 - 2D Convolution
-- Deskewing
 - Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
 
 ### General
@@ -141,6 +146,6 @@ I'm working on a full-featured image viewer app in C# for showing-casing library
 
 I have a very long list of features to implement, some advanced features include:
 
-retinex, automatic red-eye removal and possibly deblurring.
+retinex, seam carving, automatic red-eye removal and possibly deblurring.
 
 
