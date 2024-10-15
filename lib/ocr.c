@@ -1,6 +1,21 @@
 #include "ocr.h"
 #include "util.h"
 
+
+unsigned char getMedian(unsigned char* window, int size) {
+    // Simple bubble sort
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            if (window[j] > window[j + 1]) {
+                unsigned char temp = window[j];
+                window[j] = window[j + 1];
+                window[j + 1] = temp;
+            }
+        }
+    }
+    return window[size / 2];
+}
+
 bool isTextImage(unsigned char* Input, int Width, int Height) {
     const int blacklimit = 20;
     const int greylimit = 140;

@@ -2929,6 +2929,67 @@ extern "C" {
         }
     }
 
+    void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold) {
+
+        int windowSize, x, y, c;
+        unsigned char* window = (unsigned char*)malloc(maxWindowSize * maxWindowSize * sizeof(unsigned char));
+
+        int Channels = Stride / Width;
+
+        for (y = 0; y < Height; y++) {
+            for (x = 0; x < Width; x++) {
+                for (c = 0; c < Channels; c++) {
+                    windowSize = 3; // Start with a 3x3 window
+                    while (windowSize <= maxWindowSize) {
+                        int windowOffset = windowSize / 2;
+                        int windowIndex = 0;
+
+                        // Fill the window
+                        for (int wy = -windowOffset; wy <= windowOffset; wy++) {
+                            for (int wx = -windowOffset; wx <= windowOffset; wx++) {
+                                int sx = x + wx;
+                                int sy = y + wy;
+                                if (sx >= 0 && sx < Width && sy >= 0 && sy < Height) {
+                                    window[windowIndex++] = Input[(sy * Width + sx) * Channels + c];
+                                } else {
+                                    window[windowIndex++] = Input[(y * Width + x) * Channels + c];
+                                }
+                            }
+                        }
+
+                        unsigned char median = getMedian(window, windowSize * windowSize);
+                        unsigned char minValue = window[0];
+                        unsigned char maxValue = window[0];
+                        for (int i = 1; i < windowSize * windowSize; i++) {
+                            if (window[i] < minValue)
+                                minValue = window[i];
+                            if (window[i] > maxValue)
+                                maxValue = window[i];
+                        }
+
+                        unsigned char currentPixel = Input[(y * Width + x) * Channels + c];
+                        int difference = abs((int)currentPixel - (int)median);
+
+                        if (difference <= Threshold) {
+                            Output[(y * Width + x) * Channels + c] = currentPixel;
+                            break;
+                        } else if (median > minValue && median < maxValue) {
+                            Output[(y * Width + x) * Channels + c] = median;
+                            break;
+                        } else {
+                            windowSize += 2;
+                            if (windowSize > maxWindowSize) {
+                                Output[(y * Width + x) * Channels + c] = median;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        free(window);
+    }
+
     bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
         if (Input == NULL || Output == NULL || Input == Output)

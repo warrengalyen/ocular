@@ -21,6 +21,7 @@ set(MODULE_FILES
         color.c
         threshold.c
         util.c
+        ocr.c
         ocular.c
         ocular.h
 )

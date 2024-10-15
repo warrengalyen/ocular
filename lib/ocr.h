@@ -27,6 +27,9 @@ typedef struct {
     int Height;
 } OcRect;
 
+// Determine the median of the current pixel window (used for Despeckle)
+unsigned char getMedian(unsigned char* window, int size);
+
 // Determine if an image is primarily text based.
 bool isTextImage(unsigned char* Input, int Width, int Height);
 

@@ -907,8 +907,22 @@ extern "C" {
     void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
 
     /**
+     * @brief Performs an adaptive median filter on an image, useful for removing salt and pepper noise from scanned documents.
+     * @ingroup group_ip_general group_ip_ocr
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param maxWindowSize The filter window size (should be a scalar between 1 and 7). Window size (ws) is defined as
+                            W = 2*ws + 1 so that W = 3 is a 3x3 filter window.
+     * @param Threshold The adaptive theshold (0 = normal median behavior). Higher values reduce the "aggresiveness" of the filter.
+     */
+    void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold);
+
+    /**
      * @brief Performs deskewing of an image, useful for scanned documents.
-     * @ingroup group_ip_general
+     * @ingroup group_ip_general group_ip_ocr
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
