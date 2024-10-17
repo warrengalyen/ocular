@@ -31,4 +31,6 @@
 
  @ref page_examples_skin_smooth "Skin Smoothing"
 
+ @ref page_examples_zoom_blur "Zoom Blur"
+
 */

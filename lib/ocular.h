@@ -633,12 +633,12 @@ extern "C" {
 
     /**
      * @brief Performs a rotational blur on an image centered on a point.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
+     * @ingroup group_ip_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
      * @param centerX The x coordinate to center the blur at. Centered: image width / 2.
      * @param centerY The y coordinate to center the blur at. Centered: image height / 2.
      * @param intensity The strength of the blur to apply. Range [0 - 100]
@@ -646,14 +646,30 @@ extern "C" {
     void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity);
 
     /**
+     * @brief Apply zoom blur to the image. This effect mimics the zoom of a camera when capturing the image.
+     * @ingroup group_ip_filters
+     * @param Input The input image data.
+     * @param Output The output image data.
+     * @param Width The width of the image.
+     * @param Height The height of the image.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param sampleRadius The radius of the zoom blur. Range [10 - 200]
+     * @param blurAmount The amount of blur to apply. Range [0.1 - 1.0]
+     * @param centerX The x coordinate of the center of the blur.
+     * @param centerY The y coordinate of the center of the blur.
+     */
+    void ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
+                        int centerX, int centerY);
+
+    /**
      * @brief Applies a average (mean) blur to an image that that replaces each pixel with the average of of all values in the local area.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param Radius A radius in pixels to use for the blur, >= 0.0
+     * @ingroup group_ip_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param Radius A radius in pixels to use for the blur, >= 0.0
      * @param edgeMode Edge handling mode when out of bounds. OC_EDGE_WRAP or OC_EDGE_MIRROR.
      */
     void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);

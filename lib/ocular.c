@@ -4265,6 +4265,62 @@ extern "C" {
         }
     }
 
+    void ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
+                        int centerX, int centerY) {
+
+        if (Input == NULL || Output == NULL) {
+            return;
+        }
+
+        int Channels = Stride / Width;
+        float maxDistance = sqrtf(Width * Width + Height * Height) / 2.0f;
+
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                float dx = (float)(x - centerX);
+                float dy = (float)(y - centerY);
+                float distance = sqrtf(dx * dx + dy * dy);
+                float strength = distance / maxDistance;
+
+                float r = 0, g = 0, b = 0;
+                float totalWeight = 0;
+
+                int actualSamples = (int)(strength * sampleRadius);
+                for (int sample = 0; sample <= actualSamples; sample++) {
+                    float t = (float)sample / (float)actualSamples;
+                    float weight = 1.0f - t;
+                    float sampleX = x + dx * t * blurAmount;
+                    float sampleY = y + dy * t * blurAmount;
+
+                    // Clamp sample coordinates to image boundaries
+                    int ix = (int)fmaxf(0, fminf(sampleX, Width - 1));
+                    int iy = (int)fmaxf(0, fminf(sampleY, Height - 1));
+                    int index = (iy * Stride) + (ix * Channels);
+
+                    r += Input[index] * weight;
+                    g += Input[index + 1] * weight;
+                    b += Input[index + 2] * weight;
+                    totalWeight += weight;
+                }
+
+                int outIndex = (y * Stride) + (x * Channels);
+                if (totalWeight > 0) {
+                    Output[outIndex] = (unsigned char)(r / totalWeight);
+                    Output[outIndex + 1] = (unsigned char)(g / totalWeight);
+                    Output[outIndex + 2] = (unsigned char)(b / totalWeight);
+                } else {
+                    Output[outIndex] = Input[outIndex];
+                    Output[outIndex + 1] = Input[outIndex + 1];
+                    Output[outIndex + 2] = Input[outIndex + 2];
+                }
+
+                if (Channels == 4) {
+                    Output[outIndex + 3] = Input[outIndex + 3];
+                }
+            }
+        }
+    }
+
     void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
 
         Radius = Radius != 0 ? Radius : 3;

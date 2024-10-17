@@ -66,6 +66,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Gaussian Blur
 - Box Blur
 - Motion Blur
+- Zoom Blur
 - Median Blur
 - Radial Blur
 - Surface Blur
