@@ -11,6 +11,8 @@
 
  @ref page_examples_backlight "Backlight Repair"
 
+ @ref page_examples_beeps "BEEPS (Bi-exponential Edge-preserving Smoothing)"
+
  @ref page_examples_bilateral "Bilateral"
 
  @ref page_examples_canny_edge "Canny Edge Detection"
