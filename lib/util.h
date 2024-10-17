@@ -154,4 +154,7 @@ unsigned int skinDetection(unsigned char* rgb_src, int width, int height, int ch
 void skinFilter(unsigned char* input, unsigned char* output, int width, int height, int channels);
 void skinDenoise(unsigned char* input, unsigned char* output, int width, int height, int channels, int radius, int smoothingLevel);
 
+// BEEP filter
+float calcWeight(const float weight, const float spatialContraDecay, const float diff);
+
 #endif /* OCULAR_UTIL_H */

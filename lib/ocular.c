@@ -2613,6 +2613,121 @@ extern "C" {
         }
     }
 
+    void ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                           float PhotometricStandardDeviation, float SpatialDecay, int RangeFilter) {
+
+        // Implementation of the paper "Bi-Exponential Edge-Preserving Smoother".
+        // Reference: https://bigwww.epfl.ch/publications/thevenaz1202.html
+
+        int Channels = Stride / Width;
+        float spatialContraDecay = 1.0f - SpatialDecay;
+        float lambda = expf(-SpatialDecay);
+        float rho = lambda + SpatialDecay / (2.0f - (spatialContraDecay + SpatialDecay));
+        float inv_rho = 1.0f / rho;
+        float weight = 0;
+        int bpp = Channels;
+        if (bpp == 4)
+            bpp--;
+
+        // Gaussian
+        if (RangeFilter == 0) {
+            weight = -0.5f / (PhotometricStandardDeviation * PhotometricStandardDeviation);
+        }
+        // Hyperbolic Secant
+        if (RangeFilter == 1) {
+            weight = -M_PI / (2.0f * PhotometricStandardDeviation);
+        }
+        // Euler
+        if (RangeFilter == 2) {
+            float euler = 2.718281828459f;
+            weight = -powf((0.75f * euler) / (PhotometricStandardDeviation * 
+                                              PhotometricStandardDeviation), 1.0f / 3.0f);
+            weight *= (PhotometricStandardDeviation < 0.0f) 
+                        ? (-1.0f) 
+                        : ((0.0 == PhotometricStandardDeviation) ? (0.0) : (1.0f));
+        }
+        float *cache = (float *)calloc(Stride * Height, sizeof(float));
+        if (cache == NULL)
+            return;
+
+        for (int y = 0; y < Height; y++) {
+            float* lineCache = cache + y * Stride;
+            const unsigned char* lineIn = Input + y * Stride;
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < Channels; ++c) {
+                    lineCache[c] = lineIn[c];
+                }
+                lineCache += Channels;
+                lineIn += Channels;
+            }
+        }
+
+        float *horizontal = cache;
+        for (int y = 0; y < Height; y++) {
+            // forwards
+            float* fNextHori = horizontal + y * Stride + Channels;
+            float* fPrevHori = horizontal + y * Stride;
+            for (int x = 1; x < Width; x++) {
+                for (int c = 0; c < bpp; ++c) {
+                    fNextHori[c] -= calcWeight(weight, spatialContraDecay, fNextHori[c] - rho * fPrevHori[c]);
+                    fNextHori[c] *= inv_rho;
+                }
+                fNextHori += Channels;
+                fPrevHori += Channels;
+            }
+            // backwards
+            float* bPrevHori = horizontal + y * Stride + (Width - 2) * Channels;
+            float* bNextHori = horizontal + y * Stride + (Width - 1) * Channels;
+            for (int x = 1; x < Width; x++) {
+                for (int c = 0; c < bpp; ++c) {
+                    bPrevHori[c] -= calcWeight(weight, spatialContraDecay, bPrevHori[c] - rho * bNextHori[c]);
+                    bPrevHori[c] *= inv_rho;
+                }
+                bPrevHori -= Channels;
+                bNextHori -= Channels;
+            }
+        }
+
+        float *vertical = cache;
+        for (int x = 0; x < Width; x++) {
+            // forwards
+            float* fNextVert = vertical + x * Channels + Stride;
+            float* fPrevVert = vertical + x * Channels;
+            for (int y = 1; y < Height; y++) {
+                for (int c = 0; c < bpp; ++c) {
+                    fNextVert[c] -= calcWeight(weight, spatialContraDecay, fNextVert[c] - rho * fPrevVert[c]);
+                    fNextVert[c] *= inv_rho;
+                }
+                fNextVert += Stride;
+                fPrevVert += Stride;
+            }
+            // backwards
+            float* bPrevVert = vertical + x * Channels + (Height - 2) * Stride;
+            float* bNextVert = vertical + x * Channels + (Height - 1) * Stride;
+            for (int y = 1; y < Height; y++) {
+                for (int c = 0; c < bpp; ++c) {
+                    bPrevVert[c] -= calcWeight(weight, spatialContraDecay, bPrevVert[c] - rho * bNextVert[c]);
+                    bPrevVert[c] *= inv_rho;
+                }
+                bPrevVert -= Stride;
+                bNextVert -= Stride;
+            }
+        }
+
+        for (int y = 0; y < Height; y++) {
+            const float* lineCache = cache + y * Stride;
+            unsigned char* lineOut = Output + y * Stride;
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < Channels; ++c) {
+                    lineOut[c] = (unsigned char)clamp(lineCache[c], 0, 255);
+                }
+                lineOut += Channels;
+                lineCache += Channels;
+            }
+        }
+        free(cache);
+    }
+
     void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
 
         int Channels = Stride / Width;

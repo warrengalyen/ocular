@@ -707,307 +707,328 @@ extern "C" {
      */
     void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold);
 
-    //--------------------------Blur filters--------------------------
-
-
-    //-------------------------- Edge detection -----------------`---------
-
-    // -------------------------- Used for Canny Edge Detection ---------------------------
-
-    typedef enum {
-        CannyGaus3x3,
-        CannyGaus5x5
-    } CannyNoiseFilter;
-
-    // Gaussian blur
-    // 3 x 3 kernel
-    static const int8_t Gaus3x3[] = { 1, 2, 1, 2, 4, 2, // * 1/16
-                                      1, 2, 1 };
-    static const int Gaus3x3Div = 16;
-
-    static const int8_t Gaus5x5[] = { 2, 4, 5,  4, 2, 4, 9, 12, 9, 4, 5, 12, 15, 12, 5, // * 1/159
-                                      4, 9, 12, 9, 4, 2, 4, 5,  4, 2 };
-    static const int Gaus5x5Div = 159;
-
-    // -------------------------- Used for Canny Edge Detection ---------------------------
-
     /**
-     * @brief Performs Canny edge detection on an image.
-     * This is one of the most reliable methods of edge detection.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer (expects grayscale image).
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     * @param kernel_size The type of gaussian noise to apply. Gaus3x3 or Gaus5x5. Good default Gaus3x3
-     * @param weak_threshold Pixel values below this limit are discarded. Range [0 - 255]. Good default 200.
-     * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. Good default 200.
-     */
-    void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
-                               CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
-
-    /** @brief Applies a sobel edge detection filter
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer (expects grayscale image).
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Channels The numbers of color channels in the image.
-     */
-    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
-
-    /**
-     * @brief Performs edge detection on an image based on the Sobel operator.
-     *  @ingroup group_ip_filters group_inplace
-     *  @param Input The image input data buffer (expects grayscale image).
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Channels The numbers of color channels in the image.
-     */
-    void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
-
-    //-------------------------- Edge detection --------------------------
-
-    //--------------------------Enhancement filters--------------------------
-
-    /** @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
-     *  This is a fast implementation, like gaussian blur, that performs vertical/horizontal passes independently.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param sigmaSpatial The size of the Gaussian bilateral filter window to use. A larger value means that farther
-     *  pixels will influence each other as long as their colors are close enough. Range [0 - 1.0]
-     *  @param sigmaRange Control how much an adjacent pixel is down-weighted because of the intensity difference. A
-     *  larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
-     */
-    void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
-
-    /** @brief Applies an unsharp mask
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param GaussianSigma The blur radius of the underlying Gaussian blur. The
-     *  default is 4.0.
-     *  @param intensity The strength of the sharpening, >= 0.0, with a default
-     *  of 1.0.
-     */
-    void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
-
-    /** @brief Applies a Gaussian sharpening filter to an image.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param Radius The radius of the sharpening kernel. The default is 4.0.
-     *  @param sharpness The sigma of the gaussian, the smaller sigma is the more
-     *  the kernel in concentrated on the center pixel.
-     *  @param intensity The strength of the sharpening kernel. Range [0-100]
-     */
-    void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity);
-
-    /**
-     * @brief Applies denoising smoothing filter on detected skin region while retaining other details.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     * @param smoothingLevel The amount of skin denoising to apply.
-     * @param applySkinFilter Apply filtering to non-skin areas after initial denoising.
-     */
-    void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter);
-
-    //--------------------------Enhancement filters--------------------------
-
-    //--------------------------Misc--------------------------
-
-    /** @brief Applies a 2D convolution to an image using a kernel.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Channels The number of color channels in the image.
-     *  @param kernel The kernel matrix to apply. Width and height must be odd. This expects a 1D array.
-     *  @param filterW The kernel matrix width.
-     *  @param cfactor The sum of all values greater than 0 in the kernel.
-     *  @param bias Used to increase/decrease all values greater than 0 in the kernel.
-     */
-    void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
-                                   unsigned char filterW, unsigned char cfactor, unsigned char bias);
-
-    /** @brief Resizes an image using Nearest-neighbor, Bilinear, Bicubic or Lanczos interpolation.
-     *  @ingroup group_ip_general
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param newWidth The new width of the image.
-     *  @param newHeight The new height of the image.
-     *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
-     */
-    void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
-                                int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
-
-    /**
-     * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color.
-     * @ingroup group_ip_general
-     * @param Input The image input data buffer.
-     * @param Width The width of the image in pixels.
-     * @param Height The height of the image in pixels.
-     * @param Stride The number of bytes in one row of pixels.
-     * @param Output The image output data buffer.
-     * @param outWidth The width of the output image in pixels.
-     * @param outHeight The height of the output image in pixels.
-     * @param angle The angle to rotate in degrees. Range [0 - 359].
-     * @param fillColorR The blue channel value to use for filling non-image area.
-     * @param fillColorG The blue channel value to use for filling non-image area.
-     * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
-     */
-    void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
-                              float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB);
-
-    /** @brief Outputs only a selected portion of an image.
-     *  @ingroup group_ip_general
-     *  @param Input The image input data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param srcStride The number of bytes in one row of pixels.
-     *  @param Output The image output data buffer.
-     *  @param cropX Starting X coordinate to start crop.
-     *  @param cropY Starting Y coordinate to start crop.
-     *  @param dstWidth The crop width of the image.
-     *  @param dstHeight The crop height of the image.
-     *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
-     */
-    void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
-                         int dstWidth, int dstHeight, int dstStride);
-
-    /**
-     * @brief Flip image horizontally or vertically.
-     *  @ingroup group_ip_general
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Channels The number of color channels in the image.
-     * @param direction The direction of transformation to perform.
-     */
-    void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
-
-    /**
-     * @brief Performs an adaptive median filter on an image, useful for removing salt and pepper noise from scanned documents.
-     * @ingroup group_ip_general group_ip_ocr
+     * @brief Performs a Bi-Exponential Edge-Perserving Smoothing filter that removes irrelevant details while preserving strong edges.
+     *        It is faster than a bilateral filter and uses a range akin to the one found in bilateral.
+     * @ingroup group_ip_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.
      * @param Height The height of the image in pixels.
      * @param Stride The number of bytes in one row of pixels.
-     * @param maxWindowSize The filter window size (should be a scalar between 1 and 7). Window size (ws) is defined as
-                            W = 2*ws + 1 so that W = 3 is a 3x3 filter window.
-     * @param Threshold The adaptive theshold (0 = normal median behavior). Higher values reduce the "aggresiveness" of the filter.
+     * @param PhotometricStandardDeviation Controls the broadness of the range filter.  The larger the value, the more obvious the blur. 
+     *  Range [1 - 255]
+     * @param SpatialDecay Spatial standard deviation. The larger the value, the more obvious the blur.
+     *  Range [0.01 - 0.250]
+     * @param RangeFilter The type of range filter to use. [0, 1 or 2] [Gaussian|Hyperbolic Secant|Euler Constant]
      */
-    void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold);
+    void ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int width, int height, int Stride,
+                           float PhotometricStandardDeviation, float SpatialDecay, int RangeFilter);
 
-    /**
-     * @brief Performs deskewing of an image, useful for scanned documents.
-     * @ingroup group_ip_general group_ip_ocr
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     * @param Stride The number of bytes in one row of pixels.
-     * @return True, if valid text image found and deskew performed. Otherwise false.
-     */
-    bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+        //--------------------------Blur filters--------------------------
 
-    //------------------------Distort-------------------------
 
-    /**
-     * @brief Applies a pixelate effect (sometimes called "mosaic") to an image.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     * @param blockSize The width and height of the desired pixelation block (in pixels).
-     */
-    void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
+        //-------------------------- Edge detection -----------------`---------
 
-    /**
-     * @brief Applies an "oil painting" effect to an image.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     * @param radius The radius of the effect. Range >= 1.
-     * @param intensity The smoothness of the effect. Smaller values indicate less smoothness (less bins are used to calculate luminance).
-     */
-    void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
+        // -------------------------- Used for Canny Edge Detection ---------------------------
 
-    //------------------------Distort-------------------------
+        typedef enum
+        {
+            CannyGaus3x3,
+            CannyGaus5x5
+        } CannyNoiseFilter;
 
-    //--------------------------Misc--------------------------
+        // Gaussian blur
+        // 3 x 3 kernel
+        static const int8_t Gaus3x3[] = { 1, 2, 1, 2, 4, 2, // * 1/16
+                                          1, 2, 1 };
+        static const int Gaus3x3Div = 16;
 
-    /** @brief Performs a Hough transform to detect lines in an image.
-     *  @ingroup group_ip_general
-     *  @param Input The image input data buffer. Must be single channel, preferably processed through edge detection.
-     *  @param[out] LineNumber The location where the number of detected lines are to be stored.
-     *  @param[out] DetectedLine A location where parameters of detected lines are to be stored.
-     *  @param Height The height of the input image.
-     *  @param Width The width of the input image.
-     *  @param threshold The maximum number of lines to return.
-     */
-    void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold);
+        static const int8_t Gaus5x5[] = { 2, 4, 5,  4, 2, 4, 9, 12, 9, 4, 5, 12, 15, 12, 5, // * 1/159
+                                          4, 9, 12, 9, 4, 2, 4, 5,  4, 2 };
+        static const int Gaus5x5Div = 159;
 
-    /**
-     * @brief Simply draws a straight line. More of a utility function.
-     * @ingroup group_ip_general
-     * @param canvas The image input data buffer.
-     * @param width The width of the image in pixels.
-     * @param height The height of the image in pixels.
-     * @param stride The number of bytes in one row of pixels.
-     * @param x1 Starting x coordinate.
-     * @param y1 Starting y coordinate.
-     * @param x2 Ending x coordinate.
-     * @param y2 Ending y coordinate.
-     * @param R The red color to draw line with.
-     * @param G The green color to draw line with.
-     * @param B The blue color to draw line with.
-     */
-    void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
-                        unsigned char G, unsigned char B);
+        // -------------------------- Used for Canny Edge Detection ---------------------------
 
-    //--------------------------Misc--------------------------
+        /**
+         * @brief Performs Canny edge detection on an image.
+         * This is one of the most reliable methods of edge detection.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer (expects grayscale image).
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         * @param kernel_size The type of gaussian noise to apply. Gaus3x3 or Gaus5x5. Good default Gaus3x3
+         * @param weak_threshold Pixel values below this limit are discarded. Range [0 - 255]. Good default 200.
+         * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. Good default 200.
+         */
+        void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+                                   CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
-    //--------------------------preImage processing--------------------------
+        /** @brief Applies a sobel edge detection filter
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer (expects grayscale image).
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Channels The numbers of color channels in the image.
+         */
+        void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
-    /**
-     * @brief Quickly retrieve width and height from an image file without processing image. Supports PNG/GIF/JPEG/BMP/ICO files.
-     * @ingroup group_ip_utility
-     * @param file_path The absolute file path of the image file.
-     * @param[out] width The returned image file width.
-     * @param[out] height The returned image file height.
-     * @param file_size[out] The returned file size in bytes.
-     * @return True if able to get image size, otherwise False.
-     */
-    bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
+        /**
+         * @brief Performs edge detection on an image based on the Sobel operator.
+         *  @ingroup group_ip_filters group_inplace
+         *  @param Input The image input data buffer (expects grayscale image).
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Channels The numbers of color channels in the image.
+         */
+        void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
-    //--------------------------preImage processing--------------------------
+        //-------------------------- Edge detection --------------------------
+
+        //--------------------------Enhancement filters--------------------------
+
+        /** @brief Performs a non-linear, edge-preserving and noise-reducing smoothing of an image.
+         *  This is a fast implementation, like gaussian blur, that performs vertical/horizontal passes independently.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         *  @param sigmaSpatial The size of the Gaussian bilateral filter window to use. A larger value means that farther
+         *  pixels will influence each other as long as their colors are close enough. Range [0 - 1.0]
+         *  @param sigmaRange Control how much an adjacent pixel is down-weighted because of the intensity difference. A
+         *  larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
+         */
+        void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
+
+        /** @brief Applies an unsharp mask
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         *  @param GaussianSigma The blur radius of the underlying Gaussian blur. The
+         *  default is 4.0.
+         *  @param intensity The strength of the sharpening, >= 0.0, with a default
+         *  of 1.0.
+         */
+        void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
+
+        /** @brief Applies a Gaussian sharpening filter to an image.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         *  @param Radius The radius of the sharpening kernel. The default is 4.0.
+         *  @param sharpness The sigma of the gaussian, the smaller sigma is the more
+         *  the kernel in concentrated on the center pixel.
+         *  @param intensity The strength of the sharpening kernel. Range [0-100]
+         */
+        void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
+                                   float sharpness, int intensity);
+
+        /**
+         * @brief Applies denoising smoothing filter on detected skin region while retaining other details.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         * @param smoothingLevel The amount of skin denoising to apply.
+         * @param applySkinFilter Apply filtering to non-skin areas after initial denoising.
+         */
+        void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel,
+                                       bool applySkinFilter);
+
+        //--------------------------Enhancement filters--------------------------
+
+        //--------------------------Misc--------------------------
+
+        /** @brief Applies a 2D convolution to an image using a kernel.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Channels The number of color channels in the image.
+         *  @param kernel The kernel matrix to apply. Width and height must be odd. This expects a 1D array.
+         *  @param filterW The kernel matrix width.
+         *  @param cfactor The sum of all values greater than 0 in the kernel.
+         *  @param bias Used to increase/decrease all values greater than 0 in the kernel.
+         */
+        void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
+                                       unsigned char filterW, unsigned char cfactor, unsigned char bias);
+
+        /** @brief Resizes an image using Nearest-neighbor, Bilinear, Bicubic or Lanczos interpolation.
+         *  @ingroup group_ip_general
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         *  @param newWidth The new width of the image.
+         *  @param newHeight The new height of the image.
+         *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
+         */
+        void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
+                                    unsigned char* Output, int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
+
+        /**
+         * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color.
+         * @ingroup group_ip_general
+         * @param Input The image input data buffer.
+         * @param Width The width of the image in pixels.
+         * @param Height The height of the image in pixels.
+         * @param Stride The number of bytes in one row of pixels.
+         * @param Output The image output data buffer.
+         * @param outWidth The width of the output image in pixels.
+         * @param outHeight The height of the output image in pixels.
+         * @param angle The angle to rotate in degrees. Range [0 - 359].
+         * @param fillColorR The blue channel value to use for filling non-image area.
+         * @param fillColorG The blue channel value to use for filling non-image area.
+         * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
+         */
+        void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth,
+                                  int outHeight, float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB);
+
+        /** @brief Outputs only a selected portion of an image.
+         *  @ingroup group_ip_general
+         *  @param Input The image input data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param srcStride The number of bytes in one row of pixels.
+         *  @param Output The image output data buffer.
+         *  @param cropX Starting X coordinate to start crop.
+         *  @param cropY Starting Y coordinate to start crop.
+         *  @param dstWidth The crop width of the image.
+         *  @param dstHeight The crop height of the image.
+         *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
+         */
+        void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
+                             int dstWidth, int dstHeight, int dstStride);
+
+        /**
+         * @brief Flip image horizontally or vertically.
+         *  @ingroup group_ip_general
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Channels The number of color channels in the image.
+         * @param direction The direction of transformation to perform.
+         */
+        void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
+
+        /**
+         * @brief Performs an adaptive median filter on an image, useful for removing salt and pepper noise from scanned documents.
+         * @ingroup group_ip_general group_ip_ocr
+         * @param Input The image input data buffer.
+         * @param Output The image output data buffer.
+         * @param Width The width of the image in pixels.
+         * @param Height The height of the image in pixels.
+         * @param Stride The number of bytes in one row of pixels.
+         * @param maxWindowSize The filter window size (should be a scalar between 1 and 7). Window size (ws) is defined as
+                                W = 2*ws + 1 so that W = 3 is a 3x3 filter window.
+         * @param Threshold The adaptive theshold (0 = normal median behavior). Higher values reduce the "aggresiveness" of the filter.
+         */
+        void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold);
+
+        /**
+         * @brief Performs deskewing of an image, useful for scanned documents.
+         * @ingroup group_ip_general group_ip_ocr
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         * @param Stride The number of bytes in one row of pixels.
+         * @return True, if valid text image found and deskew performed. Otherwise false.
+         */
+        bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+        //------------------------Distort-------------------------
+
+        /**
+         * @brief Applies a pixelate effect (sometimes called "mosaic") to an image.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         * @param blockSize The width and height of the desired pixelation block (in pixels).
+         */
+        void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
+
+        /**
+         * @brief Applies an "oil painting" effect to an image.
+         *  @ingroup group_ip_filters
+         *  @param Input The image input data buffer.
+         *  @param Output The image output data buffer.
+         *  @param Width The width of the image in pixels.
+         *  @param Height The height of the image in pixels.
+         *  @param Stride The number of bytes in one row of pixels.
+         * @param radius The radius of the effect. Range >= 1.
+         * @param intensity The smoothness of the effect. Smaller values indicate less smoothness (less bins are used to calculate luminance).
+         */
+        void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
+
+        //------------------------Distort-------------------------
+
+        //--------------------------Misc--------------------------
+
+        /** @brief Performs a Hough transform to detect lines in an image.
+         *  @ingroup group_ip_general
+         *  @param Input The image input data buffer. Must be single channel, preferably processed through edge detection.
+         *  @param[out] LineNumber The location where the number of detected lines are to be stored.
+         *  @param[out] DetectedLine A location where parameters of detected lines are to be stored.
+         *  @param Height The height of the input image.
+         *  @param Width The width of the input image.
+         *  @param threshold The maximum number of lines to return.
+         */
+        void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold);
+
+        /**
+         * @brief Simply draws a straight line. More of a utility function.
+         * @ingroup group_ip_general
+         * @param canvas The image input data buffer.
+         * @param width The width of the image in pixels.
+         * @param height The height of the image in pixels.
+         * @param stride The number of bytes in one row of pixels.
+         * @param x1 Starting x coordinate.
+         * @param y1 Starting y coordinate.
+         * @param x2 Ending x coordinate.
+         * @param y2 Ending y coordinate.
+         * @param R The red color to draw line with.
+         * @param G The green color to draw line with.
+         * @param B The blue color to draw line with.
+         */
+        void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
+                            unsigned char G, unsigned char B);
+
+        //--------------------------Misc--------------------------
+
+        //--------------------------preImage processing--------------------------
+
+        /**
+         * @brief Quickly retrieve width and height from an image file without processing image. Supports PNG/GIF/JPEG/BMP/ICO files.
+         * @ingroup group_ip_utility
+         * @param file_path The absolute file path of the image file.
+         * @param[out] width The returned image file width.
+         * @param[out] height The returned image file height.
+         * @param file_size[out] The returned file size in bytes.
+         * @return True if able to get image size, otherwise False.
+         */
+        bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
+
+        //--------------------------preImage processing--------------------------
 
 #ifdef __cplusplus
 }

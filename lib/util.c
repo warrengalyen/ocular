@@ -642,3 +642,7 @@ void skinDenoise(unsigned char* input, unsigned char* output, int width, int hei
     if (colPos)
         free(colPos);
 }
+
+float calcWeight(const float weight, const float spatialContraDecay, const float diff) {
+    return spatialContraDecay * expf(weight * (diff * diff)) * diff;
+}
