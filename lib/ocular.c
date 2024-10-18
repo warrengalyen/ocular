@@ -3501,6 +3501,63 @@ extern "C" {
         }
     }
 
+    void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+                           int greenBalance, int blueBalance, OcToneBalanceMode mode, bool preserveLuminosity) {
+
+        if (Input == NULL || Output == NULL) {
+            return;
+        }
+
+        int Channels = Stride / Width;
+        unsigned char lookupR[256], lookupG[256], lookupB[256];
+
+        for (int i = 0; i < 256; i++) {
+            float normalizedValue = i / 255.0f;
+            float factor;
+
+            switch (mode) {
+            case SHADOWS: factor = 0.5f * (1.0f - normalizedValue); break;
+            case MIDTONES: factor = 0.5f - fabs(normalizedValue - 0.5f); break;
+            case HIGHLIGHTS: factor = 0.5f * normalizedValue; break;
+            }
+
+            // Convert integer balance (-100 to 100) to float (-1.0 to 1.0)
+            float r = i + (redBalance / 100.0f) * factor * 255.0f;
+            float g = i + (greenBalance / 100.0f) * factor * 255.0f;
+            float b = i + (blueBalance / 100.0f) * factor * 255.0f;
+
+            lookupR[i] = (unsigned char)fmax(0, fmin(255, r));
+            lookupG[i] = (unsigned char)fmax(0, fmin(255, g));
+            lookupB[i] = (unsigned char)fmax(0, fmin(255, b));
+        }
+
+        for (int i = 0; i < Width * Height * Channels; i += Channels) {
+            unsigned char r = lookupR[Input[i]];
+            unsigned char g = lookupG[Input[i + 1]];
+            unsigned char b = lookupB[Input[i + 2]];
+
+            if (preserveLuminosity) {
+                float originalLuminosity = 0.299f * Input[i] + 0.587f * Input[i + 1] + 0.114f * Input[i + 2];
+                float newLuminosity = 0.299f * r + 0.587f * g + 0.114f * b;
+
+                if (newLuminosity > 0) {
+                    float luminosityRatio = originalLuminosity / newLuminosity;
+                    r = (unsigned char)fmin(255, r * luminosityRatio);
+                    g = (unsigned char)fmin(255, g * luminosityRatio);
+                    b = (unsigned char)fmin(255, b * luminosityRatio);
+                }
+            }
+
+            Output[i] = r;
+            Output[i + 1] = g;
+            Output[i + 2] = b;
+
+            if (Channels == 4) {
+                Output[i + 3] = Input[i + 3]; // Preserve alpha channel if present
+            }
+        }
+    }
+
     void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
                                CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold) {
 

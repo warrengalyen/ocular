@@ -145,6 +145,9 @@ extern "C" {
     DLIB_EXPORT void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth,
                                       int mHeight, int mStride, OcBlendMode blendMode, int alpha);
 
+    DLIB_EXPORT void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                       int redBalance, int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Image processing--------------------------

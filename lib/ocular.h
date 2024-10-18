@@ -86,6 +86,16 @@ extern "C" {
         OC_AUTO_THRESHOLD_YEN,
     } OcAutoThresholdMethod;
 
+    /** @enum OcToneBalanceMode 
+     * @brief Tone balance mode to use for color balance filter
+    */
+    typedef enum
+    {
+        SHADOWS,
+        MIDTONES,
+        HIGHLIGHTS
+    } OcToneBalanceMode;
+
 
     //--------------------------Color adjustments--------------------------
 
@@ -590,6 +600,24 @@ extern "C" {
      */
     void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
                           int mStride, OcBlendMode blendMode, int alpha);
+
+
+    /**
+     * @brief Allows changing the overall mixture of colors in an image to correct color casts.
+     * @ingroup group_color_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param redBalance The amount to adjust the red channel. Range [-100 - 100].
+     * @param greenBalance The amount to adjust the green channel. Range [-100 - 100].
+     * @param blueBalance The amount to adjust the blue channel. Range [-100 - 100].
+     * @param Mode The tonal range to apply the color balance to. SHADOWS, MIDTONES, HIGHLIGHTS.
+     * @param preserveLuminosity Prevents changing the luminosity values in the image while changing the color.
+     */
+    void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+                           int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
 
     //--------------------------Color adjustments--------------------------
 

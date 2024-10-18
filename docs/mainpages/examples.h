@@ -17,6 +17,8 @@
 
  @ref page_examples_canny_edge "Canny Edge Detection"
 
+ @ref page_examples_color_balance "Color Balance"
+
  @ref page_examples_convolution "2D Convolution"
 
  @ref page_examples_deskew "Deskew"
