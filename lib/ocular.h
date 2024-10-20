@@ -1024,20 +1024,36 @@ extern "C" {
          */
         void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
 
+        /**
+         * @brief Simulates the image being observed through a layer of frosted glass by applying random pixel disturbance.
+         * @ingroup group_ip_filters
+         * @param Input The input image data.
+         * @param Output The output image data.
+         * @param Height The height of the image.
+         * @param Width The width of the image.
+         * @param Channels The number of channels in the image.
+         * @param Radius The radius of the blur. Recommend keeping this value around 2.
+         * @param Range Controls the range of random pixel displacement. Greater values will produce a more pronounced effect,
+         * making the image more distorted. Range [1 - 20]
+         * */
+        void ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
+
         //------------------------Distort-------------------------
 
         //--------------------------Misc--------------------------
 
-        /** @brief Performs a Hough transform to detect lines in an image.
-         *  @ingroup group_ip_general
-         *  @param Input The image input data buffer. Must be single channel, preferably processed through edge detection.
-         *  @param[out] LineNumber The location where the number of detected lines are to be stored.
-         *  @param[out] DetectedLine A location where parameters of detected lines are to be stored.
-         *  @param Height The height of the input image.
-         *  @param Width The width of the input image.
-         *  @param threshold The maximum number of lines to return.
-         */
-        void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold);
+        /**
+        *  @brief Performs a Hough transform to detect lines in an image.
+        *  @ingroup group_ip_general
+        *  @param Input The image input data buffer. Must be single channel, preferably processed through edge detection.
+        *  @param[out] LineNumber The location where the number of detected lines are to be stored.
+        *  @param[out] DetectedLine A location where parameters of detected lines are to be stored.
+        *  @param Height The height of the input image.
+        *  @param Width The width of the input image.
+        *  @param threshold The maximum number of lines to return.
+        */
+        void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height,
+                                        int Width, int threshold);
 
         /**
          * @brief Simply draws a straight line. More of a utility function.

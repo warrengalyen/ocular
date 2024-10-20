@@ -216,6 +216,8 @@ extern "C" {
 
     DLIB_EXPORT void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
 
+    DLIB_EXPORT void ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
+
     DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
                                              int numLine, float* Radius, float* Theta);
 

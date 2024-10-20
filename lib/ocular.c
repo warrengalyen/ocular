@@ -4780,6 +4780,48 @@ extern "C" {
             }
         }
     }
+
+    void ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range) {
+
+        if (Input == NULL || Output == NULL) {
+            return;
+        }
+
+        int Channels = Stride / Width;
+
+        // First the image is blurred by Gaussian filtering, then the blurred image is randomly sampled in the neighborhood,
+        // giving the image a certain degree of random disturbance and blur.
+        ocularGaussianBlurFilter(Input, Input, Width, Height, Stride, Radius);
+
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                float randomOffsetX = (rand() / (float)RAND_MAX) - 0.5f;
+                float randomOffsetY = (rand() / (float)RAND_MAX) - 0.5f;
+                int offsetX = (int)(randomOffsetX * (Range * 2 - 1));
+                int offsetY = (int)(randomOffsetY * (Range * 2 - 1));
+
+                // Reflect pixels that are out of bounds
+                int newY = y + offsetY;
+                int newX = x + offsetX;
+
+                if (newY < 0)
+                    newY = -newY;
+                if (newY >= Height)
+                    newY = 2 * Height - newY - 2;
+                if (newX < 0)
+                    newX = -newX;
+                if (newX >= Width)
+                    newX = 2 * Width - newX - 2;
+
+                int src_idx = (newY * Width + newX) * Channels;
+                int dst_idx = (y * Width + x) * Channels;
+
+                for (int c = 0; c < Channels; c++) {
+                    Output[dst_idx + c] = Input[src_idx + c];
+                }
+            }
+        }
+    }
 #ifdef __cplusplus
 }
 #endif
