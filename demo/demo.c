@@ -9,6 +9,7 @@
 #endif
 
 #include "../lib/ocular.h"
+// #include "../lib/retinex.h"
 #include "../lib/interpolate.h"
 
 #if __has_include("test_filters.h")
@@ -22,8 +23,23 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 
+#define AUTO_OPEN_OUTPUT_IMAGE // comment out to disable
+
 #include <stdio.h>
 #include "timing.h"
+#include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#if defined(AUTO_OPEN_OUTPUT_IMAGE)
+    #if defined(_WIN32) || defined(_WIN64)
+        #include <direct.h>
+        #define getcwd _getcwd
+        #include <shellapi.h> // for ShellExecute
+    #endif
+#endif
 
 static const char* calculateSize(uint64_t bytes) {
     char* suffix[] = { "B", "KB", "MB", "GB", "TB" };
@@ -96,6 +112,8 @@ void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
     }
 }
 
+
+
 int main(int argc, char** argv) {
 
     printf("Ocular Image Processing library\n");
@@ -129,22 +147,38 @@ int main(int argc, char** argv) {
     int stride = width * channels;
 
     if (input) {
-        // unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
-        unsigned char* output = (unsigned char*)calloc(width * 1.5 * channels * height * 1.5 * sizeof(unsigned char), 1);
+        unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
         if (output) {
             double startTime = now();
             printf("Processing image...\n");
 
-            int newWidth = width * 1.5;
-            int newHeight = height * 1.5;
-            int dstStride = newWidth * channels;
-            ocularResamplingFilter(input, width, height, stride, output, newWidth, newHeight, dstStride, OC_INTERPOLATE_BICUBIC);
+            // In-work filter, not available.
+            applyFilmNoirEffect(input, output, width, height, stride, 10.0, 90.0, 10.0, 50.0, 0.0);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
-            saveImage(out_file, newWidth, newHeight, channels, output);
+            saveImage(out_file, width, height, channels, output);
 
-        FreeMemory:
+// Open the output image in the associated application
+#if defined(AUTO_OPEN_OUTPUT_IMAGE)
+    #if defined(_WIN32) || defined(_WIN64)
+        char currentPath[1024];
+        if (getcwd(currentPath, sizeof(currentPath)) != NULL) {
+            char fullPath[2048];
+            sprintf(fullPath, "%s\\%s", currentPath, out_file);
+            ShellExecute(0, 0, fullPath, 0, 0, SW_SHOW);
+        }
+    #elif defined(__APPLE__)
+        char openCommand[1024];
+        sprintf(openCommand, "open %s", out_file);
+        system(openCommand);
+    #elif defined(__linux__)
+        char openCommand[1024];
+        sprintf(openCommand, "xdg-open %s", out_file);
+        system(openCommand);
+    #endif
+#endif
+
             free(output);
         }
         free(input);
@@ -152,7 +186,5 @@ int main(int argc, char** argv) {
         printf("load file: %s fail !\n", in_file);
     }
 
-    printf("press any key to exit. \n");
-    getchar();
     return 0;
 }
