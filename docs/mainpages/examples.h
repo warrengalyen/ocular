@@ -30,6 +30,8 @@
  @ref page_examples_frosted_glass "Frosted Glass"
 
  @ref page_examples_motion_blur "Motion Blur"
+    
+ @ref page_examples_retinex "Retinex"
 
  @ref page_examples_surface_blur "Surface Blur"
 

@@ -57,6 +57,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Backlight Repair (corrects extremely low or non-uniform lighting)
 - Image Blending (supports 27 Photoshop modes)
 - Color Balance
+- Retinex (Multi-Scale with Color Restoration)
 
 ### Image Processing Filters
 
@@ -146,10 +147,6 @@ This will out the following 3 files:
 
 I'm working on a full-featured image viewer app in C# for showing-casing library features using the compiled DLL.
 
-### Library
 
-I have a very long list of features to implement, some advanced features include:
-
-retinex, seam carving, automatic red-eye removal and possibly deblurring.
 
 
