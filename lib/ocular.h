@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 10-15-2024
- * Last update: added despeckle filter
+ * Last Updated: 10-21-2024
+ * Last update: added retinex filter
  *
  * @brief Contains exported primary filter function definitions
  */
@@ -17,13 +17,13 @@ extern "C" {
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1310)
     #pragma warning(disable : 4996) // VS doesn't like fopen, but fopen_s is not
-// standard C so unusable here
+                                    // standard C so unusable here
 #endif /*_MSC_VER */
 
 #include "fastmath.h"
 #include "blend.h"
 #include "core.h"
-#include "interpolate.h"
+#include "interpolate.h"    
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -95,6 +95,16 @@ extern "C" {
         MIDTONES,
         HIGHLIGHTS
     } OcToneBalanceMode;
+
+    /** @enum OcRetinexMode
+     * @brief Retinex mode to use for multiscale retinex filter
+    */
+    typedef enum
+    {
+        RETINEX_UNIFORM,
+        RETINEX_LOW,
+        RETINEX_HIGH
+    } OcRetinexMode;
 
 
     //--------------------------Color adjustments--------------------------
@@ -613,11 +623,31 @@ extern "C" {
      * @param redBalance The amount to adjust the red channel. Range [-100 - 100].
      * @param greenBalance The amount to adjust the green channel. Range [-100 - 100].
      * @param blueBalance The amount to adjust the blue channel. Range [-100 - 100].
-     * @param Mode The tonal range to apply the color balance to. SHADOWS, MIDTONES, HIGHLIGHTS.
+     * @param Mode The tonal range to apply the color balance to. [SHADOWS|MIDTONES|HIGHLIGHTS].
      * @param preserveLuminosity Prevents changing the luminosity values in the image while changing the color.
      */
     void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
                            int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
+
+    /**
+     * @brief Performs multiscale retinex with color restoration. This combines color constancy with local contrast
+     * enhancement so images are rendered similiar to how the human eye perceives.
+     * @ingroup group_color_filters     
+     * @param input The image input data buffer.
+     * @param output The image output data buffer.
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param channels The number of color channels in the image.
+     * @param mode The mode to use for retinex. [RETINEX_UNIFORM|RETINEX_LOW|RETINEX_HIGH]. 
+     * RETINEX_UNIFORM treats all image intensities similiarly. RETINEX_LOW enhances dark regions of the image. 
+     * RETINEX_HIGH enhances bright regions of the image.
+     * @param scale Specifics the depth of the retinex effect. Range [16.0 - 250.0]
+     * @param numScales Specifies the number of iterations of the multiscale filter. Values larger than 2 take advantage 
+     * of the "multiscale" nature of the algorithm. Range [1.0 - 8.0]
+     * @param dynamic Adjusts the color of the result. Large values produce less saturated images. Range [0.05 - 4.0]
+     */
+    void ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                  OcRetinexMode mode, int scale, float numScales, float dynamic);
 
     //--------------------------Color adjustments--------------------------
 

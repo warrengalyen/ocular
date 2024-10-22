@@ -2,8 +2,8 @@
  * @file: ocular.c
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 5-23-2024
- * Last update: updated resampling filter
+ * Last Updated: 10-21-2024
+ * Last update: added retinex filter
  *
  * @brief Contains exported primary filter function implementations
  */
@@ -19,6 +19,7 @@ extern "C" {
 #include "threshold.h"
 #include "color.h"
 #include "ocr.h"
+#include "retinex.h"    
 #include "ocular.h"
 #include "util.h"
 
@@ -3556,6 +3557,170 @@ extern "C" {
                 Output[i + 3] = Input[i + 3]; // Preserve alpha channel if present
             }
         }
+    }
+
+    void ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels, 
+                                 OcRetinexMode mode, int scale, float numScales, float dynamic) {
+
+        if (input == NULL || output == NULL) {
+            return;
+        }
+
+        RetinexParams params = {
+            .scales_mode = mode,
+            .scale = scale,
+            .nscales = numScales,
+            .cvar = dynamic
+        };
+
+        int scaleIdx, row, col;
+        int i, j;
+        int size;
+        int pos;
+        int channel;
+        unsigned char* psrc = NULL; // backup pointer for src buffer
+        float* dst = NULL;          // float buffer for algorithm
+        float* pdst = NULL;         // backup pointer for float buffer
+        float *in, *out;
+        int channelsize; /* Float memory cache for one channel */
+        float weight;
+        gauss3_coefs coef;
+        float mean, var;
+        float mini, range, maxi;
+        float alpha;
+        float gain;
+        float offset;
+
+        // Allocate all the memory needed for algorithm
+        size = width * height * channels;
+        dst = (float*)malloc(size * sizeof(float));
+        if (dst == NULL) {
+            return;
+        }
+        memset(dst, 0, size * sizeof(float));
+
+        channelsize = (width * height);
+        in = (float*)malloc(channelsize * sizeof(float));
+        if (in == NULL) {
+            free(dst);
+            return;
+        }
+
+        out = (float*)malloc(channelsize * sizeof(float));
+        if (out == NULL) {
+            free(in);
+            free(dst);
+            return;
+        }
+
+        // Calculate the scales of filtering according to the number of filter and their distribution.
+        retinex_scales_distribution(RetinexScales, params.nscales, params.scales_mode, params.scale);
+        
+        /*
+        Filtering according to the various scales.
+        Summerize the results of the various filters according to a specific weight (here equivalent for all).
+        */
+        weight = 1.0f / (float)params.nscales;
+
+        /*
+        The recursive filtering algorithm needs different coefficients according to the selected scale 
+        (~ = standard deviation of Gaussian).
+        */
+        pos = 0;
+        for (channel = 0; channel < 3; channel++) {
+            for (i = 0, pos = channel; i < channelsize; i++, pos += channels) {
+                in[i] = (float)(input[pos] + 1.0);
+            }
+            for (scaleIdx = 0; scaleIdx < params.nscales; scaleIdx++) {
+                compute_coefs3(&coef, RetinexScales[scaleIdx]);
+
+                /*
+                 *  Filtering (smoothing) Gaussian recursive.
+                 *
+                 *  Filter rows first
+                 */
+                for (row = 0; row < height; row++) {
+                    pos = row * width;
+                    gausssmooth(in + pos, out + pos, width, 1, &coef);
+                }
+
+                memcpy(in, out, channelsize * sizeof(float));
+                memset(out, 0, channelsize * sizeof(float));
+
+                /*
+                 *  Filtering (smoothing) Gaussian recursive.
+                 *
+                 *  Second columns
+                 */
+                for (col = 0; col < width; col++) {
+                    pos = col;
+                    gausssmooth(in + pos, out + pos, height, width, &coef);
+                }
+
+
+                /*
+                Summarize the filtered values.
+                In fact one calculates a ratio between the original values and the filtered values.
+                */
+                for (i = 0, pos = channel; i < channelsize; i++, pos += channels) {
+                    dst[pos] += weight * (float)(log(input[pos] + 1.0f) - log(out[i]));
+                }
+            }
+        }
+        free(in);
+        free(out);
+
+        /*
+        Final calculation with original value and cumulated filter values.
+        The parameters gain, alpha and offset are constants.
+        */
+        /* Ci(x,y)=log[a Ii(x,y)]-log[ Ei=1-s Ii(x,y)] */
+
+        alpha = 128.0f;
+        gain = 1.0f;
+        offset = 0.0f;
+
+        unsigned char* pOutput = NULL;
+        for (i = 0; i < size; i += channels) {
+            float logl;
+
+            psrc = input + i;
+            //pOutput = output + i;
+            pdst = dst + i;
+
+            logl = (float)log((float)psrc[0] + (float)psrc[1] + (float)psrc[2] + 3.0f);
+
+            pdst[0] = gain * ((float)(log(alpha * (psrc[0] + 1.0f)) - logl) * pdst[0]) + offset;
+            pdst[1] = gain * ((float)(log(alpha * (psrc[1] + 1.0f)) - logl) * pdst[1]) + offset;
+            pdst[2] = gain * ((float)(log(alpha * (psrc[2] + 1.0f)) - logl) * pdst[2]) + offset;
+        }
+
+        /*
+        Adapt the dynamics of the colors according to the statistics of the first and second order.
+        The use of the variance makes it possible to control the degree of saturation of the colors.
+        */
+        pdst = dst;
+
+        compute_mean_var(pdst, &mean, &var, size, channels);
+        mini = mean - params.cvar * var;
+        maxi = mean + params.cvar * var;
+        range = maxi - mini;
+
+        if (!range)
+            range = 1.0;
+
+        for (i = 0; i < size; i += channels) {
+            psrc = input + i;
+            pdst = dst + i;
+            pOutput = output + i;
+
+            for (j = 0; j < 3; j++) {
+                float c = 255 * (pdst[j] - mini) / range;
+                pOutput[j] = (unsigned char)clamp(c, 0, 255);
+            }
+        }
+
+        free(dst);
     }
 
     void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,

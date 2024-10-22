@@ -9,7 +9,6 @@
 #endif
 
 #include "../lib/ocular.h"
-// #include "../lib/retinex.h"
 #include "../lib/interpolate.h"
 
 #if __has_include("test_filters.h")
@@ -152,8 +151,7 @@ int main(int argc, char** argv) {
             double startTime = now();
             printf("Processing image...\n");
 
-            // In-work filter, not available.
-            applyFilmNoirEffect(input, output, width, height, stride, 10.0, 90.0, 10.0, 50.0, 0.0);
+            ocularMultiscaleRetinex(input, output, width, height, channels, RETINEX_UNIFORM, 240.0f, 3.0f, 1.2f);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

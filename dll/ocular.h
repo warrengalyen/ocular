@@ -148,6 +148,9 @@ extern "C" {
     DLIB_EXPORT void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                        int redBalance, int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
 
+    DLIB_EXPORT void ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                            OcRetinexMode mode, int scale, int numScales, float dynamic);   
+
     //--------------------------Color adjustments--------------------------
 
     //--------------------------Image processing--------------------------

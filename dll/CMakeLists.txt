@@ -22,6 +22,7 @@ set(MODULE_FILES
         ../lib/threshold.c
         ../lib/util.c
         ../lib/ocr.c
+        ../lib/retinex.c
         ../lib/ocular.c
         ocular.h
         dlib_export.h
