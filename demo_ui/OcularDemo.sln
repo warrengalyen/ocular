@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OcularDemo", "OcularDemo.csproj", "{FD2FB062-2342-49B1-BBDF-FD132EF5299F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD2FB062-2342-49B1-BBDF-FD132EF5299F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD2FB062-2342-49B1-BBDF-FD132EF5299F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD2FB062-2342-49B1-BBDF-FD132EF5299F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD2FB062-2342-49B1-BBDF-FD132EF5299F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD711818-99D3-4B94-BC71-44FA52F7AA03}
+	EndGlobalSection
+EndGlobal

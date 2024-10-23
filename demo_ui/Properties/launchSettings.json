@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "OcularDemo": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
