@@ -18,12 +18,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 add_executable(demo demo.c)
+add_executable(palette palette.c)
 
 # Demo application require both libraries, so add them
 target_link_libraries(demo
         ocular
 )
-
 
 # Point to which directory Demo is copied during installation and packaging
 install(TARGETS demo DESTINATION demo)

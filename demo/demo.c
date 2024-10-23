@@ -9,7 +9,6 @@
 #endif
 
 #include "../lib/ocular.h"
-#include "../lib/interpolate.h"
 
 #if __has_include("test_filters.h")
     #include "test_filters.h"
@@ -110,8 +109,6 @@ void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
         *dir = '\0';
     }
 }
-
-
 
 int main(int argc, char** argv) {
 
