@@ -135,17 +135,20 @@ cmake .
 make
 ```
 
-This will out the following 3 files:
+This will out the following 4 files:
 
 - static library `lib\libocular.xxx`
 - dynamic link library `bin\ocular.dll`
 - console demo `bin\demo.exe`
+- palette demo `bin\palette.exe`
+
 
 ## TODO
 
 ### GUI Demo Application
 
-I'm working on a full-featured image viewer app in C# for showing-casing library features using the compiled DLL.
+I'm working on a full-featured image viewer app in C# for showing-casing library. 
+This is currently available in the `demo-gui` branch and is very much a work-in-progress.
 
 
 
