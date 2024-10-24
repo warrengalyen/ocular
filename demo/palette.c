@@ -16,7 +16,13 @@
 #include <time.h>
 #include <string.h>
 
-void render_palette_colors(const PaletteData* palette) {
+#if defined(_WIN32) || defined(_WIN64)
+    #define getcwd _getcwd
+#else 
+    #include <unistd.h>
+#endif
+
+void render_palette_colors(const OcPalette* palette) {
 
     for (int i = 0; i < palette->num_colors; i++) {
         // Set background color
@@ -24,7 +30,7 @@ void render_palette_colors(const PaletteData* palette) {
 
         // Set text color to white for better contrast
         printf("\033[38;2;255;255;255m %s \033[0m  ", palette->colors[i].name);
-
+        
         // Insert a newline after every 8 colors
         if ((i + 1) % 8 == 0) {
             printf("\n");
@@ -40,13 +46,14 @@ int main(int argc, char** argv) {
     printf("Palette format demo\n");
     printf("https://github.com/warrengalyen/ocular/ \n");
 
-    char palette_file[1024] = "bin\\palettes\\crayola-1958.gpl";
+    char palette_file[1024] = "bin\\palettes\\gimp\\crayola-1958.gpl";
     char currentPath[1024];
     if (getcwd(currentPath, sizeof(currentPath)) != NULL) {
         char fullPath[2048];
         sprintf(fullPath, "%s\\%s", currentPath, palette_file);
+        printf("Loading palette from: %s\n", fullPath);
 
-        PaletteData palette;
+        OcPalette palette;
         read_gimp_palette(fullPath, &palette);
 
         printf("Palette name: %s\n", palette.name);
@@ -55,10 +62,16 @@ int main(int argc, char** argv) {
         // Render palette colors in terminal
         // TODO: fix this for windows so characters are not mangled
         render_palette_colors(&palette);
-        char palette_file[1024] = "bin\\palettes\\test.gpl";
-        sprintf(fullPath, "%s\\%s", currentPath, palette_file);
+
+        char gimp_file[1024] = "bin\\palettes\\test-gimp.gpl";
+        sprintf(fullPath, "%s\\%s", currentPath, gimp_file);
         save_gimp_palette(fullPath, &palette);
+
+        char riff_file[1024] = "bin\\palettes\\test-riff.pal";
+        sprintf(fullPath, "%s\\%s", currentPath, riff_file);
+        save_riff_palette(fullPath, &palette);
     }
 
     return 0;
 }
+
