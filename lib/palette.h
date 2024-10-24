@@ -35,7 +35,6 @@ void read_gimp_palette(const char* filename, PaletteData* palette_data) {
         }
         if (strncmp(line, "Name", 4) == 0) {
             sscanf(line, "Name: %[^\n]", palette_data->name); // read the rest of the line, including spaces
-            printf("palette name: %s\n", palette_data->name);
             continue;
         }
 

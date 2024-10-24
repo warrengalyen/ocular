@@ -142,12 +142,22 @@ This will out the following 4 files:
 - console demo `bin\demo.exe`
 - palette demo `bin\palette.exe`
 
+***Pallette Demo***
+
+
+| ![Palette Demo](screenshots/palette-demo.jpg "Gimp Palette")
+|:---:|
+| **Gimp Palette**
 
 ## TODO
 
+
+
+
+
 ### GUI Demo Application
 
-I'm working on a full-featured image viewer app in C# for showing-casing library. 
+I'm working on a full-featured image viewer app in C# for showing-casing the library. 
 This is currently available in the `demo-gui` branch and is very much a work-in-progress.
 
 
