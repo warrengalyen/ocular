@@ -428,7 +428,11 @@ void read_paintnet_palette(const char* filename, OcPalette* palette_data) {
 
     // Skip first line if it's the Paint.NET header
     if (fgets(line, sizeof(line), file)) {
-        if (strncmp(line, ";paint.net Palette File", 22) != 0) {
+        // convert header to lowercase
+        for (int i = 0; i < sizeof(line); i++) {
+            line[i] = tolower(line[i]);
+        }
+        if (strncmp(line, ";paint.net palette file", 22) != 0) {
             // If it's not a header, rewind to start of file
             rewind(file);
         }
