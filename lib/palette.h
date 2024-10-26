@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 #define MAX_PALETTE_COLORS 2048
 
@@ -180,6 +182,74 @@ void save_riff_palette(const char* filename, const OcPalette* palette_data) {
         fwrite(&g, 1, 1, file);
         fwrite(&b, 1, 1, file);
         fwrite(&flags, 1, 1, file);
+    }
+
+    fclose(file);
+}
+void read_paintnet_palette(const char* filename, OcPalette* palette_data) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Failed to open Paint.NET palette file");
+        return;
+    }
+
+    char line[256];
+    palette_data->num_colors = 0;
+    strncpy(palette_data->name, "Paint.NET Palette", 255);
+    palette_data->name[255] = '\0';
+
+    // Skip first line if it's the Paint.NET header
+    if (fgets(line, sizeof(line), file)) {
+        if (strncmp(line, ";paint.net Palette File", 22) != 0) {
+            // If it's not a header, rewind to start of file
+            rewind(file);
+        }
+    }
+
+    while (fgets(line, sizeof(line), file) && palette_data->num_colors < MAX_PALETTE_COLORS) {
+        // Skip comments and empty lines
+        if (line[0] == ';' || line[0] == '\n' || line[0] == '\r') {
+            continue;
+        }
+
+        // Remove newline characters
+        line[strcspn(line, "\r\n")] = 0;
+
+        // Convert hex string to RGB values
+        unsigned int hex_color;
+        if (sscanf(line, "%X", &hex_color) == 1) {
+            OcPaletteColor* color = &palette_data->colors[palette_data->num_colors];
+            
+            // Extract RGB components (Paint.NET uses ARGB format)
+            color->r = (hex_color >> 16) & 0xFF;
+            color->g = (hex_color >> 8) & 0xFF;
+            color->b = hex_color & 0xFF;
+            color->name[0] = '\0';
+            
+            palette_data->num_colors++;
+        }
+    }
+
+    fclose(file);
+}
+
+void save_paintnet_palette(const char* filename, const OcPalette* palette_data) {
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        perror("Failed to open file for writing");
+        return;
+    }
+
+    // Write Paint.NET palette header
+    fprintf(file, ";paint.net Palette File\n");
+    fprintf(file, ";Palette Name: Paint.net palette\n");
+    fprintf(file, ";Colors: %d\n", palette_data->num_colors);
+    
+    // Write each color in ARGB format (fully opaque)
+    for (int i = 0; i < palette_data->num_colors; i++) {
+        const OcPaletteColor* color = &palette_data->colors[i];
+        // FF prefix makes the color fully opaque (alpha = 255)
+        fprintf(file, "FF%02X%02X%02X\n", color->r, color->g, color->b);
     }
 
     fclose(file);
