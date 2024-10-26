@@ -140,14 +140,6 @@ This will out the following 4 files:
 - static library `lib\libocular.xxx`
 - dynamic link library `bin\ocular.dll`
 - console demo `bin\demo.exe`
-- palette demo `bin\palette.exe`
-
-***Pallette Demo***
-
-
-| ![Palette Demo](screenshots/palette-demo.jpg "Gimp Palette")
-|:---:|
-| **Gimp Palette**
 
 ## TODO
 

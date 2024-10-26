@@ -17,3 +17,8 @@ demo/test_filters.h
 /docs/out/html
 /docs/*.pdi
 /test_images/
+
+# palette work in progress
+/lib/palette.h
+/demo/palette.c
+/screenshots/*
