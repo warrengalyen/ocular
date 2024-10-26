@@ -563,3 +563,97 @@ void save_act_palette(const char* filename, const OcPalette* palette_data) {
     fclose(file);
 }
 
+PaletteFormat detect_palette_format(const char* filename) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        perror("Failed to open palette file");
+        return FORMAT_UNKNOWN;
+    }
+
+    char header[32];
+    size_t bytes_read = fread(header, 1, sizeof(header), file);
+    fclose(file);
+
+    if (bytes_read < 8) {
+        return FORMAT_UNKNOWN;
+    }
+
+    // Check for RIFF PAL format
+    if (memcmp(header, "RIFF", 4) == 0 && memcmp(header + 8, "PAL ", 4) == 0) {
+        return FORMAT_RIFF;
+    }
+
+    // Check for ACO format (version 1 or 2)
+    unsigned short version = (header[0] << 8) | header[1];
+    if (version == 1 || version == 2) {
+        return FORMAT_ACO;
+    }
+
+    // Check for GIMP palette (text format)
+    if (strncmp(header, "GIMP", 4) == 0) {
+        return FORMAT_GIMP;
+    }
+
+    // Check for Paint.NET palette
+    // convert header to lowercase
+    for (int i = 0; i < bytes_read; i++) {
+        header[i] = tolower(header[i]);
+    }
+    if (bytes_read >= 22 && strncmp(header, ";paint.net palette file", 22) == 0) {
+        return FORMAT_PAINTNET;
+    }
+
+    // Check for ACT format (exactly 768 or 772 bytes)
+    FILE* act_file = fopen(filename, "rb");
+    if (act_file) {
+        fseek(act_file, 0, SEEK_END);
+        long size = ftell(act_file);
+        fclose(act_file);
+        
+        if (size == 768 || size == 772) {
+            return FORMAT_ACT;
+        }
+    }
+
+    // back to text file reading for GIMP palettes that might 
+    // not have the header at the start.
+    file = fopen(filename, "r");
+    if (file) {
+        char line[256];
+        if (fgets(line, sizeof(line), file)) {
+            if (strstr(line, "GIMP") != NULL) {
+                fclose(file);
+                return FORMAT_GIMP;
+            }
+        }
+        fclose(file);
+    }
+
+    return FORMAT_UNKNOWN;
+}
+
+void ocularLoadPalette(const char* filename, OcPalette* palette) {
+    
+    PaletteFormat format = detect_palette_format(filename);
+    switch (format) {
+        case FORMAT_GIMP:
+            read_gimp_palette(filename, palette);
+            break;
+        case FORMAT_RIFF:
+            read_riff_palette(filename, palette);
+            break;
+        case FORMAT_ACO:
+            read_aco_palette(filename, palette);
+            break;
+        case FORMAT_PAINTNET:
+            read_paintnet_palette(filename, palette);
+            break;
+        case FORMAT_ACT:
+            read_act_palette(filename, palette);
+            break;
+        default:
+            fprintf(stderr, "Unsupported palette format\n");
+            break;
+    }
+}
+
