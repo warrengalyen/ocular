@@ -20,7 +20,8 @@ typedef enum
     FORMAT_GIMP,
     FORMAT_RIFF,
     FORMAT_ACO,
-    FORMAT_PAINTNET
+    FORMAT_PAINTNET,
+    FORMAT_ACT
 } PaletteFormat;
 
 // Adobe-specific structures
@@ -483,6 +484,81 @@ void save_paintnet_palette(const char* filename, const OcPalette* palette_data) 
         // FF prefix makes the color fully opaque (alpha = 255)
         fprintf(file, "FF%02X%02X%02X\n", color->r, color->g, color->b);
     }
+
+    fclose(file);
+}
+
+void read_act_palette(const char* filename, OcPalette* palette_data) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        perror("Failed to open ACT file");
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // If file has color count and transparency index, read them
+    if (file_size == 772) {
+        unsigned short color_count;
+        unsigned short transparency_index;
+        fseek(file, 768, SEEK_SET);
+        fread(&color_count, 2, 1, file);
+        fread(&transparency_index, 2, 1, file);
+        fseek(file, 0, SEEK_SET);
+        color_count = BIG_ENDIAN_16(color_count);
+        palette_data->num_colors = color_count;
+    } else {
+        palette_data->num_colors = file_size / 3;
+    }
+
+    // Initialize palette data
+    strncpy(palette_data->name, "Adobe Color Table", 255);
+    palette_data->name[255] = '\0';
+
+    // Read RGB values (up to 256 colors)
+    unsigned char rgb[3];
+    for (int i = 0; i < palette_data->num_colors; i++) {
+        fread(rgb, 1, 3, file);
+        OcPaletteColor* color = &palette_data->colors[i];
+        color->r = rgb[0];
+        color->g = rgb[1];
+        color->b = rgb[2];
+        color->name[0] = '\0';
+    }
+
+    fclose(file);
+}
+
+void save_act_palette(const char* filename, const OcPalette* palette_data) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        perror("Failed to open file for writing");
+        return;
+    }
+
+    // Write RGB values for up to 256 colors
+    int colors_to_write = palette_data->num_colors > 256 ? 256 : palette_data->num_colors;
+    
+    // Pad with zeros up to 256 colors
+    unsigned char zero_rgb[3] = {0, 0, 0};
+    
+    for (int i = 0; i < 256; i++) {
+        if (i < colors_to_write) {
+            const OcPaletteColor* color = &palette_data->colors[i];
+            unsigned char rgb[3] = {color->r, color->g, color->b};
+            fwrite(rgb, 1, 3, file);
+        } else {
+            fwrite(zero_rgb, 1, 3, file);
+        }
+    }
+
+    // Write optional color count and transparency index
+    unsigned short color_count = BIG_ENDIAN_16(colors_to_write);
+    unsigned short transparency_index = 0; // No transparency by default
+    fwrite(&color_count, 2, 1, file);
+    fwrite(&transparency_index, 2, 1, file);
 
     fclose(file);
 }
