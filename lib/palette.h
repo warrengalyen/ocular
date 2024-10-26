@@ -340,9 +340,78 @@ void read_aco_palette(const char* filename, OcPalette* palette_data) {
     fclose(file);
 }
 
+// Only supports RGB color space
 void save_aco_palette(const char* filename, const OcPalette* palette) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        perror("Failed to open file for writing");
+        return;
+    }
 
+    // Write version 1 header and color count
+    unsigned short version = BIG_ENDIAN_16(1);
+    unsigned short count = BIG_ENDIAN_16(palette->num_colors);
+    fwrite(&version, sizeof(unsigned short), 1, file);
+    fwrite(&count, sizeof(unsigned short), 1, file);
 
+    // Write version 1 color entries (without names)
+    for (int i = 0; i < palette->num_colors; i++) {
+        const OcPaletteColor* color = &palette->colors[i];
+        
+        // Color space (0 = RGB)
+        unsigned short colorSpace = BIG_ENDIAN_16(0);
+        // Convert 8-bit RGB to 16-bit values
+        unsigned short w = BIG_ENDIAN_16(color->r << 8);
+        unsigned short x = BIG_ENDIAN_16(color->g << 8);
+        unsigned short y = BIG_ENDIAN_16(color->b << 8);
+        unsigned short z = 0; // Not used for RGB
+
+        fwrite(&colorSpace, sizeof(unsigned short), 1, file);
+        fwrite(&w, sizeof(unsigned short), 1, file);
+        fwrite(&x, sizeof(unsigned short), 1, file);
+        fwrite(&y, sizeof(unsigned short), 1, file);
+        fwrite(&z, sizeof(unsigned short), 1, file);
+    }
+
+    // Write version 2 header and color count
+    version = BIG_ENDIAN_16(2);
+    count = BIG_ENDIAN_16(palette->num_colors);
+    fwrite(&version, sizeof(unsigned short), 1, file);
+    fwrite(&count, sizeof(unsigned short), 1, file);
+
+    // Write version 2 color entries (with names)
+    for (int i = 0; i < palette->num_colors; i++) {
+        const OcPaletteColor* color = &palette->colors[i];
+        
+        // Write color data (same as version 1)
+        unsigned short colorSpace = BIG_ENDIAN_16(0);
+        unsigned short w = BIG_ENDIAN_16(color->r << 8);
+        unsigned short x = BIG_ENDIAN_16(color->g << 8);
+        unsigned short y = BIG_ENDIAN_16(color->b << 8);
+        unsigned short z = 0;
+
+        fwrite(&colorSpace, sizeof(unsigned short), 1, file);
+        fwrite(&w, sizeof(unsigned short), 1, file);
+        fwrite(&x, sizeof(unsigned short), 1, file);
+        fwrite(&y, sizeof(unsigned short), 1, file);
+        fwrite(&z, sizeof(unsigned short), 1, file);
+
+        // Write color name (UTF-16 format)
+        size_t name_len = strlen(color->name);
+        unsigned int str_len = BIG_ENDIAN_32(name_len + 1); // +1 for null terminator
+        fwrite(&str_len, sizeof(unsigned int), 1, file);
+
+        // Convert and write each character as UTF-16 Big Endian
+        for (size_t j = 0; j < name_len; j++) {
+            unsigned short unicode = BIG_ENDIAN_16((unsigned short)color->name[j]);
+            fwrite(&unicode, sizeof(unsigned short), 1, file);
+        }
+        // Write null terminator
+        unsigned short null_term = 0;
+        fwrite(&null_term, sizeof(unsigned short), 1, file);
+    }
+
+    fclose(file);
 }
 
 void read_paintnet_palette(const char* filename, OcPalette* palette_data) {
