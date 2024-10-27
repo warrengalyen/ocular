@@ -21,17 +21,9 @@ typedef enum
     FORMAT_RIFF,
     FORMAT_ACO,
     FORMAT_PAINTNET,
-    FORMAT_ACT
+    FORMAT_ACT,
+    FORMAT_ASE
 } PaletteFormat;
-
-// Adobe-specific structures
-typedef struct {
-    unsigned short colorSpace;
-    unsigned short w; // Color components
-    unsigned short x;
-    unsigned short y;
-    unsigned short z;
-} AcoColorEntry;
 
 typedef struct {
     int r;
@@ -45,6 +37,29 @@ typedef struct {
     int num_colors;
     OcPaletteColor colors[MAX_PALETTE_COLORS];
 } OcPalette;
+
+// ACO-specific structures
+typedef struct {
+    unsigned short colorSpace;
+    unsigned short w; // Color components
+    unsigned short x;
+    unsigned short y;
+    unsigned short z;
+} AcoColorEntry;
+
+// ASE-specific structures and constants
+#define ASE_SIGNATURE 0x41534546 // "ASEF" in hex
+#define ASE_VERSION_MAJOR 1
+#define ASE_VERSION_MINOR 0
+
+#define ASE_BLOCK_COLOR 0x0001
+#define ASE_BLOCK_GROUP_START 0xc001
+#define ASE_BLOCK_GROUP_END 0xc002
+
+#define ASE_COLOR_RGB 0x52474220  // "RGB " in hex
+#define ASE_COLOR_CMYK 0x434D594B // "CMYK" in hex
+#define ASE_COLOR_LAB 0x4C414220  // "LAB " in hex
+#define ASE_COLOR_GRAY 0x47726179 // "Gray" in hex
 
 void read_gimp_palette(const char* filename, OcPalette* palette_data) {
     FILE *file = fopen(filename, "r");
@@ -563,6 +578,113 @@ void save_act_palette(const char* filename, const OcPalette* palette_data) {
     fclose(file);
 }
 
+void read_ase_palette(const char* filename, OcPalette* palette_data) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        perror("Failed to open ASE file");
+        return;
+    }
+
+    // Read header
+    int signature;
+    unsigned short version_major, version_minor;
+    int block_count;
+
+    fread(&signature, 4, 1, file);
+    signature = BIG_ENDIAN_32(signature);
+    
+    if (signature != ASE_SIGNATURE) {
+        fprintf(stderr, "Invalid ASE file signature\n");
+        fclose(file);
+        return;
+    }
+
+    fread(&version_major, 2, 1, file);
+    fread(&version_minor, 2, 1, file);
+    fread(&block_count, 4, 1, file);
+    
+    version_major = BIG_ENDIAN_16(version_major);
+    version_minor = BIG_ENDIAN_16(version_minor);
+    block_count = BIG_ENDIAN_32(block_count);
+
+    // Initialize palette
+    palette_data->num_colors = 0;
+    strncpy(palette_data->name, "Adobe Swatch Exchange", 255);
+    palette_data->name[255] = '\0';
+
+    // Read blocks
+    while (!feof(file) && palette_data->num_colors < MAX_PALETTE_COLORS) {
+        unsigned short block_type;
+        int block_length;
+
+        if (fread(&block_type, 2, 1, file) != 1) break;
+        if (fread(&block_length, 4, 1, file) != 1) break;
+
+        block_type = BIG_ENDIAN_16(block_type);
+        block_length = BIG_ENDIAN_32(block_length);
+
+        if (block_type == ASE_BLOCK_COLOR) {
+            unsigned short name_length;
+            fread(&name_length, 2, 1, file);
+            name_length = BIG_ENDIAN_16(name_length);
+
+            // Read color name (UTF-16)
+            char color_name[256] = {0};
+            if (name_length > 0) {
+                read_utf16_string(file, color_name, name_length);
+            }
+
+            // Read color model
+            int color_model;
+            fread(&color_model, 4, 1, file);
+            color_model = BIG_ENDIAN_32(color_model);
+
+            OcPaletteColor* color = &palette_data->colors[palette_data->num_colors];
+            strncpy(color->name, color_name, 255);
+            color->name[255] = '\0';
+
+            // Read color values
+            if (color_model == ASE_COLOR_RGB) {
+                float r, g, b;
+                fread(&r, 4, 1, file);
+                fread(&g, 4, 1, file);
+                fread(&b, 4, 1, file);
+                
+                // Convert from big-endian float and scale to 0-255
+                union { float f; int i; } ur, ug, ub;
+                ur.i = BIG_ENDIAN_32(*(int*)&r);
+                ug.i = BIG_ENDIAN_32(*(int*)&g);
+                ub.i = BIG_ENDIAN_32(*(int*)&b);
+
+                color->r = (int)(ur.f * 255.0f);
+                color->g = (int)(ug.f * 255.0f);
+                color->b = (int)(ub.f * 255.0f);
+                
+                palette_data->num_colors++;
+            } else if (color_model == ASE_COLOR_GRAY) {
+                float gray;
+                fread(&gray, 4, 1, file);
+                
+                union { float f; in i; } ug;
+                ug.i = BIG_ENDIAN_32(*(int*)&gray);
+                
+                color->r = color->g = color->b = (int)(ug.f * 255.0f);
+                palette_data->num_colors++;
+            }
+            // Skip color type (global or spot)
+            fseek(file, 2, SEEK_CUR);
+        } else if (block_type == ASE_BLOCK_GROUP_START) {
+            // Skip group blocks
+            fseek(file, block_length, SEEK_CUR);
+        } else if (block_type == ASE_BLOCK_GROUP_END) {
+            // Skip group end blocks
+            fseek(file, block_length, SEEK_CUR);
+        }
+    }
+
+    fclose(file);
+}
+
 PaletteFormat detect_palette_format(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -615,6 +737,20 @@ PaletteFormat detect_palette_format(const char* filename) {
         }
     }
 
+    // Check for ASE format
+    FILE* ase_file = fopen(filename, "rb");
+    if (ase_file) {
+        int signature;
+        if (fread(&signature, 4, 1, ase_file) == 1) {
+            signature = BIG_ENDIAN_32(signature);
+            if (signature == ASE_SIGNATURE) {
+                fclose(ase_file);
+                return FORMAT_ASE;
+            }
+        }
+        fclose(ase_file);
+    }
+
     // back to text file reading for GIMP palettes that might 
     // not have the header at the start.
     file = fopen(filename, "r");
@@ -650,6 +786,9 @@ void ocularLoadPalette(const char* filename, OcPalette* palette) {
             break;
         case FORMAT_ACT:
             read_act_palette(filename, palette);
+            break;
+        case FORMAT_ASE:
+            read_ase_palette(filename, palette);
             break;
         default:
             fprintf(stderr, "Unsupported palette format\n");
