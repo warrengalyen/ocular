@@ -61,6 +61,7 @@ typedef struct {
 
 /**
  * Read a GIMP palette file.
+ * @ingroup group_palette
  * @param filename The path to the GIMP palette file.
  * @param palette_data The palette to load the data into.
  */
@@ -68,6 +69,7 @@ void read_gimp_palette(const char* filename, OcPalette* palette_data);
 
 /**
  * Save palette data to a GIMP palette file.
+ * @ingroup group_palette
  * @param filename The path to the file to write to.
  * @param palette The palette to save.
  */
@@ -75,6 +77,7 @@ void save_gimp_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Read a Microsoft RIFF palette file.
+ * @ingroup group_palette
  * @param filename The path to the RIFF palette file.
  * @param palette The palette to load the data into.
  */
@@ -82,13 +85,15 @@ void read_riff_palette(const char* filename, OcPalette* palette);
 
 /**
  * Save palette data to a Microsoft RIFF palette file.
+ * @ingroup group_palette
  * @param filename The path to the file to write to.
  * @param palette The palette to save.
  */
 void save_riff_palette(const char* filename, const OcPalette* palette);
 
 /**
- * Read a UTF-16 encoded string from a file.
+ * Read a UTF-16 encoded string from a file.    
+ * @ingroup group_palette
  * @param file The file to read from.
  * @param output The buffer to store the string in.
  * @param length The maximum length of the string to read.
@@ -97,6 +102,7 @@ void read_utf16_string(FILE* file, char* output, int length);
 
 /**
  * Read the color swatches from an ACO file.
+ * @ingroup group_palette
  * @param file The file to read from.
  * @param palette_data The palette to load the data into.
  * @param version The version of the ACO file.
@@ -105,6 +111,7 @@ void read_swatches(FILE* file, OcPalette* palette_data, unsigned short version);
 
 /**
  * Read an Adobe Color Swatch (.aco) file.
+ * @ingroup group_palette
  * @param filename The path to the ACO file.
  * @param palette The palette to load the data into.
  */
@@ -112,6 +119,7 @@ void read_aco_palette(const char* filename, OcPalette* palette);
 
 /**
  * Save palette data to an Adobe Color Swatch (.aco) file. Currently only supports RGB colorspace
+ * @ingroup group_palette
  * @param filename The path to the file to write to.
  * @param palette The palette to save.
  */
@@ -119,6 +127,7 @@ void save_aco_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Read a Paint.NET palette file.
+ * @ingroup group_palette
  * @param filename The path to the Paint.NET palette file.
  * @param palette_data The palette to load the data into.
  */
@@ -126,6 +135,7 @@ void read_paintnet_palette(const char* filename, OcPalette* palette_data);
 
 /**
  * Save palette data to a Paint.NET palette file.
+ * @ingroup group_palette
  * @param filename The path to the file to write to.
  * @param palette The palette to save.
  */
@@ -133,6 +143,7 @@ void save_paintnet_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Read an Adobe Color Table (.act) file.
+ * @ingroup group_palette
  * @param filename The path to the ACT file.
  * @param palette The palette to load the data into.
  */
@@ -140,6 +151,7 @@ void read_act_palette(const char* filename, OcPalette* palette);
 
 /**
  * Save palette data to an Adobe Color Table (.act) file.
+ * @ingroup group_palette
  * @param filename The path to the file to write to.
  * @param palette The palette to save.
  */
@@ -147,6 +159,7 @@ void save_act_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Read an Adobe Swatch Exchange (.ase) file. Currently only supports RGB and Grayscale color spaces.
+ * @ingroup group_palette
  * @param filename The path to the ASE file.
  * @param palette The palette to load the data into.
  */
@@ -158,5 +171,3 @@ void read_ase_palette(const char* filename, OcPalette* palette);
  * @return The format of the palette file.
  */
 PaletteFormat detect_palette_format(const char* filename);
-
-

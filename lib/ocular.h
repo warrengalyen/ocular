@@ -1105,7 +1105,8 @@ extern "C" {
                             unsigned char G, unsigned char B);
 
         /**
-         * Load a palette from a file.
+         * Automatically detect palette format from a file and load palette.
+         * @ingroup group_palette
          * @param filename The path to the palette file.
          * @param palette The palette to load the data into.
          */
