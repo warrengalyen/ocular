@@ -126,6 +126,24 @@ Note: These are primarly used for included filters and added on as needed basis.
 - RGB <--> HSV
 - RGB <--> YCbCr
 
+### Palettes
+
+| File Extension      | Name                              |   Read  |  Write  |
+|---------------------|-----------------------------------|:-------:|:-------:|
+| `.aco`              | Adobe Color Swatch                |   ✓*    |    ✓*   |
+| `.act`              | Adobe Color Table                 |   ✓     |    ✓    |
+| `.ase`              | Adobe Swatch Exchange             |   ✓*    |         |
+| `.gpl`              | GIMP Palette                      |   ✓     |    ✓    |
+| `.pal, .psppalette` | Paint Shop Pro Palette            |   ✓     |    ✓    |
+| `.pal`              | Microsoft RIFF Palette            |   ✓     |    ✓    |
+| `.txt`              | Paint.NET Palette                 |   ✓     |    ✓    |
+
+*CMYK/Lab currently not supported, export RGB only.
+
+
+
+
+
 ## Running
 
 To compile the library, simply do the following:
