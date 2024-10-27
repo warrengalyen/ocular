@@ -23,6 +23,9 @@ add_executable(demo demo.c)
 target_link_libraries(demo
         ocular
 )
+target_link_libraries(palette
+    ocular
+)
 
 # Point to which directory Demo is copied during installation and packaging
 install(TARGETS demo DESTINATION demo)

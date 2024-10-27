@@ -23,7 +23,8 @@ extern "C" {
 #include "fastmath.h"
 #include "blend.h"
 #include "core.h"
-#include "interpolate.h"    
+#include "interpolate.h"
+#include "palette.h"    
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -1102,6 +1103,14 @@ extern "C" {
          */
         void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
                             unsigned char G, unsigned char B);
+
+        /**
+         * Automatically detect palette format from a file and load palette.
+         * @ingroup group_palette
+         * @param filename The path to the palette file.
+         * @param palette The palette to load the data into.
+         */
+        void ocularLoadPalette(const char* filename, OcPalette* palette);
 
         //--------------------------Misc--------------------------
 

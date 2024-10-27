@@ -22,6 +22,7 @@ set(MODULE_FILES
         threshold.c
         util.c
         ocr.c
+        palette.c
         retinex.c
         ocular.c
         ocular.h

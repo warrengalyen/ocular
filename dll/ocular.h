@@ -19,6 +19,7 @@ extern "C" {
 #include "../lib/blend.h"
 #include "../lib/ocr.h"
 #include "../lib/interpolate.h"
+#include "../lib/palette.h"
 #include "dlib_export.h"
 
     // Parameters for Levels filter
@@ -229,11 +230,17 @@ extern "C" {
 
     //--------------------------Image processing--------------------------
 
-    //--------------------------preImage processing--------------------------
+    //--------------------------preImage processing------------------------
 
     DLIB_EXPORT bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
 
-    //--------------------------preImage processing--------------------------
+    //--------------------------preImage processing------------------------
+
+    //--------------------------File processing----------------------------
+    
+    DLIB_EXPORT void ocularLoadPalette(const char* filename, OcPalette* palette);
+    
+    //---------------------------------------------------------------------
 
 #ifdef __cplusplus
 }

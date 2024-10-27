@@ -4987,6 +4987,20 @@ extern "C" {
             }
         }
     }
+
+    void ocularLoadPalette(const char* filename, OcPalette* palette) {
+
+        PaletteFormat format = detect_palette_format(filename);
+        switch (format) {
+        case FORMAT_GIMP: read_gimp_palette(filename, palette); break;
+        case FORMAT_RIFF: read_riff_palette(filename, palette); break;
+        case FORMAT_ACO: read_aco_palette(filename, palette); break;
+        case FORMAT_PAINTNET: read_paintnet_palette(filename, palette); break;
+        case FORMAT_ACT: read_act_palette(filename, palette); break;
+        case FORMAT_ASE: read_ase_palette(filename, palette); break;
+        default: fprintf(stderr, "Unsupported palette format\n"); break;
+        }
+    }
 #ifdef __cplusplus
 }
 #endif
