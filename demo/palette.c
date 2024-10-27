@@ -6,7 +6,7 @@
     #include <unistd.h>
 #endif
 
-#include "../lib/palette.h"
+#include "../lib/ocular.h"
 
 #include <stdio.h>
 #include "timing.h"
@@ -21,6 +21,45 @@
 #else 
     #include <unistd.h>
 #endif
+
+void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
+    const char* end;
+    const char* p;
+    const char* s;
+    if (path[0] && path[1] == ':') {
+        if (drv) {
+            *drv++ = *path++;
+            *drv++ = *path++;
+            *drv = '\0';
+        }
+    } else if (drv)
+        *drv = '\0';
+    for (end = path; *end && *end != ':';)
+        end++;
+    for (p = end; p > path && *--p != '\\' && *p != '/';)
+        if (*p == '.') {
+            end = p;
+            break;
+        }
+    if (ext)
+        for (s = end; (*ext = *s++);)
+            ext++;
+    for (p = end; p > path;)
+        if (*--p == '\\' || *p == '/') {
+            p++;
+            break;
+        }
+    if (name) {
+        for (s = p; s < end;)
+            *name++ = *s++;
+        *name = '\0';
+    }
+    if (dir) {
+        for (s = path; s < p;)
+            *dir++ = *s++;
+        *dir = '\0';
+    }
+}
 
 void render_palette_colors(const OcPalette* palette) {
 
@@ -46,31 +85,37 @@ int main(int argc, char** argv) {
     printf("Palette format demo\n");
     printf("https://github.com/warrengalyen/ocular/ \n");
 
-    char palette_file[1024] = "bin\\palettes\\gimp\\crayola-1958.gpl";
-    char currentPath[1024];
-    if (getcwd(currentPath, sizeof(currentPath)) != NULL) {
-        char fullPath[2048];
-        sprintf(fullPath, "%s\\%s", currentPath, palette_file);
-        printf("Loading palette from: %s\n", fullPath);
-
-        OcPalette palette;
-        read_gimp_palette(fullPath, &palette);
-
-        printf("Palette name: %s\n", palette.name);
-        printf("Total colors: %d\n", palette.num_colors);
-
-        // Render palette colors in terminal
-        // TODO: fix this for windows so characters are not mangled
-        render_palette_colors(&palette);
-
-        char gimp_file[1024] = "bin\\palettes\\test-gimp.gpl";
-        sprintf(fullPath, "%s\\%s", currentPath, gimp_file);
-        save_gimp_palette(fullPath, &palette);
-
-        char riff_file[1024] = "bin\\palettes\\test-riff.pal";
-        sprintf(fullPath, "%s\\%s", currentPath, riff_file);
-        save_riff_palette(fullPath, &palette);
+    if (argc < 2) {
+        printf("usage: \n ");
+        printf("%s filename \n ", argv[0]);
+        getchar();
+        return 0;
     }
+
+    char* in_file = argv[1];
+    if (access(in_file, 0) == -1) {
+        printf("load file: %s fail!\n", in_file);
+        return -1;
+    }
+    char drive[3];
+    char dir[256];
+    char fname[256];
+    char ext[256];
+    char out_file[1024];
+    splitpath(in_file, drive, dir, fname, ext);
+
+    OcPalette palette;
+    read_aco_palette(in_file, &palette);
+
+    printf("Palette name: %s\n", palette.name);
+    printf("Total colors: %d\n", palette.num_colors);
+
+    // Render palette colors in terminal
+    // TODO: fix this for windows so characters are not mangled
+    render_palette_colors(&palette);
+
+    sprintf(out_file, "bin/palettes/swatch_test.aco", drive, dir, fname);
+    save_aco_palette(out_file, &palette);
 
     return 0;
 }
