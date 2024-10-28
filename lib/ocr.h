@@ -37,4 +37,4 @@ float calcSkewAngle(unsigned char* Input, int Width, int Height, OcRect* CheckRe
                     int localPeakRadius, int nLineCount);
 
 
-#endif /* OCULAR_OCR_H */
+#endif  /* OCULAR_OCR_H */

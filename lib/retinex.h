@@ -15,8 +15,8 @@
  * Retinex GIMP plug-in
 */
 
-#ifndef RETINEX_H
-#define RETINEX_H
+#ifndef OCULAR_RETINEX_H
+#define OCULAR_RETINEX_H
 
 #include <math.h>
 #include <stdlib.h>
@@ -54,4 +54,4 @@ void compute_coefs3(gauss3_coefs* c, float sigma);
 
 void gausssmooth(float* in, float* out, int size, int rowstride, gauss3_coefs* c);
 
-#endif  /* RETINEX_H */
+#endif  /* OCULAR_RETINEX_H */

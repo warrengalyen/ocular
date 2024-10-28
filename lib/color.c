@@ -1,13 +1,3 @@
-/**
- * @file: color.c
- * @author Warren Galyen
- * Created: 2-12-2024
- * Last Updated: 2-12-2024
- * Last update: migrate functions
- *
- * @brief Ocular color conversion implementations
- */
-
 #include "color.h"
 #include "util.h"
 

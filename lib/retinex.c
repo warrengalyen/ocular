@@ -1,21 +1,3 @@
-
-/**
- * @file: retinex.h
- * @author Warren Galyen
- * Created: 10-21-2024
- * Last Updated: 10-21-2024
- * Last update: initial implementation
- *
- * @brief Ocular utility functions implementations that support retinex filter.
- */
-
-/* Based on:
- * MSRCR Retinex
- * (Multi - Scale Retinex with Color Restoration)
- * 2003 Fabien Pelisson<Fabien.Pelisson @inrialpes.fr>
- * Retinex GIMP plug-in
- */
-
 #include "retinex.h"
 
 void retinex_scales_distribution(float* scales, int nscales, int mode, int s) {

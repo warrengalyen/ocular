@@ -1,3 +1,14 @@
+/**
+ * @file: auxiliary.h
+ * @author Warren Galyen
+ * Created: 2-29-2024
+ * Last Updated: 2-29-2024
+ * Last update: initial implementation
+ *
+ * @brief Contains additional functions for image processing 
+ *        Mostly unused currently.
+ */
+
 #ifndef OCULAR_AUXILIARY_H
 #define OCULAR_AUXILIARY_H
 

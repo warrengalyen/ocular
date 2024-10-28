@@ -1,5 +1,15 @@
-#ifndef OCULAR_BLEND_H
-#define OCULAR_BLEND_H
+/**
+ * @file: blend.h
+ * @author Warren Galyen
+ * Created: 2-21-2024
+ * Last Updated: 2-21-2024
+ * Last update: initial implementation
+ *
+ * @brief Contains image layer color blending functions
+ */
+
+#ifndef OCUALR_BLEND_H
+#define OCUALR_BLEND_H
 
 #include <stdlib.h>
 #include "util.h"
@@ -434,4 +444,4 @@ static inline void layerBlend(int baseR, int baseG, int baseB, int mixR, int mix
     }
 };
 
-#endif // OCULAR_BLEND_H
+#endif /* OCUALR_BLEND_H */

@@ -25,4 +25,4 @@ static inline float fastSin(float x) {
 
 static inline float fastCos(float x) { return fastSin(x + 1.570796327f); }
 
-#endif /* FASTMATH_H */
+#endif  /* FASTMATH_H */

@@ -1,13 +1,3 @@
-/**
- * @file: ocular.c
- * @author Warren Galyen
- * Created: 1-29-2024
- * Last Updated: 10-21-2024
- * Last update: added retinex filter
- *
- * @brief Contains exported primary filter function implementations
- */
-
 #include <math.h>
 #include <string.h>
 #include <sys/stat.h>

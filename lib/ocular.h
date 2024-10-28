@@ -2,10 +2,10 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 10-21-2024
- * Last update: added retinex filter
+ * Last Updated: 10-27-2024
+ * Last update: added palette import/export
  *
- * @brief Contains exported primary filter function definitions
+ * @brief Contains exported primary filter functions
  */
 
 #ifndef OCULAR_H

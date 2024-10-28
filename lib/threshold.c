@@ -1,13 +1,3 @@
-/**
- * @file: threshold.c
- * @author Warren Galyen
- * Created: 2-19-2024
- * Last Updated: 2-19-2024
- * Last update: initial implementation
- *
- * @brief Ocular histogram threshold method implementations
- */
-
 #include <string.h>
 #include <math.h>
 #include <float.h>

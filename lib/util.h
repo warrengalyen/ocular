@@ -157,4 +157,4 @@ void skinDenoise(unsigned char* input, unsigned char* output, int width, int hei
 // BEEP filter
 float calcWeight(const float weight, const float spatialContraDecay, const float diff);
 
-#endif /* OCULAR_UTIL_H */
+#endif  /* OCULAR_UTIL_H */

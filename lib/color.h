@@ -5,7 +5,7 @@
  * Last Updated: 2-12-2024
  * Last update: migrate functions
  *
- * @brief Ocular color conversion definitions
+ * @brief Ocular color conversion functions
  */
 
 #ifndef OCULAR_COLOR_H

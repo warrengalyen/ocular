@@ -5,7 +5,7 @@
  * Last Updated: 2-19-2024
  * Last update: initial implementation
  *
- * @brief Ocular histogram threshold method definitions
+ * @brief Ocular histogram threshold methods
  * Many of these algorithms were adapted from ImageJ: http://fiji.sc/wiki/index.php/Auto_Threshold
  */
 
@@ -164,4 +164,4 @@ float D(int histogram[], int index);
 bool isBimodal(int histogram[]);
 
 
-#endif // OCULAR_THRESHOLD_H
+#endif  /* OCULAR_THRESHOLD_H */

@@ -1,3 +1,13 @@
+/**
+ * @file: core.h
+ * @author Warren Galyen
+ * Created: 2-29-2024
+ * Last Updated: 5-21-2024
+ * Last update: added transpose function
+ *
+ * @brief Contains exported primary filter functions
+ */
+
 #ifndef OCULAR_CORE_H
 #define OCULAR_CORE_H
 

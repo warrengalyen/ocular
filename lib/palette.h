@@ -1,3 +1,16 @@
+/**
+ * @file: palette.h
+ * @author Warren Galyen
+ * Created: 10-23-2024
+ * Last Updated: 10-27-2024
+ * Last update: added auto detect file format
+ *
+ * @brief Ocular palette file format import/export functions
+ */
+
+#ifndef OCULAR_PALETTE_H
+#define OCULAR_PALETTE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,7 +106,6 @@ void save_riff_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Read a UTF-16 encoded string from a file.    
- * @ingroup group_palette
  * @param file The file to read from.
  * @param output The buffer to store the string in.
  * @param length The maximum length of the string to read.
@@ -102,7 +114,6 @@ void read_utf16_string(FILE* file, char* output, int length);
 
 /**
  * Read the color swatches from an ACO file.
- * @ingroup group_palette
  * @param file The file to read from.
  * @param palette_data The palette to load the data into.
  * @param version The version of the ACO file.
@@ -171,3 +182,5 @@ void read_ase_palette(const char* filename, OcPalette* palette);
  * @return The format of the palette file.
  */
 PaletteFormat detect_palette_format(const char* filename);
+
+#endif /* OCULAR_PALETTE_H */
