@@ -2,8 +2,8 @@
  * @file: color.h
  * @author Warren Galyen
  * Created: 2-12-2024
- * Last Updated: 2-12-2024
- * Last update: migrate functions
+ * Last Updated: 10-28-2024
+ * Last update: added CMYK <--> RGB conversion
  *
  * @brief Ocular color conversion functions
  */
@@ -53,5 +53,15 @@ void rgb2ycbcr(unsigned char R, unsigned char G, unsigned char B, unsigned char*
  * @ingroup group_color_convert
  */
 void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned char* R, unsigned char* G, unsigned char* B);
+
+/** @brief RGB to CMYK color space conversion.
+ * @ingroup group_color_convert
+ */
+void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float* m, float* y, float* k);
+
+/** @brief CMYK to RGB color space conversion.
+ * @ingroup group_color_convert
+ */
+void cmyk2rgb(float c, float m, float y, float k, unsigned char* R, unsigned char* G, unsigned char* B);
 
 #endif  /* OCULAR_COLOR_H */

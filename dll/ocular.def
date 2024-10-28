@@ -75,14 +75,16 @@ EXPORTS
     hsl2rgb @73
     rgb2hsv @74
     hsv2rgb @75
-    read_gimp_palette @77
-    save_gimp_palette @78
-    read_riff_palette @79
-    save_riff_palette @80
-    read_aco_palette @81
-    save_aco_palette @82
-    read_act_palette @83
-    save_act_palette @84
-    read_ase_palette @85
-    read_paintnet_palette @86
-    save_paintnet_palette @87
+    rgb2cmyk @76
+    cmyk2rgb @77
+    read_gimp_palette @78
+    save_gimp_palette @79
+    read_riff_palette @80
+    save_riff_palette @81
+    read_aco_palette @82
+    save_aco_palette @83
+    read_act_palette @84
+    save_act_palette @85
+    read_ase_palette @86
+    read_paintnet_palette @87
+    save_paintnet_palette @88

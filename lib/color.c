@@ -205,3 +205,44 @@ void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned cha
     *G = (unsigned char)g;
     *B = (unsigned char)b;
 }
+
+void cmyk2rgb(float c, float m, float y, float k, unsigned char* R, unsigned char* G, unsigned char* B) {
+    // Convert from CMYK percentages (0-100) to RGB (0-255)
+    float r = 255 * (1.0f - c/100.0f) * (1.0f - k/100.0f);
+    float g = 255 * (1.0f - m/100.0f) * (1.0f - k/100.0f);
+    float b = 255 * (1.0f - y/100.0f) * (1.0f - k/100.0f);
+    
+    // Round and clamp values to valid byte range
+    *R = (unsigned char)(r + 0.5f);
+    *G = (unsigned char)(g + 0.5f);
+    *B = (unsigned char)(b + 0.5f);
+}
+
+void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float* m, float* y, float* k) {
+    // Convert RGB (0-255) to floating point (0-1)
+    float r = R / 255.0f;
+    float g = G / 255.0f;
+    float b = B / 255.0f;
+    
+    // Find k (black)
+    float k_temp = 1.0f - fmaxf(r, fmaxf(g, b));
+    
+    // Handle pure black case
+    if (k_temp == 1.0f) {
+        *c = 0.0f;
+        *m = 0.0f;
+        *y = 0.0f;
+    } else {
+        // Calculate CMY values
+        *c = (1.0f - r - k_temp) / (1.0f - k_temp);
+        *m = (1.0f - g - k_temp) / (1.0f - k_temp);
+        *y = (1.0f - b - k_temp) / (1.0f - k_temp);
+    }
+    
+    // Convert to percentages (0-100)
+    *c *= 100.0f;
+    *m *= 100.0f;
+    *y *= 100.0f;
+    *k = k_temp * 100.0f;
+}
+
