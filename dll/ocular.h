@@ -194,8 +194,8 @@ extern "C" {
     DLIB_EXPORT void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                                int smoothingLevel, bool applySkinFilter);
 
-    DLIB_EXPORT void ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
-                                         float sharpness, int intensity);
+    DLIB_EXPORT void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
+                                           float sharpness, int intensity);
 
     DLIB_EXPORT void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
                                             int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
@@ -239,7 +239,29 @@ extern "C" {
     //--------------------------File processing----------------------------
     
     DLIB_EXPORT void ocularLoadPalette(const char* filename, OcPalette* palette);
-    
+
+    DLIB_EXPORT void read_gimp_palette(const char* filename, OcPalette* palette_data);
+
+    DLIB_EXPORT void save_gimp_palette(const char* filename, const OcPalette* palette);
+
+    DLIB_EXPORT void read_riff_palette(const char* filename, OcPalette* palette);
+
+    DLIB_EXPORT void save_riff_palette(const char* filename, const OcPalette* palette);
+
+    DLIB_EXPORT void read_aco_palette(const char* filename, OcPalette* palette);
+
+    DLIB_EXPORT void save_aco_palette(const char* filename, const OcPalette* palette);
+
+    DLIB_EXPORT void read_paintnet_palette(const char* filename, OcPalette* palette_data);
+
+    DLIB_EXPORT void save_paintnet_palette(const char* filename, const OcPalette* palette);
+
+    DLIB_EXPORT void read_act_palette(const char* filename, OcPalette* palette);
+
+    DLIB_EXPORT void save_act_palette(const char* filename, const OcPalette* palette);
+
+    DLIB_EXPORT void read_ase_palette(const char* filename, OcPalette* palette);
+
     //---------------------------------------------------------------------
 
 #ifdef __cplusplus

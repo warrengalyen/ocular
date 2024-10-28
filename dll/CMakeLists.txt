@@ -28,8 +28,13 @@ set(MODULE_FILES
         ocular.h
         dlib_export.h
 )
+if (WIN32)
+    # prevent exporting all symbols
+    set (MODULE_FILES ${MODULE_FILES} ocular.def) 
+endif ()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/demo_ui")
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/demo_ui")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin")
 
 add_library(ocular_dll SHARED ${MODULE_FILES})
 

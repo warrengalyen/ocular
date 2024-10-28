@@ -13,7 +13,7 @@
     #if defined(__GNUC__) || defined(__APPLE__) || defined(LINUX)
         #if defined(DLib_EXPORTS)
             #undef DLIB_EXPORT
-            #define DLIB_EXPORT __attribute__((visibility("default")))
+            #define DLIB_EXPORT __attribute__((visibility("hidden")))
         #endif // defined(DLib_EXPORTS)
     #endif     // defined(__GNUC__) || defined(__APPLE__) || defined(LINUX)
 
