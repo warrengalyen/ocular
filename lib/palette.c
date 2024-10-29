@@ -1,6 +1,29 @@
 #include "palette.h"
 #include "color.h"
 
+void ocularFreePalette(OcPalette* palette) {
+    if (palette) {
+        free(palette->colors);
+        palette->colors = NULL;
+        palette->num_colors = 0;
+        palette->capacity = 0;
+        palette->name[0] = '\0';
+    }
+}
+
+bool resize_palette(OcPalette* palette) {
+    if (palette->num_colors >= palette->capacity) {
+        palette->capacity *= 2;
+        OcPaletteColor* colors = realloc(palette->colors, palette->capacity * sizeof(OcPaletteColor));
+        if (!colors) {
+            perror("Failed to reallocate memory for palette");
+            return false;
+        }
+        palette->colors = colors;
+    }
+    return true;
+}
+
 void read_gimp_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -9,7 +32,15 @@ void read_gimp_palette(const char* filename, OcPalette* palette) {
     }
 
     char line[256];
-    palette->num_colors = 0; // Initialize the number of colors
+    palette->num_colors = 0;
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+
+    if (!palette->colors) {
+        perror("Failed to allocate memory for palette");
+        fclose(file);
+        return;
+    }
 
     // Skip header lines
     while (fgets(line, sizeof(line), file)) {
@@ -20,6 +51,11 @@ void read_gimp_palette(const char* filename, OcPalette* palette) {
         if (strncmp(line, "Name", 4) == 0) {
             sscanf(line, "Name: %[^\n]", palette->name); // read the rest of the line, including spaces
             continue;
+        }
+
+        // Ensure we have enough capacity for new color
+        if (!resize_palette(palette)) {
+            break;
         }
 
         // Read color data
@@ -95,12 +131,19 @@ void read_riff_palette(const char* filename, OcPalette* palette) {
     fread(&num_entries, 2, 1, file);
 
     palette->num_colors = num_entries;
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
     strncpy(palette->name, "RIFF Palette", 255);
     palette->name[255] = '\0';
 
     // Read color entries
     unsigned char r, g, b, flags;
     for (int i = 0; i < num_entries; i++) {
+
+        // Ensure we have enough capacity for new color
+        if (!resize_palette(palette)) {
+            break;
+        }
 
         fread(&r, 1, 1, file);
         fread(&g, 1, 1, file);
@@ -155,6 +198,7 @@ void save_riff_palette(const char* filename, const OcPalette* palette) {
 
     // Write color entries
     for (int i = 0; i < palette->num_colors; i++) {
+
         const OcPaletteColor* color = &palette->colors[i];
         unsigned char r = (unsigned char)color->r;
         unsigned char g = (unsigned char)color->g;
@@ -198,7 +242,15 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
     count = BIG_ENDIAN_16(count);
     palette->num_colors = count;
 
-    for (int i = 0; i < count && palette->num_colors < MAX_PALETTE_COLORS; i++) {
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+
+    for (int i = 0; i < count; i++) {
+
+        if (!resize_palette(palette)) {
+            break;
+        }
+
         AcoColorEntry entry;
         fread(&entry.colorSpace, sizeof(unsigned short), 1, file);
         fread(&entry.w, sizeof(unsigned short), 1, file);
@@ -394,7 +446,11 @@ void read_paintnet_palette(const char* filename, OcPalette* palette) {
         }
     }
 
-    while (fgets(line, sizeof(line), file) && palette->num_colors < MAX_PALETTE_COLORS) {
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+
+    while (fgets(line, sizeof(line), file)) {
+
         // Skip comments and empty lines
         if (line[0] == ';' || line[0] == '\n' || line[0] == '\r') {
             continue;
@@ -406,6 +462,11 @@ void read_paintnet_palette(const char* filename, OcPalette* palette) {
         // Convert hex string to RGB values
         unsigned int hex_color;
         if (sscanf(line, "%X", &hex_color) == 1) {
+
+            if (!resize_palette(palette)) {
+                break;
+            }
+
             OcPaletteColor* color = &palette->colors[palette->num_colors];
 
             // Extract RGB components (Paint.NET uses ARGB format)
@@ -472,9 +533,17 @@ void read_act_palette(const char* filename, OcPalette* palette) {
     strncpy(palette->name, "Adobe Color Table", 255);
     palette->name[255] = '\0';
 
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+
     // Read RGB values (up to 256 colors)
     unsigned char rgb[3];
     for (int i = 0; i < palette->num_colors; i++) {
+
+        if (!resize_palette(palette)) {
+            break;
+        }
+
         fread(rgb, 1, 3, file);
         OcPaletteColor* color = &palette->colors[i];
         color->r = rgb[0];
@@ -552,8 +621,11 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
     strncpy(palette->name, "Adobe Swatch Exchange", 255);
     palette->name[255] = '\0';
 
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+
     // Read blocks
-    while (!feof(file) && palette->num_colors < MAX_PALETTE_COLORS) {
+    while (!feof(file)) {
         unsigned short block_type;
         int block_length;
 
@@ -580,6 +652,8 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
             int color_model;
             fread(&color_model, 4, 1, file);
             color_model = BIG_ENDIAN_32(color_model);
+
+            
 
             OcPaletteColor* color = &palette->colors[palette->num_colors];
             strncpy(color->name, color_name, 255);

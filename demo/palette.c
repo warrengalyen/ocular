@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
     splitpath(in_file, drive, dir, fname, ext);
 
     OcPalette palette;
-    read_aco_palette(in_file, &palette);
+    ocularLoadPalette(in_file, &palette);
 
     printf("Palette name: %s\n", palette.name);
     printf("Total colors: %d\n", palette.num_colors);
@@ -116,6 +116,9 @@ int main(int argc, char** argv) {
 
     sprintf(out_file, "bin/palettes/swatch_test.aco", drive, dir, fname);
     save_aco_palette(out_file, &palette);
+
+    // Must be called to free palette memory allocated during palette load
+    ocularFreePalette(&palette);
 
     return 0;
 }

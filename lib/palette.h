@@ -2,8 +2,8 @@
  * @file: palette.h
  * @author Warren Galyen
  * Created: 10-23-2024
- * Last Updated: 10-27-2024
- * Last update: added auto detect file format
+ * Last Updated: 10-29-2024
+ * Last update: improved palette loading memory management
  *
  * @brief Ocular palette file format import/export functions
  */
@@ -23,7 +23,7 @@
 // Convert a 32-bit value from big-endian to little-endian
 #define BIG_ENDIAN_32(x) ((((x) >> 24) & 0xFF) | (((x) >> 8) & 0xFF00) | (((x) << 8) & 0xFF0000) | (((x) << 24) & 0xFF000000))
 
-#define MAX_PALETTE_COLORS 2048
+#define DEFAULT_PALETTE_CAPACITY 16
 
 typedef enum
 {
@@ -46,7 +46,8 @@ typedef struct {
 typedef struct {
     char name[256];
     int num_colors;
-    OcPaletteColor colors[MAX_PALETTE_COLORS];
+    int capacity;
+    OcPaletteColor* colors;
 } OcPalette;
 
 // ACO-specific structures
@@ -71,6 +72,16 @@ typedef struct {
 #define ASE_COLOR_CMYK 0x434D594B // "CMYK" in hex
 #define ASE_COLOR_LAB 0x4C414220  // "LAB " in hex
 #define ASE_COLOR_GRAY 0x47726179 // "Gray" in hex
+
+/**
+ * @brief Frees a palette.
+ * @ingroup group_palette
+ * @param palette The palette to free.
+ */
+void ocularFreePalette(OcPalette* palette);
+
+// allocates more memory for palette if needed
+bool resize_palette(OcPalette* palette);
 
 /**
  * Read a GIMP palette file.

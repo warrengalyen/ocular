@@ -240,6 +240,8 @@ extern "C" {
     
     DLIB_EXPORT void ocularLoadPalette(const char* filename, OcPalette* palette);
 
+    DLIB_EXPORT void ocularFreePalette(OcPalette* palette);
+
     DLIB_EXPORT void read_gimp_palette(const char* filename, OcPalette* palette_data);
 
     DLIB_EXPORT void save_gimp_palette(const char* filename, const OcPalette* palette);

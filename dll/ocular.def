@@ -88,3 +88,4 @@ EXPORTS
     read_ase_palette @86
     read_paintnet_palette @87
     save_paintnet_palette @88
+    ocularFreePalette @89
