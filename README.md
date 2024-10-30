@@ -78,6 +78,8 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 #### Morphology
 
 - Erode/Dilate
+- Min/Max
+- High Pass
 
 #### Sharpening
 
@@ -125,6 +127,7 @@ Note: These are primarly used for included filters and added on as needed basis.
 - RGB <--> HSL
 - RGB <--> HSV
 - RGB <--> YCbCr
+- RGB <--> CMYK
 
 ### Palettes
 
@@ -157,7 +160,8 @@ This will out the following 4 files:
 
 - static library `lib\libocular.xxx`
 - dynamic link library `bin\ocular.dll`
-- console demo `bin\demo.exe`
+- cli image demo `bin\demo.exe`
+- cli palette demo `bin\palette.exe`
 
 ## TODO
 

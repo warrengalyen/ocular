@@ -89,3 +89,6 @@ EXPORTS
     read_paintnet_palette @87
     save_paintnet_palette @88
     ocularFreePalette @89
+    ocularMinFilter @90
+    ocularMaxFilter @91
+    ocularHighPassFilter @92

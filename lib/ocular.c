@@ -4796,6 +4796,196 @@ extern "C" {
         }
     }
 
+    void ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+        int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return;
+
+        // Pre-calculate circle mask
+        const int maskSize = (Radius * 2 + 1);
+        char* circleMask = (char*)malloc(maskSize * maskSize);
+        int radiusSquared = Radius * Radius;
+
+        for (int y = 0; y < maskSize; y++) {
+            for (int x = 0; x < maskSize; x++) {
+                int dx = x - Radius;
+                int dy = y - Radius;
+                circleMask[y * maskSize + x] = (dx * dx + dy * dy <= radiusSquared);
+            }
+        }
+
+        // Process image in chunks for better cache utilization
+        const int CHUNK_SIZE = 32;
+        for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+            for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                int endY = min(blockY + CHUNK_SIZE, Height);
+                int endX = min(blockX + CHUNK_SIZE, Width);
+
+                for (int y = blockY; y < endY; y++) {
+                    unsigned char* pOutput = Output + (y * Stride) + (blockX * Channels);
+
+                    for (int x = blockX; x < endX; x++) {
+                        unsigned char minValues[4] = { 255, 255, 255, 255 };
+
+                        // Scan only the pixels within the circle mask
+                        for (int ky = 0; ky < maskSize; ky++) {
+                            int ny = y + ky - Radius;
+                            if (ny < 0 || ny >= Height)
+                                continue;
+
+                            unsigned char* pInput = Input + (ny * Stride);
+
+                            for (int kx = 0; kx < maskSize; kx++) {
+                                if (!circleMask[ky * maskSize + kx])
+                                    continue;
+
+                                int nx = x + kx - Radius;
+                                if (nx < 0 || nx >= Width)
+                                    continue;
+
+                                unsigned char* pixel = pInput + (nx * Channels);
+
+                                // Unrolled channel comparison
+                                if (Channels >= 1 && pixel[0] < minValues[0])
+                                    minValues[0] = pixel[0];
+                                if (Channels >= 2 && pixel[1] < minValues[1])
+                                    minValues[1] = pixel[1];
+                                if (Channels >= 3 && pixel[2] < minValues[2])
+                                    minValues[2] = pixel[2];
+                                if (Channels == 4 && pixel[3] < minValues[3])
+                                    minValues[3] = pixel[3];
+                            }
+                        }
+
+                        for (int c = 0; c < Channels; c++) {
+                            pOutput[c] = minValues[c];
+                        }
+                        pOutput += Channels;
+                    }
+                }
+            }
+        }
+
+        free(circleMask);
+    }
+
+    void ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+        int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return;
+
+        // Pre-calculate circle mask
+        const int maskSize = (Radius * 2 + 1);
+        char* circleMask = (char*)malloc(maskSize * maskSize);
+        int radiusSquared = Radius * Radius;
+
+        for (int y = 0; y < maskSize; y++) {
+            for (int x = 0; x < maskSize; x++) {
+                int dx = x - Radius;
+                int dy = y - Radius;
+                circleMask[y * maskSize + x] = (dx * dx + dy * dy <= radiusSquared);
+            }
+        }
+
+        // Process image in chunks for better cache utilization
+        const int CHUNK_SIZE = 32;
+        for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+            for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                int endY = min(blockY + CHUNK_SIZE, Height);
+                int endX = min(blockX + CHUNK_SIZE, Width);
+
+                for (int y = blockY; y < endY; y++) {
+                    unsigned char* pOutput = Output + (y * Stride) + (blockX * Channels);
+
+                    for (int x = blockX; x < endX; x++) {
+                        unsigned char maxValues[4] = { 0, 0, 0, 0 };
+
+                        // Scan only the pixels within the circle mask
+                        for (int ky = 0; ky < maskSize; ky++) {
+                            int ny = y + ky - Radius;
+                            if (ny < 0 || ny >= Height)
+                                continue;
+
+                            unsigned char* pInput = Input + (ny * Stride);
+
+                            for (int kx = 0; kx < maskSize; kx++) {
+                                if (!circleMask[ky * maskSize + kx])
+                                    continue;
+
+                                int nx = x + kx - Radius;
+                                if (nx < 0 || nx >= Width)
+                                    continue;
+
+                                // Use pointer arithmetic for faster access
+                                unsigned char* pixel = pInput + (nx * Channels);
+
+                                // Unrolled channel comparison
+                                if (Channels >= 1 && pixel[0] > maxValues[0])
+                                    maxValues[0] = pixel[0];
+                                if (Channels >= 2 && pixel[1] > maxValues[1])
+                                    maxValues[1] = pixel[1];
+                                if (Channels >= 3 && pixel[2] > maxValues[2])
+                                    maxValues[2] = pixel[2];
+                                if (Channels == 4 && pixel[3] > maxValues[3])
+                                    maxValues[3] = pixel[3];
+                            }
+                        }
+
+                        // Write output values
+                        for (int c = 0; c < Channels; c++) {
+                            pOutput[c] = maxValues[c];
+                        }
+                        pOutput += Channels;
+                    }
+                }
+            }
+        }
+
+        free(circleMask);
+    }
+
+    void ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return;
+
+        // Create temporary buffer for blur result
+        unsigned char* blurBuffer = (unsigned char*)malloc(Width * Height * Stride);
+        if (!blurBuffer)
+            return;
+
+        // First apply Gaussian blur to get low frequency components
+        ocularGaussianBlurFilter(Input, blurBuffer, Width, Height, Stride, Radius);
+
+        // Subtract blurred image from original to get high frequency components
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pInput = Input + (y * Stride);
+            unsigned char* pBlur = blurBuffer + (y * Stride);
+            unsigned char* pOutput = Output + (y * Stride);
+
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < (Channels == 4 ? 3 : Channels); c++) {
+                    // High pass = Original - Low pass (blur)
+                    // Add 128 to center the result around middle gray
+                    int highPass = 128 + (pInput[c] - pBlur[c]);
+                    pOutput[c] = ClampToByte(highPass);
+                }
+
+                // Preserve alpha channel if it exists
+                if (Channels == 4) {
+                    pOutput[3] = pInput[3];
+                }
+
+                pInput += Channels;
+                pBlur += Channels;
+                pOutput += Channels;
+            }
+        }
+
+        free(blurBuffer);
+    }
+
     void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
 
         int channels = Stride / Width;

@@ -768,6 +768,42 @@ extern "C" {
      */
     void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
+   /**
+     * @brief Apply a minimum filter. This is the same as Erode except it uses a circular kernel that accounts for edges.
+     * @param Input The image input data buffer
+     * @param Output The image output data buffer
+     * @param Width The width of the image in pixels
+     * @param Height The height of the image in pixels
+     * @param Stride The number of bytes in one row of pixels
+     * @param Radius The radius of the kernel. Range [1 - 256]
+     */
+    void ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
+    /**
+     * @brief Apply a maximum filter. This is the same as Dialte except it uses a circular kernel that accounts for edges.
+     * @param Input The image input data buffer
+     * @param Output The image output data buffer
+     * @param Width The width of the image in pixels
+     * @param Height The height of the image in pixels
+     * @param Stride The number of bytes in one row of pixels
+     * @param Radius The radius of the kernel. Range [1 - 256]
+     */
+    void ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
+    /**
+     * @brief Perform a high pass filter that emphasizes high-frequency components (edges and details) while reducing
+     * low-frequency components (smooth areas)
+     * @ingroup group_filters
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     * @param Radius Controls the cutoff frequency - larger values will remove more low frequency content, resulting in
+     * a more pronounced high pass effect. Range [1 - 512]
+     */
+    void ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
     /**
      * @brief Performs an optimized blurring of an image, maintaining edges while reducing and smoothing out noise.
      *  @ingroup group_ip_filters
