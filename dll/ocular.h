@@ -272,6 +272,19 @@ extern "C" {
 
     //---------------------------------------------------------------------
 
+    //---------------------------General functions--------------------------
+
+    DLIB_EXPORT OcImage* ocularCreateImage(int width, int height, int channels);
+
+    DLIB_EXPORT void ocularFreeImage(OcImage** image);
+
+    DLIB_EXPORT void ocularCloneImage(OcImage* Input, OcImage** Output);    
+
+    DLIB_EXPORT void ocularTransposeImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+    //---------------------------General functions--------------------------
+    
+
 #ifdef __cplusplus
 }
 #endif
