@@ -18,9 +18,10 @@ int main(void) {
   
             int stride = width * channels;  
   
-            ocularMotionBlurFilter(inputImage, outputImage, width, height, stride, 60, 70);  
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status = ocularMotionBlurFilter(inputImage, outputImage, width, height, stride, 60, 70);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

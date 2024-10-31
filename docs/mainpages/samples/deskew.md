@@ -18,7 +18,8 @@ int main(void) {
   
             int stride = width * channels;  
   
-            if (ocularDocumentDeskew(inputImage, outputImage, width, height, stride)) {    
+            bool skewed = false;
+            if (ocularDocumentDeskew(inputImage, outputImage, width, height, stride, &skewed)) {    
                 printf("[✔] Document deskewed\n");    
             } else {    
                 printf("[x] Document deskewed\n");    

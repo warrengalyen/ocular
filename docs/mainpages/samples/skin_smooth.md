@@ -20,9 +20,10 @@ int main(void) {
   
             int smoothingLevel = 8;
             int applySkinFilter = false;
-            ocularSkinSmoothingFilter(input, output, width, height, stride, smoothingLevel, applySkinFilter);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status = ocularSkinSmoothingFilter(inputImage, outputImage, width, height, stride, smoothingLevel, applySkinFilter);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

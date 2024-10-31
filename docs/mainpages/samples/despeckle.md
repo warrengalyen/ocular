@@ -20,9 +20,10 @@ int main(void) {
   
             int maxWindowSize = 7; 
             int threshold = 30;
-            ocularDespeckle(input, output, width, height, stride, maxWindowSize, threshold);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status = ocularDespeckle(inputImage, outputImage, width, height, stride, maxWindowSize, threshold);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

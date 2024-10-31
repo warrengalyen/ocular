@@ -17,6 +17,8 @@ int main(void) {
         if (outputImage) {  
   
             int stride = width * channels;  
+
+            OC_STATUS status;
   
             int Blurfilter[25] = {  
                 0, 0, 1, 0, 0, 
@@ -56,9 +58,11 @@ int main(void) {
                     -1, -1, 0, 1, 1,
                     -1, 0, 1, 1, 1,
                     0, 1, 1, 1, 1 };  
-            ocularConvolution2DFilter(inputImage, outputImage, width, height, channels, Embossfilter, 5, 1, 128);  
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+
+            OC_STATUS status = ocularConvolution2DFilter(inputImage, outputImage, width, height, channels, Embossfilter, 5, 1, 128);  
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

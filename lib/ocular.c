@@ -3463,7 +3463,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool* Skewed) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3488,9 +3488,11 @@ extern "C" {
         float skewAngle = calcSkewAngle(Output, Width, Height, &rect, maxSkewToDetect, stepsPerDegree, localPeakRadius, nLineCount);
         if ((skewAngle == 0) || (skewAngle < -maxSkewToDetect || skewAngle > maxSkewToDetect)) {
             memcpy(Output, Input, Height * Stride * sizeof(unsigned char));
+            Skewed = false;
             return OC_STATUS_OK;
         } else {
             ocularRotateBilinear(Input, Width, Height, Stride, Output, Width, Height, -skewAngle, true, 255, 255, 255);
+            *Skewed = true;
         }
         return OC_STATUS_OK;
     }

@@ -24,12 +24,15 @@ int main(void) {
             // Gaussian Noise reduction kernel   
             // CannyGaus3x3 = 3 x 3 Gaussian  
             // CannyGaus5x5 = 5 x 5 Gaussian
-              
-            ocularGrayscaleFilter(inputImage, inputImage, width, height, stride);    
-            channels = 1; // grayscale filter converts data to single channel, so reset channels  
-            ocularCannyEdgeDetect(inputImage, outputImage, width, height, channels, CannyGaus3x3, lower_threshold, upper_threshold);  
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status;  
+            status = ocularGrayscaleFilter(inputImage, inputImage, width, height, stride);
+            if (status == OC_STATUS_OK) {
+                channels = 1; // grayscale filter converts data to single channel, so reset channels  
+                status = ocularCannyEdgeDetect(inputImage, outputImage, width, height, channels, CannyGaus3x3, lower_threshold, upper_threshold);  
+                if (status == OC_STATUS_OK) {
+                    stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+                }
+            }  
         }  
         free(outputImage);  
     }  

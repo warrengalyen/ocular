@@ -18,13 +18,18 @@ int main(void) {
   
             int stride = width * channels;  
   
+            OC_STATUS status;
+
             // input expects a single channel image
-            ocularGrayscaleFilter(inputImage, inputImage, width, height, stride);
-            ocularAutoThreshold(inputImage, outputImage, width, height, width, OC_AUTO_THRESHOLD_OTSU);  // single channel, so stride = width
-            // methods are defined under OcAutoThresholdMethod in "lib/ocular.h"
-            channels = 1;  
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            status = ocularGrayscaleFilter(inputImage, inputImage, width, height, stride);
+            if (status == OC_STATUS_OK) {
+                // methods are defined under OcAutoThresholdMethod in "lib/ocular.h"
+                status = ocularAutoThreshold(inputImage, outputImage, width, height, width, OC_AUTO_THRESHOLD_OTSU);  // single channel, so stride = width
+                if (status == OC_STATUS_OK) {
+                    channels = 1;  
+                    stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+                }
+            }
         }  
         free(outputImage);  
     }  

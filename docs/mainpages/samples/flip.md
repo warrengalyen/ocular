@@ -18,13 +18,16 @@ int main(void) {
   
             int stride = width * channels;  
   
+            OC_STATUS status;
             // flip image  
-            ocularFlipImage(inputImage, outputImage, width, height, stride, OC_DIRECTION_VERTICAL);  
+            status = ocularFlipImage(inputImage, outputImage, width, height, stride, OC_DIRECTION_VERTICAL);  
               
             // mirror image  
-            ocularFlipImage(inputImage, outputImage, width, height, stride, OC_DIRECTION_HORIZONTAL);  
+            status = ocularFlipImage(inputImage, outputImage, width, height, stride, OC_DIRECTION_HORIZONTAL);  
   
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

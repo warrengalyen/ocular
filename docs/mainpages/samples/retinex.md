@@ -22,9 +22,10 @@ int main(void) {
             float scale = 240.0f;  // [16.0 - 250.0]
             float numScales = 3.0f;  // [1.0 - 8.0]
             float dynamic = 1.2f;  // [0.05 - 4.0]
-            ocularMultiscaleRetinex(inputImage, outputImage, width, height, channels, mode, scale, numScales, dynamic);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status =  ocularMultiscaleRetinex(inputImage, outputImage, width, height, channels, mode, scale, numScales, dynamic);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

@@ -22,10 +22,11 @@ int main(void) {
             float spatialDecay = 0.1; // [0.01 - 0.250]
             int rangeFilter = 1;      //  [0,1 or 2] [Gaussian|Hyperbolic Secant|Euler Constant]
 
-            ocularBEEPSFilter(inputImage, outputImage, width, height, stride photometricStandardDeviation, 
+            OC_STATUS status = ocularBEEPSFilter(inputImage, outputImage, width, height, stride, photometricStandardDeviation, 
                               spatialDecay, rangeFilter);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

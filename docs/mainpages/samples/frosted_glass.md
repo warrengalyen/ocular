@@ -21,9 +21,10 @@ int main(void) {
             int radius = 2;
             int range = 3;
 
-            ocularFrostedGlassEffect(input, output, width, height, stride, radius, range);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status = ocularFrostedGlassEffect(inputImage, outputImage, width, height, stride, radius, range);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  

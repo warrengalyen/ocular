@@ -22,9 +22,10 @@ int main(void) {
             float blurAmount = 0.3f;
             int centerX = width / 2;
             int centerY = height / 2;
-            ocularZoomBlur(inputImage, outputImage, width, height, stride, sampleRadius, blurAmount, centerX, centerY);
-  
-            stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            OC_STATUS status = ocularZoomBlur(inputImage, outputImage, width, height, stride, sampleRadius, blurAmount, centerX, centerY);
+            if (status == OC_STATUS_OK) {
+                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+            }
         }  
         free(outputImage);  
     }  
