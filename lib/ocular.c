@@ -811,7 +811,7 @@ extern "C" {
         }
 
         // Create lookup tables to speed up calculation
-        unsigned char GammaMap[256][Channels];
+        unsigned char GammaMap[256][3];
         for (int i = 0; i < 256; i++) {
             for (int c = 0; c < Channels; c++) {
                 // calculate gamma
@@ -5553,8 +5553,8 @@ extern "C" {
 
                 // Find the average color value of the pixels in a block
                 int numPix = 0;
-                int avg[channels];
-                int blockAvg[channels];
+                int avg[3];
+                int blockAvg[3];
                 memset(avg, 0, sizeof avg);
                 for (int dy = 0; dy < blockSize; dy++) {
                     for (int dx = 0; dx < blockSize; dx++) {

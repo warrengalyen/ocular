@@ -18,3 +18,5 @@ demo/test_filters.h
 /docs/*.pdi
 /test_images/
 *.zip
+/tests/
+/build/

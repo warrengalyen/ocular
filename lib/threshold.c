@@ -30,8 +30,8 @@ int GetHuangFuzzyThreshold(int histogram[]) {
         return first; // There are only two colors in the image
 
     // Calculate the cumulative histogram and the corresponding cumulative histogram with weights
-    int S[last + 1];
-    int W[last + 1]; // For extremely large images, the data stored in this array may exceed the representation range of int.
+    int S[256];
+    int W[256]; // For extremely large images, the data stored in this array may exceed the representation range of int.
                      // You may consider using the long type instead.
 
     S[0] = histogram[0];
@@ -41,7 +41,7 @@ int GetHuangFuzzyThreshold(int histogram[]) {
     }
 
     // Establish the loop tables used in equations (4) and (6)
-    float sum[last + 1 - first];
+    float sum[256];
     int lenSum = sizeof(sum) / sizeof(sum[0]);
     for (y = 1; y < lenSum; y++) {
         float mu = 1 / (1 + (double)y / (last - first)); // Eq. (4)

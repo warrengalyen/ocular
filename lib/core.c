@@ -20,13 +20,13 @@ void FreeMemory(void* ptr) {
 int OC_ELEMENT_SIZE(int Depth) {
     int Size;
     switch (Depth) {
-    case OC_DEPTH_8U: Size = sizeof(unsigned char); break;
-    case OC_DEPTH_8S: Size = sizeof(char); break;
-    case OC_DEPTH_16S: Size = sizeof(short); break;
-    case OC_DEPTH_32S: Size = sizeof(int); break;
-    case OC_DEPTH_32F: Size = sizeof(float); break;
-    case OC_DEPTH_64F: Size = sizeof(double); break;
-    default: Size = 0; break;
+        case OC_DEPTH_8U: Size = sizeof(unsigned char); break;
+        case OC_DEPTH_8S: Size = sizeof(char); break;
+        case OC_DEPTH_16S: Size = sizeof(short); break;
+        case OC_DEPTH_32S: Size = sizeof(int); break;
+        case OC_DEPTH_32F: Size = sizeof(float); break;
+        case OC_DEPTH_64F: Size = sizeof(double); break;
+        default: Size = 0; break;
     }
     return Size;
 }
