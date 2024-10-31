@@ -3,7 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#include <malloc.h>
+#endif
+
 void* AllocMemory(unsigned int Size, bool ZeroMemory) {
+    
     void* ptr = _mm_malloc(Size, 32);
     if (ptr != NULL)
         if (ZeroMemory == true)
