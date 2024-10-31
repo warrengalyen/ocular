@@ -59,7 +59,7 @@ extern "C" {
     }; */
 
     //    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
-    //
+    
     //        if (Input == NULL || Output == NULL)
     //            return OC_STATUS_ERR_NULLREFERENCE;
     //        if (Input->Data == NULL || Output->Data == NULL)
@@ -70,7 +70,7 @@ extern "C" {
     //            return OC_STATUS_ERR_NOTSUPPORTED;
     //        if (Input->Channels != 3 || (Output->Channels != 3 && Output->Channels != 1))
     //            return OC_STATUS_ERR_INVALIDPARAMETER;
-    //
+    
     //        const int B_WT = (int)(0.114 * 256 + 0.5);
     //        const int G_WT = (int)(0.587 * 256 + 0.5);
     //        const int R_WT = 256 - B_WT - G_WT;
@@ -109,13 +109,21 @@ extern "C" {
     //                memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
     //            }
     //        }
-    //
+    
     //        // Reset channels
     //        Output->Channels = 1;
     //    }
 
-    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         const int B_WT = (int)(0.114 * 256 + 0.5);
         const int G_WT = (int)(0.587 * 256 + 0.5);
@@ -156,14 +164,22 @@ extern "C" {
                 memcpy(Output, Input, Height * Stride);
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
+    OC_STATUS ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
                          float greenAdjustment, float blueAdjustment) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 || Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char AdjustMapR[256] = { 0 };
         unsigned char AdjustMapG[256] = { 0 };
         unsigned char AdjustMapB[256] = { 0 };
@@ -183,14 +199,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
+    OC_STATUS ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
                          float satAdjustment, float lightAdjustment) {
 
-        int channels = Stride / Width;
-        if (channels == 1)
-            return;
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int Channels = Stride / Width;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         float r, g, b;
         float h, s, l;
@@ -230,15 +253,25 @@ extern "C" {
                 pOutput[1] = ClampToByte(g);
                 pOutput[2] = ClampToByte(b);
 
-                pInput += channels;
-                pOutput += channels;
+                pInput += Channels;
+                pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier) {
+    OC_STATUS ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char Luminance = 0;
         if (Channels == 1) {
             int numberOfPixels = Width * Height;
@@ -295,12 +328,22 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
+    OC_STATUS ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
                             unsigned char* AverageB, unsigned char* AverageA) {
 
+        if (Input == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         if (Channels == 1) {
             int numberOfPixels = Width * Height;
             unsigned int histogramGray[256] = { 0 };
@@ -382,11 +425,21 @@ extern "C" {
             *AverageB = (unsigned char)(SumPixB / numberOfPixels);
             *AverageA = (unsigned char)(SumPixA / numberOfPixels);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance) {
+    OC_STATUS ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance) {
+
+        if (Input == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         if (Channels == 1) {
             int numberOfPixels = Width * Height;
             unsigned int histogramGray[256] = { 0 };
@@ -422,13 +475,21 @@ extern "C" {
             }
             *Luminance = (unsigned char)(Sum / numberOfPixels);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity) {
+    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char degreeMap[256 * 256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
             unsigned char* pDegreeMap = degreeMap + pixel * 256;
@@ -524,27 +585,43 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity) {
+    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         float fIntensity = intensity / 100.0f;
 
         float colorMatrix[4 * 4] = { 0.3588f, 0.7044f, 0.1368f, 0.0f, 0.2990f, 0.5870f, 0.1140f, 0.0f,
                                      0.2392f, 0.4696f, 0.0912f, 0.0f, 0.f,     0.f,     0.f,     1.f };
-        ocularColorMatrixFilter(Input, Output, Width, Height, Stride, colorMatrix, fIntensity);
+        OC_STATUS status = ocularColorMatrixFilter(Input, Output, Width, Height, Stride, colorMatrix, fIntensity);
+        if (status != OC_STATUS_OK)
+            return status;
+
+        return OC_STATUS_OK;
     }
 
-    void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char colorToReplaceR,
+    OC_STATUS ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char colorToReplaceR,
                                unsigned char colorToReplaceG, unsigned char colorToReplaceB, float thresholdSensitivity, float smoothing) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         unsigned char maskY = (unsigned char)((19589 * colorToReplaceR + 38443 * colorToReplaceG + 7504 * colorToReplaceB) >> 16);
 
@@ -614,13 +691,21 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity) {
+    OC_STATUS ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         float preMap[256 * 5] = { 0 };
         float* pixelColorMap = &preMap[0];
         float* quad1yMap = &preMap[256];
@@ -666,13 +751,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation) {
+    OC_STATUS ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char SaturationMap[256 * 256] = { 0 };
         for (int gray = 0; gray < 256; gray++) {
             unsigned char* pSaturationMap = SaturationMap + (gray << 8);
@@ -696,18 +789,25 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]) {
+    OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3)
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         // check for valid parameter values
         for (int i = 0; i < Channels; i++) {
             if (gamma[i] <= 0)
-                return;
+                return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         // Create lookup tables to speed up calculation
@@ -731,13 +831,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast) {
+    OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char contrastMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
             contrastMap[pixel] = ClampToByte((pixel - 127) * contrast + 127);
@@ -753,13 +861,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure) {
+    OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char exposureMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
             exposureMap[pixel] = ClampToByte(pixel * pow(2.0, exposure));
@@ -775,13 +891,20 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness) {
+    OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         unsigned char BrightnessMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -798,15 +921,23 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
+    OC_STATUS ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
                                 unsigned char firstColorG, unsigned char firstColorB, unsigned char secondColorR,
                                 unsigned char secondColorG, unsigned char secondColorB, int intensity) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
         int c1 = 256 * (100 - sIntensity) / 100;
         int c2 = 256 * (100 - (100 - sIntensity)) / 100;
@@ -833,13 +964,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity) {
+    OC_STATUS ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
+        if (Channels == 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
         int c1 = 256 * (100 - sIntensity) / 100;
         int c2 = 256 * (100 - (100 - sIntensity)) / 100;
@@ -852,7 +991,7 @@ extern "C" {
             if (patchDistanceMap) {
                 free(patchDistanceMap);
             }
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
         float color = 1.0f;
         for (int i = 0; i < Height; i++) {
@@ -876,34 +1015,50 @@ extern "C" {
         }
         free(distanceColorMap);
         free(patchDistanceMap);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity) {
+    OC_STATUS ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1)
-            return;
-        if (Channels == 4) {
-            unsigned char opacityMap[256] = { 0 };
-            for (unsigned int pixel = 0; pixel < 256; pixel++) {
-                opacityMap[pixel] = (unsigned char)(pixel * opacity);
-            }
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pOutput = Output + (Y * Stride);
-                unsigned char* pInput = Input + (Y * Stride);
-                for (int X = 0; X < Width; X++) {
-                    pOutput[3] = opacityMap[pInput[3]];
-                    pInput += Channels;
-                    pOutput += Channels;
-                }
+        if (Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
+        unsigned char opacityMap[256] = { 0 };
+        for (unsigned int pixel = 0; pixel < 256; pixel++) {
+            opacityMap[pixel] = (unsigned char)(pixel * opacity);
+        }
+        for (int Y = 0; Y < Height; Y++) {
+            unsigned char* pOutput = Output + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
+            for (int X = 0; X < Width; X++) {
+                pOutput[3] = opacityMap[pInput[3]];
+                pInput += Channels;
+                pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+    OC_STATUS ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                             ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char LevelMapR[256] = { 0 };
         unsigned char LevelMapG[256] = { 0 };
         unsigned char LevelMapB[256] = { 0 };
@@ -947,11 +1102,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjust) {
+    OC_STATUS ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjust) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         hueAdjust = fmodf(hueAdjust, 360.0f) * 3.14159265358979323846f / 180.0f;
         float hueMap[256 * 256] = { 0 };
         float ChromaMap[256 * 256] = { 0 };
@@ -995,16 +1160,22 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
+    OC_STATUS ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
                                          float shadowTintG, float shadowTintB, float highlightTintR, float highlightTintG,
                                          float highlightTintB, float shadowTintIntensity, float highlightTintIntensity) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         unsigned char HighlightShadowMapR[256 * 256] = { 0 };
         unsigned char HighlightShadowMapG[256 * 256] = { 0 };
@@ -1045,14 +1216,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights) {
+    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         short luminanceWeightingMap[256] = { 0 };
         short shadowMap[256] = { 0 };
         short highlightMap[256] = { 0 };
@@ -1092,15 +1270,22 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
+    OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
                                 unsigned char filterColorG, unsigned char filterColorB, int intensity) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;  
+
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
         int c1 = 256 * (100 - sIntensity) / 100;
         int c2 = 256 * (100 - (100 - sIntensity)) / 100;
@@ -1131,14 +1316,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char invertMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
             invertMap[pixel] = (unsigned char)(255 - pixel);
@@ -1154,12 +1346,22 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, unsigned char colorG,
+    OC_STATUS ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, unsigned char colorG,
                                    unsigned char colorB, unsigned char colorAlpha) {
 
+        if (Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         if (Channels == 4) {
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* pOutput = Output + (Y * Stride);
@@ -1182,11 +1384,21 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold) {
+    OC_STATUS ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         if (Channels == 1) {
 
             for (int Y = 0; Y < Height; Y++) {
@@ -1198,7 +1410,7 @@ extern "C" {
                     pOutput++;
                 }
             }
-            return;
+            return OC_STATUS_OK;
         }
 
         for (int Y = 0; Y < Height; Y++) {
@@ -1211,17 +1423,26 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+        return OC_STATUS_OK;
     }
 
-    void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+    OC_STATUS ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
         // implementation of Local Color Correction using Non-Linear Masking published by Nathan Moroney Hewlett-Packard
         // Laboratories, Palo Alto, California.
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Channels <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         unsigned char* Luminance = (unsigned char*)malloc(Width * Height * 2 * sizeof(unsigned char));
         unsigned char* Mask = Luminance + (Width * Height);
         if (Luminance == NULL)
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         unsigned char LocalLut[256 * 256];
         for (int mask = 0; mask < 256; mask++) {
             unsigned char* pLocalLut = LocalLut + (mask << 8);
@@ -1248,17 +1469,20 @@ extern "C" {
             }
         }
         free(Luminance);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        if ((Input == NULL) || (Output == NULL))
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if ((Width <= 0) || (Height <= 0) || (Stride <= 0))
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if ((Input == NULL) || (Output == NULL))
-            return;
-        if ((Width <= 0) || (Height <= 0))
-            return;
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         unsigned char AvgR, AvgG, AvgB, AvgA;
         ocularAverageColor(Input, Width, Height, Stride, &AvgR, &AvgG, &AvgB, &AvgA);
@@ -1282,74 +1506,87 @@ extern "C" {
             }
             applyCurve(Input, Output, Width, Height, Channels, Stride, TableR, TableG, TableB);
         }
+
+        return OC_STATUS_OK;
     }
 
-    bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int width, int height, int channels, int stride,
-                                int colorCoeff, float cutLimit, float contrast) {
+    OC_STATUS ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int width, int height, int stride,
+                                int colorCoeff, float cutLimit, float contrast, bool* hasColorCast) {
 
-        bool ret = false;
-        if (channels == 3 || channels == 4) {
-            int numberOfPixels = height * width;
-            unsigned int histogramYcbcr[768] = { 0 };
-            unsigned int* histogramY = &histogramYcbcr[0];
-            unsigned int* histogramCb = &histogramYcbcr[256];
-            unsigned int* histogramCr = &histogramYcbcr[512];
-            unsigned int histogramRGB[768] = { 0 };
-            unsigned int* histogramR = &histogramRGB[0];
-            unsigned int* histogramG = &histogramRGB[256];
-            unsigned int* histogramB = &histogramRGB[512];
-            unsigned char Y = 0;
-            unsigned char Cb = 0;
-            unsigned char Cr = 0;
-            for (int y = 0; y < height; y++) {
-                const unsigned char* scanIn = input + y * stride;
-                for (int x = 0; x < width; x++) {
-                    const unsigned char R = scanIn[0];
-                    const unsigned char G = scanIn[1];
-                    const unsigned char B = scanIn[2];
-                    histogramR[R]++;
-                    histogramG[G]++;
-                    histogramB[B]++;
-                    rgb2ycbcr(R, G, B, &Y, &Cb, &Cr);
-                    histogramY[Y]++;
-                    histogramCb[Cb]++;
-                    histogramCr[Cr]++;
-                    scanIn += channels;
-                }
-            }
-            ret = isColorCast(histogramCb, histogramCr, numberOfPixels, colorCoeff);
-            if (!ret) {
-                memcpy(output, input, numberOfPixels * channels * sizeof(*input));
-                return ret;
-            }
-            unsigned char mapRGB[256 * 3] = { 0 };
-            unsigned char* mapR = &mapRGB[0];
-            unsigned char* mapG = &mapRGB[256];
-            unsigned char* mapB = &mapRGB[256 + 256];
-            autoLevel(histogramR, mapR, numberOfPixels, cutLimit, contrast);
-            autoLevel(histogramG, mapG, numberOfPixels, cutLimit, contrast);
-            autoLevel(histogramB, mapB, numberOfPixels, cutLimit, contrast);
-            for (int y = 0; y < height; y++) {
-                unsigned char* scanIn = input + y * stride;
-                unsigned char* scanOut = output + y * stride;
-                for (int x = 0; x < width; x++) {
-                    scanOut[0] = mapR[scanIn[0]];
-                    scanOut[1] = mapG[scanIn[1]];
-                    scanOut[2] = mapB[scanIn[2]];
-                    scanIn += channels;
-                    scanOut += channels;
-                }
+        if (input == NULL || output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (width <= 0 || height <= 0 || stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int channels = stride / width;
+        if (channels != 3 && channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
+        int numberOfPixels = height * width;
+        unsigned int histogramYcbcr[768] = { 0 };
+        unsigned int* histogramY = &histogramYcbcr[0];
+        unsigned int* histogramCb = &histogramYcbcr[256];
+        unsigned int* histogramCr = &histogramYcbcr[512];
+        unsigned int histogramRGB[768] = { 0 };
+        unsigned int* histogramR = &histogramRGB[0];
+        unsigned int* histogramG = &histogramRGB[256];
+        unsigned int* histogramB = &histogramRGB[512];
+        unsigned char Y = 0;
+        unsigned char Cb = 0;
+        unsigned char Cr = 0;
+        for (int y = 0; y < height; y++) {
+            const unsigned char* scanIn = input + y * stride;
+            for (int x = 0; x < width; x++) {
+                const unsigned char R = scanIn[0];
+                const unsigned char G = scanIn[1];
+                const unsigned char B = scanIn[2];
+                histogramR[R]++;
+                histogramG[G]++;
+                histogramB[B]++;
+                rgb2ycbcr(R, G, B, &Y, &Cb, &Cr);
+                histogramY[Y]++;
+                histogramCb[Cb]++;
+                histogramCr[Cr]++;
+                scanIn += channels;
             }
         }
-        return ret;
+        bool colorCast = isColorCast(histogramCb, histogramCr, numberOfPixels, colorCoeff);
+        if (!colorCast) {
+            memcpy(output, input, numberOfPixels * channels * sizeof(*input));
+            *hasColorCast = true;
+        }
+        unsigned char mapRGB[256 * 3] = { 0 };
+        unsigned char* mapR = &mapRGB[0];
+        unsigned char* mapG = &mapRGB[256];
+        unsigned char* mapB = &mapRGB[256 + 256];
+        autoLevel(histogramR, mapR, numberOfPixels, cutLimit, contrast);
+        autoLevel(histogramG, mapG, numberOfPixels, cutLimit, contrast);
+        autoLevel(histogramB, mapB, numberOfPixels, cutLimit, contrast);
+        for (int y = 0; y < height; y++) {
+            unsigned char* scanIn = input + y * stride;
+            unsigned char* scanOut = output + y * stride;
+            for (int x = 0; x < width; x++) {
+                scanOut[0] = mapR[scanIn[0]];
+                scanOut[1] = mapG[scanIn[1]];
+                scanOut[2] = mapB[scanIn[2]];
+                scanIn += channels;
+                scanOut += channels;
+            }
+        }
+        return OC_STATUS_OK;
     }
 
-    void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint) {
+    OC_STATUS ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         float Temperature = temperature;
         Temperature = Temperature < 5000 ? (float)(0.0004 * (Temperature - 5000.0)) : (float)(0.00006 * (Temperature - 5000.0));
 
@@ -1402,14 +1639,21 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance) {
+    OC_STATUS ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         int iVibrance = (int)(-(vibrance * 256));
         unsigned char mx = 0;
         int amt = 0;
@@ -1430,15 +1674,22 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
+    OC_STATUS ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
                               float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor) {
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
-        if (Channels == 1) {
-            return;
-        }
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         int maxSatShiftAdjust = (int)(maxSaturationShift * 255.0f * skinToneAdjust);
         float maxHueShiftAdjust = maxHueShift * skinToneAdjust;
         unsigned char hueMap[256] = { 0 };
@@ -1488,6 +1739,8 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
     static void bilateralHorizontal(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f,
@@ -1646,9 +1899,17 @@ extern "C" {
         }
     }
 
-    void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange) {
+    OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         int reserveWidth = Width;
         int reserveHeight = Height;
 
@@ -1670,7 +1931,7 @@ extern "C" {
             if (rightFactorBuffer)
                 free(rightFactorBuffer);
 
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
         float* downColorBuffer = leftColorBuffer;
         float* downFactorBuffer = leftFactorBuffer;
@@ -1711,6 +1972,8 @@ extern "C" {
             free(rightFactorBuffer);
             rightFactorBuffer = NULL;
         }
+
+        return OC_STATUS_OK;
     }
 
     static void gaussianHorizontal(unsigned char* bufferPerLine, const unsigned char* lpRowInitial, unsigned char* lpColumn, int width,
@@ -1934,8 +2197,17 @@ extern "C" {
         }
     }
 
-    void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma) {
+    OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         float a0, a1, a2, a3, b1, b2, cprev, cnext;
 
         CalGaussianCoeff(GaussianSigma, &a0, &a1, &a2, &a3, &b1, &b2, &cprev, &cnext);
@@ -1954,7 +2226,7 @@ extern "C" {
             if (bufferPerLine) {
                 free(bufferPerLine);
             }
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
         for (int y = 0; y < Height; ++y) {
             unsigned char* lpRowInitial = Input + Stride * y;
@@ -1970,11 +2242,21 @@ extern "C" {
 
         free(bufferPerLine);
         free(tempData);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity) {
+    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         intensity = max(min(intensity, 100), 0);
         int c1 = 256 * (100 - intensity) / 100;
         int c2 = 256 * (100 - (100 - intensity)) / 100;
@@ -2003,7 +2285,7 @@ extern "C" {
                 if (Temp) {
                     free(Temp);
                 }
-                return;
+                return OC_STATUS_ERR_OUTOFMEMORY;
             }
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* pInput = Input + (Y * Stride);
@@ -2049,7 +2331,7 @@ extern "C" {
         case 1: {
             unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
             if (Blur == NULL) {
-                return;
+                return OC_STATUS_ERR_OUTOFMEMORY;
             }
 
             ocularGaussianBlurFilter(Input, Blur, Width, Height, Width, GaussianSigma);
@@ -2076,6 +2358,8 @@ extern "C" {
 
         default: break;
         }
+
+        return OC_STATUS_OK;
     }
 
     static inline void boxfilterRow(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int Radius) {
@@ -2486,35 +2770,64 @@ extern "C" {
         }
     }
 
-    void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        unsigned char* temp = (unsigned char*)malloc(Width * Height * Channels);
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        if (Radius < 1 || Radius >= 127)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        unsigned char *temp = (unsigned char*)malloc(Width * Height * Channels);
         if (temp == NULL) {
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
         boxfilterRow(Input, temp, Width, Height, Channels, Radius);
         boxfilterCol(temp, Output, Width, Height, Channels, Radius);
         free(temp);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold) {
+    OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channel = Stride / Width;
         if ((Channel != 1) && (Channel != 3))
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
         if (Radius < 1 || Radius >= 127 || Threshold < 2 || Threshold > 255)
-            return;
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         if (Channel == 1) {
             unsigned short* ColHist = (unsigned short*)_aligned_malloc(256 * (Width + Radius + Radius) * sizeof(unsigned short), 32);
+            if (ColHist == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
             unsigned short* Hist = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
+            if (Hist == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
 
             unsigned short* Intensity = (unsigned short*)_aligned_malloc(511 * sizeof(unsigned short), 32); // Avoid abs when a negative value is used
+            if (Intensity == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
             unsigned short* Level = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
+            if (Level == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
 
             int* RowOffset = (int*)malloc((Width + Radius + Radius) * sizeof(int));
+            if (RowOffset == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
             int* ColOffset = (int*)malloc((Height + Radius + Radius) * sizeof(int));
+            if (ColOffset == NULL)
+                return OC_STATUS_ERR_OUTOFMEMORY;
 
             GetOffsetPos(RowOffset, Width, Radius, Radius);
             GetOffsetPos(ColOffset, Height, Radius, Radius);
@@ -2582,7 +2895,6 @@ extern "C" {
             unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
             unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
             unsigned char* SrcR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
-
             unsigned char* DstB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
             unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
             unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
@@ -2604,13 +2916,21 @@ extern "C" {
         }
     }
 
-    void ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+    OC_STATUS ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                            float PhotometricStandardDeviation, float SpatialDecay, int RangeFilter) {
 
         // Implementation of the paper "Bi-Exponential Edge-Preserving Smoother".
         // Reference: https://bigwww.epfl.ch/publications/thevenaz1202.html
 
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         int Channels = Stride / Width;
+        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         float spatialContraDecay = 1.0f - SpatialDecay;
         float lambda = expf(-SpatialDecay);
         float rho = lambda + SpatialDecay / (2.0f - (spatialContraDecay + SpatialDecay));
@@ -2639,7 +2959,7 @@ extern "C" {
         }
         float *cache = (float *)calloc(Stride * Height, sizeof(float));
         if (cache == NULL)
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
 
         for (int y = 0; y < Height; y++) {
             float* lineCache = cache + y * Stride;
@@ -2717,11 +3037,21 @@ extern "C" {
             }
         }
         free(cache);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
+    OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
         intensity = max(min(intensity, 100), 0);
         int c1 = 256 * (100 - intensity) / 100;
         int c2 = 256 * (100 - (100 - intensity)) / 100;
@@ -2749,7 +3079,7 @@ extern "C" {
                 if (blur) {
                     free(blur);
                 }
-                return;
+                return OC_STATUS_ERR_OUTOFMEMORY;
             }
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* pInput = Input + (Y * Stride);
@@ -2793,7 +3123,7 @@ extern "C" {
 
             unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
             if (Blur == NULL) {
-                return;
+                return OC_STATUS_ERR_OUTOFMEMORY;
             }
 
             ocularBoxBlurFilter(Input, Blur, Width, Height, Width, (int)Radius);
@@ -2818,13 +3148,18 @@ extern "C" {
 
         default: break;
         }
+        
+        return OC_STATUS_OK;
     }
 
-    void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter) {
+    OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter) {
 
         int Channels = Stride / Width;
-        if (Input == NULL | Output == NULL || Width == 0 || Height == 0 || Channels == 1)
-            return;
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Channels == 1)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         // 1. Detect skin color, adapt radius according to skin color ratio
         unsigned int skinSum = skinDetection(Input, Width, Height, Channels);
         float skin_rate = skinSum / (float)(Width * Height) * 100;
@@ -2834,40 +3169,47 @@ extern "C" {
         // 3. Re-detect skin color based on the denoise results, filtering non-skin areas
         if (applySkinFilter)
             skinFilter(Input, Output, Width, Height, Channels);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
+    OC_STATUS ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
                                 int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode) {
 
         int Channels = Stride / Width;
         if ((Input == NULL) || (Output == NULL))
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
         if ((Width <= 0) || (Height <= 0) || (newWidth <= 0) || (newHeight <= 0))
-            return;
+            return OC_STATUS_ERR_INVALIDPARAMETER;
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         if ((Width == newWidth) && (Height == newHeight)) {
             memcpy(Output, Input, Width * Height * Channels * sizeof(unsigned char));
-            return;
+            return OC_STATUS_OK;
         }
 
         switch (InterpolationMode) {
-        case OC_INTERPOLATE_NEAREST: nearestNeighborResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
-        case OC_INTERPOLATE_BILINEAR: bilinearResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
-        case OC_INTERPOLATE_BICUBIC: bicubicResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
-        case OC_INTERPOLATE_LANZCOS: lanzcosResize(Input, Width, Height, Stride, Output, newWidth, newHeight, dstStride); break;
+            case OC_INTERPOLATE_NEAREST: nearestNeighborResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+            case OC_INTERPOLATE_BILINEAR: bilinearResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+            case OC_INTERPOLATE_BICUBIC: bicubicResize(Input, Output, Width, Height, newWidth, newHeight, Channels); break;
+            case OC_INTERPOLATE_LANZCOS: lanzcosResize(Input, Width, Height, Stride, Output, newWidth, newHeight, dstStride); break;
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
+    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
                               float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB) {
 
-
         if (Input == NULL || Output == NULL)
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if ((Width <= 0) || (Height <= 0))
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
+        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         float oldXradius = (float)(Width - 1) / 2;
         float oldYradius = (float)(Height - 1) / 2;
@@ -2991,10 +3333,17 @@ extern "C" {
                 dst += dstOffset;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
+    OC_STATUS ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
                          int dstWidth, int dstHeight, int dstStride) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || dstWidth <= 0 || dstHeight <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = srcStride / Width;
 
@@ -3006,9 +3355,16 @@ extern "C" {
             src += srcStride;
             dst += dstStride;
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcDirection direction) {
+    OC_STATUS ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcDirection direction) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         if (direction == OC_DIRECTION_HORIZONTAL) {
             int channels = Stride / Width;
@@ -3033,12 +3389,21 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold) {
+    OC_STATUS ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || maxWindowSize <= 0 || Threshold <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int windowSize, x, y, c;
         unsigned char* window = (unsigned char*)malloc(maxWindowSize * maxWindowSize * sizeof(unsigned char));
+        if (window == NULL)
+            return OC_STATUS_ERR_OUTOFMEMORY;
 
         int Channels = Stride / Width;
 
@@ -3094,12 +3459,15 @@ extern "C" {
         }
 
         free(window);
+
+        return OC_STATUS_OK;
     }
 
-    bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
-        if (Input == NULL || Output == NULL || Input == Output)
-            return false;
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+
         int Channels = Stride / Width;
         // maximum tilt angle
         int maxSkewToDetect = 89;
@@ -3120,14 +3488,19 @@ extern "C" {
         float skewAngle = calcSkewAngle(Output, Width, Height, &rect, maxSkewToDetect, stepsPerDegree, localPeakRadius, nLineCount);
         if ((skewAngle == 0) || (skewAngle < -maxSkewToDetect || skewAngle > maxSkewToDetect)) {
             memcpy(Output, Input, Height * Stride * sizeof(unsigned char));
-            return false;
+            return OC_STATUS_OK;
         } else {
             ocularRotateBilinear(Input, Width, Height, Stride, Output, Width, Height, -skewAngle, true, 255, 255, 255);
         }
-        return true;
+        return OC_STATUS_OK;
     }
 
-    void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction) {
+    OC_STATUS ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || fraction <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
         switch (Channels) {
@@ -3246,7 +3619,7 @@ extern "C" {
             }
             unsigned char MapGray[256] = { 0 };
             if ((thresholdMax - thresholdMin) <= 0)
-                return;
+                return OC_STATUS_ERR_UNKNOWN;
             for (int i = 0; i < 256; i++) {
                 if (i < thresholdMin)
                     MapGray[i] = (0);
@@ -3270,14 +3643,20 @@ extern "C" {
 
         default: break;
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-
         if (Channels != 3)
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         int histogram[256] = { 0 };
         unsigned char Lut[256] = { 0 };
@@ -3310,14 +3689,20 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method) {
+    OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-
         if (Channels != 1)
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
 
         int histogram[256] = { 0 };
         int* histogramSmooth[256] = { 0 }; // for future use
@@ -3333,25 +3718,24 @@ extern "C" {
         }
 
         switch (method) {
-
-        case OC_AUTO_THRESHOLD_MEAN: threshold = GetMeanThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_HUANG: threshold = GetHuangFuzzyThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_MIN: threshold = GetMinimumThreshold(histogram, histogramSmooth); break;
-        case OC_AUTO_THRESHOLD_INTERMODES: threshold = GetIntermodesThreshold(histogram, histogramSmooth); break;
-        case OC_AUTO_THRESHOLD_PTILE: threshold = GetPTileThreshold(histogram, 50); break;
-        case OC_AUTO_THRESHOLD_ITERBEST: threshold = GetIterativeBestThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_OTSU: threshold = GetOSTUThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_1DMAX: threshold = Get1DMaxEntropyThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_MOMENT: threshold = GetMomentPreservingThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_KITTLER: threshold = GetKittlerMinError(histogram); break;
-        case OC_AUTO_THRESHOLD_ISODATA: threshold = GetIsoDataThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_SHANBHAG: threshold = GetShanbhagThreshold(histogram); break;
-        case OC_AUTO_THRESHOLD_YEN: threshold = GetYenThreshold(histogram); break;
-        default: break;
+            case OC_AUTO_THRESHOLD_MEAN: threshold = GetMeanThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_HUANG: threshold = GetHuangFuzzyThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_MIN: threshold = GetMinimumThreshold(histogram, histogramSmooth); break;
+            case OC_AUTO_THRESHOLD_INTERMODES: threshold = GetIntermodesThreshold(histogram, histogramSmooth); break;
+            case OC_AUTO_THRESHOLD_PTILE: threshold = GetPTileThreshold(histogram, 50); break;
+            case OC_AUTO_THRESHOLD_ITERBEST: threshold = GetIterativeBestThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_OTSU: threshold = GetOSTUThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_1DMAX: threshold = Get1DMaxEntropyThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_MOMENT: threshold = GetMomentPreservingThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_KITTLER: threshold = GetKittlerMinError(histogram); break;
+            case OC_AUTO_THRESHOLD_ISODATA: threshold = GetIsoDataThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_SHANBHAG: threshold = GetShanbhagThreshold(histogram); break;
+            case OC_AUTO_THRESHOLD_YEN: threshold = GetYenThreshold(histogram); break;
+            default: break;
         }
 
         if (threshold <= 0)
-            return; // selected method failed to calculate a threshold for whatever reason
+            return OC_STATUS_ERR_UNKNOWN; // selected method failed to calculate a threshold for whatever reason
 
         for (int y = 0; y < Height; y++) {
             unsigned char* pInput = Input + (y * Stride);
@@ -3362,9 +3746,11 @@ extern "C" {
                 pOutput += Channels;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    OC_STATUS ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
         // Implementation of the paper "Adaptive and integrated neighborhood-dependent approach for nonlinear enhancement of color images",
         // but it has been deeply improved.
@@ -3373,11 +3759,11 @@ extern "C" {
         int channels = Stride / Width;
 
         if (channels != 3)
-            return;
+            return OC_STATUS_ERR_NOTSUPPORTED;
         if ((Input == NULL) || (Output == NULL))
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
         if ((Width <= 0) || (Height <= 0))
-            return;
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int RadiusS = 5, RadiusM = 20, RadiusL = 120;
         const int LowLevel = 50, HighLevel = 150;
@@ -3465,10 +3851,17 @@ extern "C" {
         free(BlurM);
         free(BlurL);
         free(Luminance);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
+    OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
                           int mStride, OcBlendMode blendMode, int alpha) {
+
+        if (baseInput == NULL || mixInput == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (bWidth <= 0 || bHeight <= 0 || mWidth <= 0 || mHeight <= 0 || bStride <= 0 || mStride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
 
         for (int y = 0; y < bHeight; y++) {
             unsigned char* pBaseInput = baseInput + (y * bStride);
@@ -3490,16 +3883,25 @@ extern "C" {
                 pBaseInput += 3;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+    OC_STATUS applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
                            int greenBalance, int blueBalance, OcToneBalanceMode mode, bool preserveLuminosity) {
 
         if (Input == NULL || Output == NULL) {
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         int Channels = Stride / Width;
+        if (Channels == 1) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+
         unsigned char lookupR[256], lookupG[256], lookupB[256];
 
         for (int i = 0; i < 256; i++) {
@@ -3507,9 +3909,9 @@ extern "C" {
             float factor;
 
             switch (mode) {
-            case SHADOWS: factor = 0.5f * (1.0f - normalizedValue); break;
-            case MIDTONES: factor = 0.5f - fabs(normalizedValue - 0.5f); break;
-            case HIGHLIGHTS: factor = 0.5f * normalizedValue; break;
+                case SHADOWS: factor = 0.5f * (1.0f - normalizedValue); break;
+                case MIDTONES: factor = 0.5f - fabs(normalizedValue - 0.5f); break;
+                case HIGHLIGHTS: factor = 0.5f * normalizedValue; break;
             }
 
             // Convert integer balance (-100 to 100) to float (-1.0 to 1.0)
@@ -3547,13 +3949,18 @@ extern "C" {
                 Output[i + 3] = Input[i + 3]; // Preserve alpha channel if present
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels, 
+    OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels, 
                                  OcRetinexMode mode, int scale, float numScales, float dynamic) {
 
         if (input == NULL || output == NULL) {
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (width <= 0 || height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         RetinexParams params = {
@@ -3585,7 +3992,7 @@ extern "C" {
         size = width * height * channels;
         dst = (float*)malloc(size * sizeof(float));
         if (dst == NULL) {
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
         memset(dst, 0, size * sizeof(float));
 
@@ -3593,14 +4000,14 @@ extern "C" {
         in = (float*)malloc(channelsize * sizeof(float));
         if (in == NULL) {
             free(dst);
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
 
         out = (float*)malloc(channelsize * sizeof(float));
         if (out == NULL) {
             free(in);
             free(dst);
-            return;
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
 
         // Calculate the scales of filtering according to the number of filter and their distribution.
@@ -3711,13 +4118,22 @@ extern "C" {
         }
 
         free(dst);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+    OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
                                CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold) {
 
-        if (Channels != 1)
-            return;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+        if (Channels != 1) {    
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         // Sobel, as for why this can be used instead of Gaussian derivative, see
         // https://medium.com/@haidarlina4/sobel-vs-canny-edge-detection-techniques-step-by-step-implementation-11ae6103a56a
@@ -3900,25 +4316,30 @@ extern "C" {
         free(G_);
         free(M_);
         free(s_);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+    OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
-        if ((Input == NULL) || (Output == NULL))
-            return;
-        if ((Width <= 0) || (Height <= 0))
-            return;
+        if ((Input == NULL) || (Output == NULL)) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if ((Width <= 0) || (Height <= 0)) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
-        if (Channels != 1)
-            return;
+        if (Channels != 1) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         unsigned char* SqrLut = (unsigned char*)malloc(65026 * sizeof(unsigned char));
+        if (SqrLut == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
         unsigned char* RowCopy = (unsigned char*)malloc((Width + 2) * 3 * sizeof(unsigned char));
-        if ((SqrLut == NULL) || (RowCopy == NULL)) {
-            if (SqrLut != NULL)
-                free(SqrLut);
-            if (RowCopy != NULL)
-                free(RowCopy);
+        if (RowCopy == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
 
         unsigned char *First = RowCopy, *Second = RowCopy + (Width + 2), *Third = RowCopy + (Width + 2) * 2;
@@ -3964,20 +4385,31 @@ extern "C" {
         if (SqrLut) {
             free(SqrLut);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+    OC_STATUS ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
-        if ((Input == NULL) || (Output == NULL))
-            return;
-        if ((Width <= 0) || (Height <= 0))
-            return;
+        if ((Input == NULL) || (Output == NULL)) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if ((Width <= 0) || (Height <= 0)) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
-        if (Channels != 1)
-            return;
+        if (Channels != 1) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         unsigned char* RowCopy = (unsigned char*)malloc((Width + 2) * 3 * Channels);
+        if (RowCopy == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
         unsigned char* SqrValue = (unsigned char*)malloc(65026 * sizeof(unsigned char));
+        if (SqrValue == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
         unsigned char* First = RowCopy;
         unsigned char* Second = RowCopy + (Width + 2) * Channels;
         unsigned char* Third = RowCopy + (Width + 2) * 2 * Channels;
@@ -4028,9 +4460,15 @@ extern "C" {
         }
         free(RowCopy);
         free(SqrValue);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold) {
+    OC_STATUS ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold) {
+
+        if ((Input == NULL) || (LineNumber == NULL)) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
 
         float diagonalLength = sqrt((float)(Height * Height + Width * Width));
         float minAngle = 0;
@@ -4045,6 +4483,9 @@ extern "C" {
 
         // build and initialize the vote tables for coarse angle and distance
         unsigned int** voteTableCoarse = (unsigned int**)malloc(numAnglesCoarse * sizeof(unsigned int*));
+        if (voteTableCoarse == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
         for (int i = 0; i < numAnglesCoarse; i++) {
             voteTableCoarse[i] = (unsigned int*)malloc(numDistancesCoarse * sizeof(unsigned int));
         }
@@ -4104,10 +4545,16 @@ extern "C" {
         }
 
         free(voteTableCoarse);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
-                        unsigned char G, unsigned char B) {
+    OC_STATUS ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
+                             unsigned char G, unsigned char B) {
+
+        if (canvas == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
 
         int channels = stride / width;
 
@@ -4128,7 +4575,7 @@ extern "C" {
                 curLine[1] = G;
                 curLine[2] = B;
             }
-            return;
+            return OC_STATUS_ERR_PARAMISMATCH;
         }
 
         float a = (float)(y2 - y1) / (x2 - x1);
@@ -4180,6 +4627,8 @@ extern "C" {
                 curLine[2] = B;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
     bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size) {
@@ -4307,8 +4756,15 @@ extern "C" {
         return has_image_size;
     }
 
-    void ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, float* kernel,
+    OC_STATUS ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, float* kernel,
                                    unsigned char filterW, unsigned char cfactor, unsigned char bias) {
+
+        if (input == NULL || output == NULL || kernel == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (width <= 0 || height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int factor = 256 / cfactor;
         int halfW = (filterW - 1) / 2;
@@ -4357,12 +4813,18 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle) {
+    OC_STATUS ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle) {
 
-        if (Input == NULL || Output == NULL)
-            return;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int channels = Stride / Width;
 
@@ -4407,12 +4869,19 @@ extern "C" {
         }
     }
 
-    void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
+    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
+
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int channels = Stride / Width;
-
-        if (channels != 1 && channels != 3)
-            return;
+        if (channels != 1 && channels != 3) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         centerX = min(Width - 1, max(0, centerX));
         centerY = min(Height - 1, max(0, centerY));
@@ -4475,13 +4944,18 @@ extern "C" {
                 pOut += stride;
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
+    OC_STATUS ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
                         int centerX, int centerY) {
 
         if (Input == NULL || Output == NULL) {
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         int Channels = Stride / Width;
@@ -4531,16 +5005,26 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
 
-        Radius = Radius != 0 ? Radius : 3;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int channels = Stride / Width;
 
-        if (channels != 3)
-            return;
+        if (channels != 3) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+
+        Radius = Radius != 0 ? Radius : 3;
 
         int count = pow(Radius, 2);
         int sumR, sumG, sumB;
@@ -4590,18 +5074,32 @@ extern "C" {
                 Output[pPos + 2] = ClampToByte(avgB);
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
-        const int Level = 256;
+    OC_STATUS ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+        
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int Channel = Stride / Width;
-        if ((Channel != 1) && (Channel != 3))
-            return;
+        if ((Channel != 1) && (Channel != 3)) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+
+        const int Level = 256;
 
         if (Channel == 1) {
 
             int* histogram = (int*)malloc(Level * sizeof(int));
+            if (histogram == NULL) {
+                return OC_STATUS_ERR_OUTOFMEMORY;
+            }
             for (int Y = 0; Y < Height; Y++) {
                 unsigned char* LinePS = Input + Y * Stride;
                 unsigned char* LinePD = Output + Y * Stride;
@@ -4682,12 +5180,18 @@ extern "C" {
             free(DstG);
             free(DstB);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
 
-        if (Input == NULL || Output == NULL)
-            return;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int Channels = Stride / Width;
 
@@ -4738,12 +5242,18 @@ extern "C" {
             free(DstG);
             free(DstB);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
 
-        if (Input == NULL || Output == NULL)
-            return;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int Channels = Stride / Width;
 
@@ -4794,12 +5304,23 @@ extern "C" {
             free(DstG);
             free(DstB);
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+        
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+        
         int Channels = Stride / Width;
-        if (Channels != 1 && Channels != 3 && Channels != 4)
-            return;
+        if (Channels != 1 && Channels != 3 && Channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -4867,12 +5388,23 @@ extern "C" {
         }
 
         free(circleMask);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
         int Channels = Stride / Width;
-        if (Channels != 1 && Channels != 3 && Channels != 4)
-            return;
+        if (Channels != 1 && Channels != 3 && Channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        };
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -4942,18 +5474,29 @@ extern "C" {
         }
 
         free(circleMask);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int Channels = Stride / Width;
-        if (Channels != 1 && Channels != 3 && Channels != 4)
-            return;
+        if (Channels != 1 && Channels != 3 && Channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         // Create temporary buffer for blur result
         unsigned char* blurBuffer = (unsigned char*)malloc(Width * Height * Stride);
-        if (!blurBuffer)
-            return;
+        if (blurBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
 
         // First apply Gaussian blur to get low frequency components
         ocularGaussianBlurFilter(Input, blurBuffer, Width, Height, Stride, Radius);
@@ -4984,14 +5527,23 @@ extern "C" {
         }
 
         free(blurBuffer);
+
+        return OC_STATUS_OK;
     }
 
-    void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
+    OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
+
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int channels = Stride / Width;
-
-        if (channels != 1 && channels != 3)
-            return;
+        if (channels != 1 && channels != 3) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         int pPos;
         for (int y = 0; y < Height; y += blockSize) {
@@ -5037,17 +5589,23 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
-    void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
+    OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
 
-        if (Input == NULL || Output == NULL)
-            return;
+        if (Input == NULL || Output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
 
         int Channels = Stride / Width;
-
-        if (Channels != 3)
-            return;
+        if (Channels != 3) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
 
         int intensityCount[256];
         int sumR[256];
@@ -5126,10 +5684,13 @@ extern "C" {
         }
     }
 
-    void ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range) {
+    OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range) {
 
         if (Input == NULL || Output == NULL) {
-            return;
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         int Channels = Stride / Width;
@@ -5168,17 +5729,17 @@ extern "C" {
         }
     }
 
-    void ocularLoadPalette(const char* filename, OcPalette* palette) {
+    OC_STATUS ocularLoadPalette(const char* filename, OcPalette* palette) {
 
         PaletteFormat format = detect_palette_format(filename);
         switch (format) {
-        case FORMAT_GIMP: read_gimp_palette(filename, palette); break;
-        case FORMAT_RIFF: read_riff_palette(filename, palette); break;
-        case FORMAT_ACO: read_aco_palette(filename, palette); break;
-        case FORMAT_PAINTNET: read_paintnet_palette(filename, palette); break;
-        case FORMAT_ACT: read_act_palette(filename, palette); break;
-        case FORMAT_ASE: read_ase_palette(filename, palette); break;
-        default: fprintf(stderr, "Unsupported palette format\n"); break;
+            case FORMAT_GIMP: read_gimp_palette(filename, palette); return OC_STATUS_OK;
+            case FORMAT_RIFF: read_riff_palette(filename, palette); return OC_STATUS_OK;
+            case FORMAT_ACO: read_aco_palette(filename, palette); return OC_STATUS_OK;
+            case FORMAT_PAINTNET: read_paintnet_palette(filename, palette); return OC_STATUS_OK;
+            case FORMAT_ACT: read_act_palette(filename, palette); return OC_STATUS_OK;
+            case FORMAT_ASE: read_ase_palette(filename, palette); return OC_STATUS_OK;
+            default: fprintf(stderr, "Unsupported palette format\n"); return OC_STATUS_ERR_NOTSUPPORTED;
         }
     }
 #ifdef __cplusplus

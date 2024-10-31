@@ -130,7 +130,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    OC_STATUS ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /** @brief Adjusts the individual RGB channels of an image
      *  @ingroup group_color_filters
@@ -146,7 +146,7 @@ extern "C" {
      *  @param blueAdjustment Normalized values by which each color channel is
      *  multiplied. Range [0.0-1.0], default 1.0
      */
-    void ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
+    OC_STATUS ocularRGBFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float redAdjustment,
                          float greenAdjustment, float blueAdjustment);
 
     /**
@@ -161,7 +161,7 @@ extern "C" {
      * @param satAdjustment The saturation modifier to apply.  Range [-2.0 - 2.0]
      * @param lightAdjustment The lightness modifier to apply. Range [-1.0 - 1.0]
      */
-    void ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
+    OC_STATUS ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
                          float satAdjustment, float lightAdjustment);
 
     /** @brief Applies a thresholding operation where the threshold is continually adjusted based on the average luminance of the image.
@@ -174,7 +174,7 @@ extern "C" {
      *  @param thresholdMultiplier Factor that the average luminance will be multiplied by in order to arrive at the final threshold to use.
      *  Default is 1.0.
      */
-    void ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier);
+    OC_STATUS ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier);
 
     /** @brief Determines the average color, by averaging the RGBA components for each each pixel in an image.
      *  @ingroup group_color_filters
@@ -188,7 +188,7 @@ extern "C" {
      *  @param[out] AverageB Returns the calculated blue channel value.
      *  @param[out] AverageA Returns the calculated alpha channel value.
      */
-    void ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
+    OC_STATUS ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
                             unsigned char* AverageB, unsigned char* AverageA);
 
     /** @brief Calculates the average luminosity for an image.
@@ -199,7 +199,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param[out] Luminance Returns average luminosity value.
      */
-    void ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance);
+    OC_STATUS ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance);
 
     /** @brief Transforms the colors of an image by apply a matrix to them.
      *  @param Input The image input data buffer.
@@ -211,7 +211,7 @@ extern "C" {
      *  @param intensity The degree to which the new transformed color replaces the
      *  original color for each pixel. Range [0.0-1.0]. Default 1.0.
      */
-    void ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity);
+    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity);
 
     /** @brief Applies a simple sepia tone filter
      *  @ingroup group_color_filters
@@ -222,7 +222,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param intensity The degree to which the sepia tone replaces the normal image color. Range [0 - 100].
      */
-    void ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
+    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
 
     /** @brief For a given color in the image, sets the alpha channel to 0.
      *  @ingroup group_color_filters
@@ -237,7 +237,7 @@ extern "C" {
      *  @param thresholdSensitivity How close a color match needs to exist to the target color to be replaced. Default 0.4.
      *  @param smoothing How smoothly to blend for the color match. Default 0.1.
      */
-    void ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char colorToReplaceR,
+    OC_STATUS ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char colorToReplaceR,
                                unsigned char colorToReplaceG, unsigned char colorToReplaceB, float thresholdSensitivity, float smoothing);
 
     /** @brief Uses an RGB color lookup image to remap the colors in an image.
@@ -250,7 +250,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param intensity int intensity = 100
      */
-    void ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity);
+    OC_STATUS ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity);
 
     /** @brief Adjusts the saturation of an image
      *  @ingroup group_color_filters
@@ -262,7 +262,7 @@ extern "C" {
      *  @param saturation The degree of saturation or desaturation to apply to the
      *  image. Range [0.0 - 2.0]. Default 1.0.
      */
-    void ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation);
+    OC_STATUS ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation);
 
     /** @brief Adjusts the gamma of an image
      *  @ingroup group_color_filters group_inplace
@@ -273,7 +273,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param gamma The gamma adjustment to apply to each channel. Range [> 0 to ~4 or 5]. Supports 1 or 3 channels.
      */
-    void ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
+    OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
     /** @brief Adjusts the contrast of the image
      *  @ingroup group_color_filters group_inplace
@@ -284,7 +284,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param contrast The adjusted contrast. Range [0.0 - 4.0]. Default 1.0.
      */
-    void ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast);
+    OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast);
 
     /** @brief Adjusts the exposure of the image
      *  @ingroup group_color_filters
@@ -295,7 +295,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param exposure The adjusted exposure. Range [-10.0 - 10.0]. Default 0.0.
      */
-    void ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);
+    OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);
 
     /** @brief Adjusts the brightness of the image
      *  @ingroup group_color_filters group_inplace
@@ -306,7 +306,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param brightness The adjusted brightness. Range [-1.0 - 1.0]. Default 0.0.
      */
-    void ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness);
+    OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness);
 
     /** @brief Detects the dark and bright areas of an image, and replaces them with respective colors.
      *  @ingroup group_color_filters
@@ -323,7 +323,7 @@ extern "C" {
      *  @param secondColorB The blue channel to replace in light areas of the image.
      *  @param intensity The luminance intensity to use for dark and light areas. Range [0 - 100].
      */
-    void ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
+    OC_STATUS ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
                                 unsigned char firstColorG, unsigned char firstColorB, unsigned char secondColorR,
                                 unsigned char secondColorG, unsigned char secondColorB, int intensity);
 
@@ -338,7 +338,7 @@ extern "C" {
      *  @param slope Amount of color change. Default 0. Values between -0.3 and 0.3 are best.
      *  @param intensity The luminance intensity to apply. Range [0 - 100]. Default 100.
      */
-    void ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity);
+    OC_STATUS ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity);
 
     /** @brief Adjusts the alpha channel of the image
      *  @ingroup group_color_filters
@@ -349,7 +349,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param opacity The value to multiply the incoming alpha channel for each pixel. Range [0.0 - 1.0]. Default 1.0.
      */
-    void ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity);
+    OC_STATUS ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity);
 
     /** @brief Photoshop-like levels adjustment. The min, max, minOut and maxOut parameters are floats in the range [0 - 1].
      *  If you have parameters from Photoshop in the range[0, 255] you must first convert them to be [0 - 1]. The gamma / mid
@@ -365,7 +365,7 @@ extern "C" {
      *  @param greenLevelParams The green channel for parameters for min, mid, max and output values.
      *  @param blueLevelParams The blue channel for parameters for min, mid, max and output values.
      */
-    void ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+    OC_STATUS ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                             ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams);
 
     /** @brief Adjust the hue of an image
@@ -377,7 +377,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param hueAdjust The hue angle, in degrees. 90 degrees by default.
      */
-    void ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjust);
+    OC_STATUS ocularHueFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjust);
 
     /** @brief Allows you to tint the shadows and highlights of an image independently using a color and intensity.
      *  @ingroup group_color_filters
@@ -395,7 +395,7 @@ extern "C" {
      *  @param shadowTintIntensity Shadow tint intensity. Range [0 - 1.0]
      *  @param highlightTintIntensity Highlight tint intensity. Range [0 - 1.0]
      */
-    void ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
+    OC_STATUS ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
                                          float shadowTintG, float shadowTintB, float highlightTintR, float highlightTintG,
                                          float highlightTintB, float shadowTintIntensity, float highlightTintIntensity);
 
@@ -409,7 +409,7 @@ extern "C" {
      *  @param shadows Increase to lighten shadows, from 0.0 to 1.0, with 0.0 as the default.
      *  @param highlights Decrease to darken highlights, from 0.0 to 1.0, with 1.0 as the default.
      */
-    void ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights);
+    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights);
 
     /** @brief Converts the image to a single color version, based on the luminance of each pixel
      *  @ingroup group_color_filters
@@ -424,7 +424,7 @@ extern "C" {
      *  @param intensity The degree to which the specific color replaces the normal
      *  image color. Range [0.0 - 1.0]. Default 1.0.
      */
-    void ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
+    OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
                                 unsigned char filterColorG, unsigned char filterColorB, int intensity);
 
     /** @brief Inverts the colors of an image
@@ -435,7 +435,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    OC_STATUS ocularColorInvertFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /** @brief Outputs a generated image with a solid color.
      *  @ingroup group_ip_general
@@ -448,7 +448,7 @@ extern "C" {
      *  @param colorB The blue channel color to use. Range [0-255]
      *  @param colorAlpha The alpha channel value to use. Range [0-255]
      */
-    void ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, unsigned char colorG,
+    OC_STATUS ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, unsigned char colorG,
                                    unsigned char colorB, unsigned char colorAlpha);
 
     /** @brief Converts an image to black and white based on a luminance threshold.
@@ -461,7 +461,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param threshold The luminance threshold. Range [0.0 - 1.0]. Default. 0.5.
      */
-    void ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
+    OC_STATUS ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
 
     /**
      * @brief Performs an automatic contrast enhancement on an image based on local and image-dependent exponential correction.
@@ -473,7 +473,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Channels The numbers of color channels in the image.
      */
-    void ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+    OC_STATUS ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
     /**
      * @brief Performs automatic gamma correction based on average brightness.
@@ -484,7 +484,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    OC_STATUS ocularAutoGammaCorrection(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /** @brief Automatically applies a neutral white balance to an image.
      *  @ingroup group_color_filters
@@ -498,8 +498,8 @@ extern "C" {
      *  @param contrast The histogram contrast strength. Range [0 - 1.0]
      *  @return bool Whether the image has a color cast.
      */
-    bool ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int Width, int height, int channels, int stride,
-                                int colorCoeff, float cutLimit, float contrast);
+    OC_STATUS ocularAutoWhiteBalance(unsigned char* input, unsigned char* output, int Width, int height, int stride,
+                                int colorCoeff, float cutLimit, float contrast, bool* hasColorCast);
 
     /** @brief Adjust the white balance of of an image
      *  @ingroup group_color_filters
@@ -514,7 +514,7 @@ extern "C" {
      *  @param tint Tints the image either towards green or magenta. Useful for removing color casts. A value of -200
      *  is very green and 200 is very pink.
      */
-    void ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint);
+    OC_STATUS ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint);
 
     /** @brief Adjusts the vibrance of an image
      *  @ingroup group_color_filters
@@ -526,7 +526,7 @@ extern "C" {
      *  @param vibrance The vibrance adjustment to apply, using 0.0 as the default,
      *  and a suggested min/max of around - 1.2 and 1.2, respectively.
      */
-    void ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance);
+    OC_STATUS ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance);
 
     /** @brief A skin-tone adjustment filter that affects a unique range of light  skin-tone colors and adjusts the pink/green
      *  or pink/orange range accordingly. Default values are targeted at fair caucasian skin, but can be adjusted as required.
@@ -543,7 +543,7 @@ extern "C" {
      *  @param maxSaturationShift Maximum amount of saturation to be shifted (when using orange). Default: 0.4.
      *  @param upperSkinToneColor Adjusts hue or saturation based on what tone we are aiming for. 0 = Pink/Green, 1 = Pink/Orange.
      */
-    void ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
+    OC_STATUS ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
                               float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
 
     /** @brief Automatically calculates levels of an image.
@@ -556,7 +556,7 @@ extern "C" {
      *  @param fraction Clipping threshold in percentage of pixels allowed to clip to clip to the white and black points
      *  of the histogram. Range [0.001 - 0.1].
      */
-    void ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
+    OC_STATUS ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
     /**
      * @brief Performs a tone equalization by redistributing the brightness values of the pixels in an image so
@@ -568,7 +568,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    OC_STATUS ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /**
      * @brief Performs global thresholding using various methods.
@@ -581,7 +581,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param method The method to use for automatically calculating threshold value. Good default OC_AUTO_THRESHOLD_OTSU.
      */
-    void ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method);
+    OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method);
 
     /**
      * @brief Attempts to correct images that were captured under extremely low or non-uniform lighting conditions.
@@ -593,7 +593,7 @@ extern "C" {
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
      */
-    void ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+    OC_STATUS ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     /**
      * @brief Applies a Photoshop-style layer blending mode to an image using a secondary image to mix with.
@@ -609,7 +609,7 @@ extern "C" {
      * @param blendMode The blending mode to apply. All 27 Photoshop blend are available.
      * @param alpha The transparency to apply. Range [0 - 100].
      */
-    void ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
+    OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
                           int mStride, OcBlendMode blendMode, int alpha);
 
 
@@ -627,7 +627,7 @@ extern "C" {
      * @param Mode The tonal range to apply the color balance to. [SHADOWS|MIDTONES|HIGHLIGHTS].
      * @param preserveLuminosity Prevents changing the luminosity values in the image while changing the color.
      */
-    void applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+    OC_STATUS applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
                            int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
 
     /**
@@ -647,7 +647,7 @@ extern "C" {
      * of the "multiscale" nature of the algorithm. Range [1.0 - 8.0]
      * @param dynamic Adjusts the color of the result. Large values produce less saturated images. Range [0.05 - 4.0]
      */
-    void ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
+    OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                   OcRetinexMode mode, int scale, float numScales, float dynamic);
 
     //--------------------------Color adjustments--------------------------
@@ -663,7 +663,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param Radius A radius in pixels to use for the blur, >= 0.0. This adjusts the sigma variable in the Gaussian distribution function.
      */
-    void ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /** @brief Performs a smoothing of an image using a discrete Gaussian kernel.
      *  Reduces noise by averaging it out, but will also reduce edges.
@@ -676,7 +676,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param GaussianSigma A radius in pixels to use for the blur, >= 0.0
      */
-    void ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
+    OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
 
     /** @brief Performs a convolution blurring that simulates the effect of shooting a moving object on film.
      *  @ingroup group_ip_filters
@@ -688,7 +688,7 @@ extern "C" {
      *  @param distance The distance in pixels to use for the blur, >= 0.0
      *  @param angle The angle of the blur. Range [-180 - 180]
      */
-    void ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle);
+    OC_STATUS ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle);
 
     /**
      * @brief Performs a rotational blur on an image centered on a point.
@@ -702,7 +702,7 @@ extern "C" {
      * @param centerY The y coordinate to center the blur at. Centered: image height / 2.
      * @param intensity The strength of the blur to apply. Range [0 - 100]
      */
-    void ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity);
+    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity);
 
     /**
      * @brief Apply zoom blur to the image. This effect mimics the zoom of a camera when capturing the image.
@@ -717,7 +717,7 @@ extern "C" {
      * @param centerX The x coordinate of the center of the blur.
      * @param centerY The y coordinate of the center of the blur.
      */
-    void ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
+    OC_STATUS ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
                         int centerX, int centerY);
 
     /**
@@ -731,7 +731,7 @@ extern "C" {
      * @param Radius A radius in pixels to use for the blur, >= 0.0
      * @param edgeMode Edge handling mode when out of bounds. OC_EDGE_WRAP or OC_EDGE_MIRROR.
      */
-    void ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
 
     /** @brief Applies a median blur to an image, which is good for removing salt and pepper noise.
      *  @ingroup group_ip_filters
@@ -742,7 +742,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param Radius A radius in pixels to use for the blur, >= 0.0
      */
-    void ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
      * @brief Performs a minimum rank filter that replaces the central pixel with the darkest one in the radius.
@@ -754,7 +754,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param Radius A radius in pixels to use for calculation, >= 0
      */
-    void ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
      * @brief Performs a maximum rank filter that replaces the central pixel with the lightest one in the radius.
@@ -766,7 +766,7 @@ extern "C" {
      *  @param Stride The number of bytes in one row of pixels.
      *  @param Radius A radius in pixels to use for calculation, >= 0
      */
-    void ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
    /**
      * @brief Apply a minimum filter. This is the same as Erode except it uses a circular kernel that accounts for edges.
@@ -777,7 +777,7 @@ extern "C" {
      * @param Stride The number of bytes in one row of pixels
      * @param Radius The radius of the kernel. Range [1 - 256]
      */
-    void ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
      * @brief Apply a maximum filter. This is the same as Dialte except it uses a circular kernel that accounts for edges.
@@ -788,7 +788,7 @@ extern "C" {
      * @param Stride The number of bytes in one row of pixels
      * @param Radius The radius of the kernel. Range [1 - 256]
      */
-    void ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
      * @brief Perform a high pass filter that emphasizes high-frequency components (edges and details) while reducing
@@ -802,7 +802,7 @@ extern "C" {
      * @param Radius Controls the cutoff frequency - larger values will remove more low frequency content, resulting in
      * a more pronounced high pass effect. Range [1 - 512]
      */
-    void ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+    OC_STATUS ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /**
      * @brief Performs an optimized blurring of an image, maintaining edges while reducing and smoothing out noise.
@@ -816,7 +816,7 @@ extern "C" {
      * @param Threshold Controls how much the tonal values of neighboring pixels must diverge from the center pixel before being
      * included in the blur. Range [2 - 255].
      */
-    void ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold);
+    OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold);
 
     /**
      * @brief Performs a Bi-Exponential Edge-Perserving Smoothing filter that removes irrelevant details while preserving strong edges.
@@ -833,7 +833,7 @@ extern "C" {
      *  Range [0.01 - 0.250]
      * @param RangeFilter The type of range filter to use. [0, 1 or 2] [Gaussian|Hyperbolic Secant|Euler Constant]
      */
-    void ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int width, int height, int Stride,
+    OC_STATUS ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int width, int height, int Stride,
                            float PhotometricStandardDeviation, float SpatialDecay, int RangeFilter);
 
         //--------------------------Blur filters--------------------------
@@ -873,7 +873,7 @@ extern "C" {
          * @param weak_threshold Pixel values below this limit are discarded. Range [0 - 255]. Good default 200.
          * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. Good default 200.
          */
-        void ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
+        OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
                                    CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
         /** @brief Applies a sobel edge detection filter
@@ -884,7 +884,7 @@ extern "C" {
          *  @param Height The height of the image in pixels.
          *  @param Channels The numbers of color channels in the image.
          */
-        void ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+        OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
         /**
          * @brief Performs edge detection on an image based on the Sobel operator.
@@ -895,7 +895,7 @@ extern "C" {
          *  @param Height The height of the image in pixels.
          *  @param Channels The numbers of color channels in the image.
          */
-        void ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+        OC_STATUS ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
         //-------------------------- Edge detection --------------------------
 
@@ -914,7 +914,7 @@ extern "C" {
          *  @param sigmaRange Control how much an adjacent pixel is down-weighted because of the intensity difference. A
          *  larger value means that farther colors within the pixel neighborhood will be mixed together. Range [0 - 1.0]
          */
-        void ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
+        OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
 
         /** @brief Applies an unsharp mask
          *  @ingroup group_ip_filters
@@ -928,7 +928,7 @@ extern "C" {
          *  @param intensity The strength of the sharpening, >= 0.0, with a default
          *  of 1.0.
          */
-        void ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
+        OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
 
         /** @brief Applies a Gaussian sharpening filter to an image.
          *  @ingroup group_ip_filters
@@ -942,7 +942,7 @@ extern "C" {
          *  the kernel in concentrated on the center pixel.
          *  @param intensity The strength of the sharpening kernel. Range [0-100]
          */
-        void ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
+        OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
                                    float sharpness, int intensity);
 
         /**
@@ -956,7 +956,7 @@ extern "C" {
          * @param smoothingLevel The amount of skin denoising to apply.
          * @param applySkinFilter Apply filtering to non-skin areas after initial denoising.
          */
-        void ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel,
+        OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel,
                                        bool applySkinFilter);
 
         //--------------------------Enhancement filters--------------------------
@@ -975,7 +975,7 @@ extern "C" {
          *  @param cfactor The sum of all values greater than 0 in the kernel.
          *  @param bias Used to increase/decrease all values greater than 0 in the kernel.
          */
-        void ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
+        OC_STATUS ocularConvolution2DFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* kernel,
                                        unsigned char filterW, unsigned char cfactor, unsigned char bias);
 
         /** @brief Resizes an image using Nearest-neighbor, Bilinear, Bicubic or Lanczos interpolation.
@@ -989,7 +989,7 @@ extern "C" {
          *  @param newHeight The new height of the image.
          *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
          */
-        void ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
+        OC_STATUS ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
                                     unsigned char* Output, int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
 
         /**
@@ -1007,7 +1007,7 @@ extern "C" {
          * @param fillColorG The blue channel value to use for filling non-image area.
          * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
          */
-        void ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth,
+        OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth,
                                   int outHeight, float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB);
 
         /** @brief Outputs only a selected portion of an image.
@@ -1023,7 +1023,7 @@ extern "C" {
          *  @param dstHeight The crop height of the image.
          *  @param dstStride The number of bytes in one row of pixels for output. Used to calculate destination offset.
          */
-        void ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
+        OC_STATUS ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
                              int dstWidth, int dstHeight, int dstStride);
 
         /**
@@ -1036,7 +1036,7 @@ extern "C" {
          *  @param Channels The number of color channels in the image.
          * @param direction The direction of transformation to perform.
          */
-        void ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
+        OC_STATUS ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, OcDirection direction);
 
         /**
          * @brief Performs an adaptive median filter on an image, useful for removing salt and pepper noise from scanned documents.
@@ -1050,7 +1050,7 @@ extern "C" {
                                 W = 2*ws + 1 so that W = 3 is a 3x3 filter window.
          * @param Threshold The adaptive theshold (0 = normal median behavior). Higher values reduce the "aggresiveness" of the filter.
          */
-        void ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold);
+        OC_STATUS ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold);
 
         /**
          * @brief Performs deskewing of an image, useful for scanned documents.
@@ -1062,7 +1062,7 @@ extern "C" {
          * @param Stride The number of bytes in one row of pixels.
          * @return True, if valid text image found and deskew performed. Otherwise false.
          */
-        bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+        OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
         //------------------------Distort-------------------------
 
@@ -1076,7 +1076,7 @@ extern "C" {
          *  @param Stride The number of bytes in one row of pixels.
          * @param blockSize The width and height of the desired pixelation block (in pixels).
          */
-        void ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
+        OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
         /**
          * @brief Applies an "oil painting" effect to an image.
@@ -1089,7 +1089,7 @@ extern "C" {
          * @param radius The radius of the effect. Range >= 1.
          * @param intensity The smoothness of the effect. Smaller values indicate less smoothness (less bins are used to calculate luminance).
          */
-        void ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
+        OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
 
         /**
          * @brief Simulates the image being observed through a layer of frosted glass by applying random pixel disturbance.
@@ -1103,7 +1103,7 @@ extern "C" {
          * @param Range Controls the range of random pixel displacement. Greater values will produce a more pronounced effect,
          * making the image more distorted. Range [1 - 20]
          * */
-        void ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
+        OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
 
         //------------------------Distort-------------------------
 
@@ -1119,7 +1119,7 @@ extern "C" {
         *  @param Width The width of the input image.
         *  @param threshold The maximum number of lines to return.
         */
-        void ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height,
+        OC_STATUS ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height,
                                         int Width, int threshold);
 
         /**
@@ -1137,7 +1137,7 @@ extern "C" {
          * @param G The green color to draw line with.
          * @param B The blue color to draw line with.
          */
-        void ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
+        OC_STATUS ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
                             unsigned char G, unsigned char B);
 
         /**
@@ -1146,7 +1146,7 @@ extern "C" {
          * @param filename The path to the palette file.
          * @param palette The palette to load the data into.
          */
-        void ocularLoadPalette(const char* filename, OcPalette* palette);
+        OC_STATUS ocularLoadPalette(const char* filename, OcPalette* palette);
 
         //--------------------------Misc--------------------------
 
