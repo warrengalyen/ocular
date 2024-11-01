@@ -96,3 +96,4 @@ EXPORTS
     ocularMinFilter @94
     ocularMaxFilter @95
     ocularHighPassFilter @96
+    ocularFilmNoirEffect @97

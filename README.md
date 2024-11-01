@@ -97,6 +97,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Pixelate (Mosaic)
 - Oil Paint
 - Frosted Glass
+- Film Noir
 
 #### OCR Pre-preprocessing
 
@@ -174,6 +175,8 @@ This will out the following 4 files:
 I'm working on a full-featured image viewer app in C# for showing-casing the library. 
 This is currently available in the `demo-gui` branch and is very much a work-in-progress.
 
+## Licensing
 
+Ocular is under the MIT license.
 
-
+Ocular uses code ported from 3d parties. See the [LICENSE](LICENSE) file for details.
