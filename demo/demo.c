@@ -112,7 +112,7 @@ void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
 
 int main(int argc, char** argv) {
 
-    printf("Ocular Image Processing library\n");
+    printf("Ocular Image Processing library v%s\n", ocularGetVersion());
     printf("https://github.com/warrengalyen/ocular/ \n");
 
     if (argc < 2) {
@@ -148,7 +148,11 @@ int main(int argc, char** argv) {
             double startTime = now();
             printf("Processing image...\n");
 
-            ocularMultiscaleRetinex(input, output, width, height, channels, RETINEX_UNIFORM, 240.0f, 3.0f, 1.2f);
+            OC_STATUS status = ocularFilmNoirEffect(input, output, width, height, stride, 10, 90, 10, 50, 50);
+            if (status != OC_STATUS_OK) {
+                printf("Error: %s\n", ocularGetStatusString(status));
+                return -1;
+            }
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));

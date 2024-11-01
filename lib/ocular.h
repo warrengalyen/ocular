@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 10-27-2024
- * Last update: added palette import/export
+ * Last Updated: 11-1-2024
+ * Last update: added version and status string functions
  *
  * @brief Contains exported primary filter functions
  */
@@ -24,13 +24,19 @@ extern "C" {
 #include "blend.h"
 #include "core.h"
 #include "interpolate.h"
-#include "palette.h"    
+#include "palette.h"
+#include "version.h"
+// #include "fft.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+
+
+static const char* ocular_version = VERSION_MAJOR "." VERSION_MINOR "." VERSION_PATCH "." VERSION_BUILD ;
+static char timestamp[] = __DATE__ " " __TIME__;
 
     /** @enum OcInterpolationMode
      * @brief Interpolation method to use for resampling filter
@@ -1257,6 +1263,21 @@ extern "C" {
     bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
 
     //--------------------------preImage processing--------------------------
+
+    /**
+     * @brief Get the version of the library.
+     * @ingroup group_ip_utility
+     * @return The version of the library as string.
+     */
+    const char* ocularGetVersion();
+
+    /**
+     * @brief Get the status string for a given status code.
+     * @ingroup group_ip_utility
+     * @param status The status code returned by Ocular functions.
+     * @return The status string.
+     */
+    const char* ocularGetStatusString(OC_STATUS status);
 
 #ifdef __cplusplus
 }

@@ -5821,6 +5821,24 @@ extern "C" {
             default: fprintf(stderr, "Unsupported palette format\n"); return OC_STATUS_ERR_NOTSUPPORTED;
         }
     }
+
+    const char* ocularGetVersion() { return ocular_version; }
+
+    const char* ocularGetStatusString(OC_STATUS status) {
+        switch (status) {
+            case OC_STATUS_ERR_OUTOFMEMORY: return "Memory allocation error";
+            case OC_STATUS_ERR_STACKOVERFLOW: return "Stack overflow";
+            case OC_STATUS_ERR_NULLREFERENCE: return "Empty reference provided";
+            case OC_STATUS_ERR_INVALIDPARAMETER: return "Invalid parameter provided, empty or not within valid range";
+            case OC_STATUS_ERR_PARAMISMATCH: return "Input and output sizes do not match";
+            case OC_STATUS_ERR_INDEXOUTOFRANGE: return "Index out of range";
+            case OC_STATUS_ERR_NOTSUPPORTED: return "Unsupported image format";
+            case OC_STATUS_ERR_OVERFLOW: return "Overflow";
+            case OC_STATUS_ERR_FILENOTFOUND: return "File not found";
+            case OC_STATUS_ERR_UNKNOWN: return "Unknown error occurred";
+            default: return "Unknown error";
+        }
+    }
 #ifdef __cplusplus
 }
 #endif

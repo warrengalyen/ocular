@@ -1,4 +1,4 @@
-## Film Noir Example {#page_examples_autowb}
+## Film Noir Example {#page_examples_film_noir}
 
 ```c
 #include <stdio.h>
@@ -23,7 +23,8 @@ int main(void) {
             int contrastBoost = 10;
             int contrastMidpoint = 50;
             int grainPercentage = 50;
-            OC_STATUS status = ocularFilmNoirEffect(inputImage, outputImage, width, height, channels, stride, shadowCutoff, highlightCutoff, contrastBoost, contrastMidpoint, grainPercentage);
+            OC_STATUS status = ocularFilmNoirEffect(inputImage, outputImage, width, height, channels, stride, 
+                            shadowCutoff, highlightCutoff, contrastBoost, contrastMidpoint, grainPercentage);
             if (status == OC_STATUS_OK) {
                 stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
             }
@@ -42,7 +43,7 @@ int main(void) {
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="awb_out.jpg" alt=""/>
+        <img src="film_noir_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>
