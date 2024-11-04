@@ -15,6 +15,9 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
     message(FATAL_ERROR "ERROR: CMAKE_CXX_STANDARD is not set or it is too low. Minimum C v17 is required to compile \"Ocular\" library.")
 endif ()
 
+# Call the function to get the current VERSION_BUILD
+# get_version_build()
+
 set(MODULE_FILES
         auxiliary.c
         core.c
@@ -29,6 +32,13 @@ set(MODULE_FILES
 )
 
 add_library(ocular STATIC ${MODULE_FILES})
+
+# Pre-build step to update VERSION_BUILD
+add_custom_command(
+    TARGET ocular
+    PRE_BUILD
+    COMMAND bash build_update.sh
+)
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to it

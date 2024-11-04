@@ -27,6 +27,7 @@
 
 #include "color.h"
 #include "util.h"
+#include <math.h>
 
 void rgb2yiq(unsigned char* R, unsigned char* G, unsigned char* B, short* Y, short* I, short* Q) {
     *Y = (short)((int)(0.299f * 65536) * *R + (int)(0.587f * 65536) * *G + (int)(0.114f * 65536) * *B) >> 16;
@@ -273,6 +274,38 @@ void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float
     *k = k_temp * 100.0f;
 }
 
+void rgb2xyz(unsigned char R, unsigned char G, unsigned char B, double* X, double* Y, double* Z) {
+
+    double var_R = (double)R / 255.0;
+    double var_G = (double)G / 255.0;
+    double var_B = (double)B / 255.0;
+
+    if (var_R > 0.04045f)   
+        var_R = pow(((var_R + 0.055f) / 1.055f), 2.4f);
+    else
+        var_R = var_R / 12.92f;
+
+    if (var_G > 0.04045)
+        var_G = pow(((var_G + 0.055f) / 1.055f), 2.4f);
+    else
+        var_G = var_G / 12.92f;
+
+    if (var_B > 0.04045f)
+        var_B = pow(((var_B + 0.055f) / 1.055f), 2.4f);
+    else
+        var_B = var_B / 12.92f;
+
+    var_R *= 100.0;
+    var_G *= 100.0;
+    var_B *= 100.0;
+
+
+    // Observer. = 2°, Illuminant = D65
+    *X = var_R * 0.4124564 + var_G * 0.3575761 + var_B * 0.1804375;
+    *Y = var_R * 0.2126729 + var_G * 0.7151522 + var_B * 0.0721750;
+    *Z = var_R * 0.0193339 + var_G * 0.1191920 + var_B * 0.9503041;
+}
+
 void lab2xyz(double L, double a, double b, double* X, double* Y, double* Z) {
 
     double ref_X = 95.047;
@@ -337,7 +370,7 @@ void xyz2lab(double X, double Y, double Z, double* L, double* a, double* b) {
         var_Y = m * var_Y + c;
     }
 
-    if (var_Z > eps)
+    if (var_Z > eps) {
         var_Z = pow(var_Z, 1.0 / 3.0);
     } else {
         var_Z = m * var_Z + c;
@@ -374,6 +407,7 @@ void xyz2rgb(double X, double Y, double Z, unsigned char* R, unsigned char* G, u
         var_B = 1.055 * pow(var_B, (1.0 / 2.4)) - 0.055;
     } else {
         var_B = 12.92 * var_B;
+    }
 
     *R = (unsigned char)(ClampToByte(var_R * 255.0 + 0.5));
     *G = (unsigned char)(ClampToByte(var_G * 255.0 + 0.5));
