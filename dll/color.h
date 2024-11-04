@@ -32,6 +32,10 @@ extern "C" {
 
     DLIB_EXPORT void cmyk2rgb(float c, float m, float y, float k, unsigned char* R, unsigned char* G, unsigned char* B);    
 
+    DLIB_EXPORT void lab2rgb(double L, double a, double b, unsigned char* R, unsigned char* G, unsigned char* B);
+
+    DLIB_EXPORT void rgb2lab(unsigned char R, unsigned char G, unsigned char B, double* L, double* a, double* b);
+
     //--------------------------Color conversion--------------------------
 
 #ifdef __cplusplus

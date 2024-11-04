@@ -1,3 +1,30 @@
+/*
+    http://www.easyrgb.com/index.php?X=MATH&H=02text2
+    Observer	2° (CIE 1931)	10° (CIE 1964)	Note
+    Illuminant	X2	Y2	Z2	X10	Y10	Z10
+    A	109.850	100.000	35.585	111.144	100.000	35.200	Incandescent/tungsten
+    B	99.0927	100.000	85.313	99.178;	100.000	84.3493	Old direct sunlight at noon
+    C	98.074	100.000	118.232	97.285	100.000	116.145	Old daylight
+    D50	96.422	100.000	82.521	96.720	100.000	81.427	ICC profile PCS
+    D55	95.682	100.000	92.149	95.799	100.000	90.926	Mid-morning daylight
+    D65	95.047	100.000	108.883	94.811	100.000	107.304	Daylight, sRGB, Adobe-RGB
+    D75	94.972	100.000	122.638	94.416	100.000	120.641	North sky daylight
+    E	100.000	100.000	100.000	100.000	100.000	100.000	Equal energy
+    F1	92.834	100.000	103.665	94.791	100.000	103.191	Daylight Fluorescent
+    F2	99.187	100.000	67.395	103.280	100.000	69.026	Cool fluorescent
+    F3	103.754	100.000	49.861	108.968	100.000	51.965	White Fluorescent
+    F4	109.147	100.000	38.813	114.961	100.000	40.963	Warm White Fluorescent
+    F5	90.872	100.000	98.723	93.369	100.000	98.636	Daylight Fluorescent
+    F6	97.309	100.000	60.191	102.148	100.000	62.074	Lite White Fluorescent
+    F7	95.044	100.000	108.755	95.792	100.000	107.687	Daylight fluorescent, D65 simulator
+    F8	96.413	100.000	82.333	97.115	100.000	81.135	Sylvania F40, D50 simulator
+    F9	100.365	100.000	67.868	102.116	100.000	67.826	Cool White Fluorescent
+    F10	96.174	100.000	81.712	99.001	100.000	83.134	Ultralume 50, Philips TL85
+    F11	100.966	100.000	64.370	103.866	100.000	65.627	Ultralume 40, Philips TL84
+    F12	108.046	100.000	39.228	111.428	100.000	40.353	Ultralume 30, Philips TL83
+*/
+
+
 #include "color.h"
 #include "util.h"
 
@@ -246,3 +273,122 @@ void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float
     *k = k_temp * 100.0f;
 }
 
+void lab2xyz(double L, double a, double b, double* X, double* Y, double* Z) {
+
+    double ref_X = 95.047;
+    double ref_Y = 100.000;
+    double ref_Z = 108.883;
+
+    double var_Y = (L + 16.0) / 116.0;
+    double var_X = a / 500.0 + var_Y;
+    double var_Z = var_Y - b / 200.0;
+
+    const double eps = pow(6.0 / 29.0, 3);
+    const double m = 1.0 / 3.0 * pow(eps, -2);
+    const double c = 4.0 / 29.0;
+
+    if (pow(var_Y, 3) > eps) {
+        var_Y = pow(var_Y, 3);
+    } else {
+        var_Y = (var_Y - c) / m;
+    }
+
+    if (pow(var_X, 3) > eps) {
+        var_X = pow(var_X, 3);
+    } else {
+        var_X = (var_X - c) / m;
+    }
+
+    if (pow(var_Z, 3) > eps) {
+        var_Z = pow(var_Z, 3);
+    } else {
+        var_Z = (var_Z - c) / m;
+    }
+
+    *X = ref_X * var_X; // ref_X =  95.047     Observer= 2°, Illuminant= D65
+    *Y = ref_Y * var_Y; // ref_Y = 100.000
+    *Z = ref_Z * var_Z; // ref_Z = 108.883
+}
+
+void xyz2lab(double X, double Y, double Z, double* L, double* a, double* b) {
+
+    // See table above
+    double ref_X = 95.047;
+    double ref_Y = 100.0;
+    double ref_Z = 108.883;
+
+    double var_X = X / ref_X;
+    double var_Y = Y / ref_Y;
+    double var_Z = Z / ref_Z;
+
+    const double eps = pow(6.0 / 29.0, 3);     // 0.008856
+    const double m = 1.0 / 3.0 * pow(eps, -2); // 7.787
+    const double c = 4.0 / 29.0;               // 16.0/116
+
+    if (var_X > eps) {
+        var_X = pow(var_X, 1.0 / 3.0);
+    } else {
+        var_X = m * var_X + c;
+    }
+
+    if (var_Y > eps) {
+        var_Y = pow(var_Y, 1.0 / 3.0);
+    } else {
+        var_Y = m * var_Y + c;
+    }
+
+    if (var_Z > eps)
+        var_Z = pow(var_Z, 1.0 / 3.0);
+    } else {
+        var_Z = m * var_Z + c;
+    }
+
+    *L = 116.0 * var_Y - 16.0;
+    *a = 500.0 * (var_X - var_Y);
+    *b = 200.0 * (var_Y - var_Z);
+}
+
+void xyz2rgb(double X, double Y, double Z, unsigned char* R, unsigned char* G, unsigned char* B) {
+
+    double var_X = X / 100.0;
+    double var_Y = Y / 100.0;
+    double var_Z = Z / 100.0;
+
+    double var_R = var_X * 3.2404542 + var_Y * -1.5371385 + var_Z * -0.4985314;
+    double var_G = var_X * -0.9692660 + var_Y * 1.8760108 + var_Z * 0.0415560;
+    double var_B = var_X * 0.0556434 + var_Y * -0.2040259 + var_Z * 1.0572252;
+
+    if (var_R > 0.0031308) {
+        var_R = 1.055 * pow(var_R, (1.0 / 2.4)) - 0.055;
+    } else {
+        var_R = 12.92 * var_R;
+    }
+
+    if (var_G > 0.0031308) {
+        var_G = 1.055 * pow(var_G, (1.0 / 2.4)) - 0.055;
+    } else {
+        var_G = 12.92 * var_G;
+    }
+
+    if (var_B > 0.0031308) {    
+        var_B = 1.055 * pow(var_B, (1.0 / 2.4)) - 0.055;
+    } else {
+        var_B = 12.92 * var_B;
+
+    *R = (unsigned char)(ClampToByte(var_R * 255.0 + 0.5));
+    *G = (unsigned char)(ClampToByte(var_G * 255.0 + 0.5));
+    *B = (unsigned char)(ClampToByte(var_B * 255.0 + 0.5));
+}
+
+void lab2rgb(double L, double a, double b, unsigned char* R, unsigned char* G, unsigned char* B) {
+    
+    double X, Y, Z;
+    lab2xyz(L, a, b, &X, &Y, &Z);
+    xyz2rgb(X, Y, Z, R, G, B);
+}
+
+void rgb2lab(unsigned char R, unsigned char G, unsigned char B, double* L, double* a, double* b) {
+    double X, Y, Z;
+    rgb2xyz(R, G, B, &X, &Y, &Z);
+    xyz2lab(X, Y, Z, L, a, b);
+}

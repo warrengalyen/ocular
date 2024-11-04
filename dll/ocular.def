@@ -81,21 +81,23 @@ EXPORTS
     hsv2rgb @79
     rgb2cmyk @80
     cmyk2rgb @81
-    read_gimp_palette @82
-    save_gimp_palette @83
-    read_riff_palette @84
-    save_riff_palette @85
-    read_aco_palette @86
-    save_aco_palette @87
-    read_act_palette @88
-    save_act_palette @89
-    read_ase_palette @90
-    read_paintnet_palette @91
-    save_paintnet_palette @92
-    ocularFreePalette @93
-    ocularMinFilter @94
-    ocularMaxFilter @95
-    ocularHighPassFilter @96
-    ocularFilmNoirEffect @97
-    ocularGetStatusString @98
-    ocularGetVersion @99
+    lab2rgb @82
+    rgb2lab @83
+    read_gimp_palette @84
+    save_gimp_palette @85
+    read_riff_palette @86
+    save_riff_palette @87
+    read_aco_palette @88
+    save_aco_palette @89
+    read_act_palette @90
+    save_act_palette @91
+    read_ase_palette @92
+    read_paintnet_palette @93
+    save_paintnet_palette @94
+    ocularFreePalette @95
+    ocularMinFilter @96
+    ocularMaxFilter @97
+    ocularHighPassFilter @98
+    ocularFilmNoirEffect @99
+    ocularGetStatusString @100
+    ocularGetVersion @101

@@ -64,4 +64,14 @@ void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float
  */
 void cmyk2rgb(float c, float m, float y, float k, unsigned char* R, unsigned char* G, unsigned char* B);
 
+/** @brief CIELAB to RGB color space conversion.
+ * @ingroup group_color_convert
+ */
+void lab2rgb(double L, double a, double b, unsigned char* R, unsigned char* G, unsigned char* B);
+
+/** @brief RGB to CIELAB color space conversion.
+ * @ingroup group_color_convert
+ */
+void rgb2lab(unsigned char R, unsigned char G, unsigned char B, double* L, double* a, double* b);
+
 #endif  /* OCULAR_COLOR_H */
