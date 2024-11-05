@@ -104,7 +104,6 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Despeckle (Salt & Pepper Noise Removal)
 - Deskewing
 
-
 #### Misc
 
 - 2D Convolution
@@ -129,24 +128,21 @@ Note: These are primarly used for included filters and added on as needed basis.
 - RGB <--> HSV
 - RGB <--> YCbCr
 - RGB <--> CMYK
+- RGB <--> CIELab
 
 ### Palettes
 
 | File Extension      | Name                              |   Read  |  Write  |
 |---------------------|-----------------------------------|:-------:|:-------:|
-| `.aco`              | Adobe Color Swatch                |   ✓*    |    ✓*   |
+| `.aco`              | Adobe Color Swatch                |   ✓     |    ✓*   |
 | `.act`              | Adobe Color Table                 |   ✓     |    ✓    |
-| `.ase`              | Adobe Swatch Exchange             |   ✓*    |         |
+| `.ase`              | Adobe Swatch Exchange             |   ✓    |         |
 | `.gpl`              | GIMP Palette                      |   ✓     |    ✓    |
 | `.pal, .psppalette` | Paint Shop Pro Palette            |   ✓     |    ✓    |
 | `.pal`              | Microsoft RIFF Palette            |   ✓     |    ✓    |
 | `.txt`              | Paint.NET Palette                 |   ✓     |    ✓    |
 
-*CMYK/Lab currently not supported, export RGB only.
-
-
-
-
+> **_NOTE:_**  *RGB only.
 
 ## Running
 
@@ -165,10 +161,6 @@ This will out the following 4 files:
 - cli palette demo `bin\palette.exe`
 
 ## TODO
-
-
-
-
 
 ### GUI Demo Application
 
