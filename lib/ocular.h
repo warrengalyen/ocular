@@ -97,8 +97,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
     /** @enum OcToneBalanceMode 
      * @brief Tone balance mode to use for color balance filter
     */
-    typedef enum
-    {
+    typedef enum {
         SHADOWS,
         MIDTONES,
         HIGHLIGHTS
@@ -107,8 +106,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
     /** @enum OcRetinexMode
      * @brief Retinex mode to use for multiscale retinex filter
     */
-    typedef enum
-    {
+    typedef enum {
         RETINEX_UNIFORM,
         RETINEX_LOW,
         RETINEX_HIGH

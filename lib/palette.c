@@ -1,5 +1,20 @@
 #include "palette.h"
 #include "color.h"
+#include "util.h"
+
+static float swap_float_endian(float value) {
+    float result;
+    unsigned char* src = (unsigned char*)&value;  // Treat float as a byte array
+    unsigned char* dst = (unsigned char*)&result; // Destination for swapped float
+
+    // Swap the bytes manually
+    dst[0] = src[3];
+    dst[1] = src[2];
+    dst[2] = src[1];
+    dst[3] = src[0];
+
+    return result;
+}
 
 void ocularFreePalette(OcPalette* palette) {
     if (palette) {
@@ -24,11 +39,10 @@ bool resize_palette(OcPalette* palette) {
     return true;
 }
 
-void read_gimp_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_gimp_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "r");
     if (!file) {
-        perror("Failed to open palette file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     char line[256];
@@ -37,9 +51,8 @@ void read_gimp_palette(const char* filename, OcPalette* palette) {
     palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
 
     if (!palette->colors) {
-        perror("Failed to allocate memory for palette");
         fclose(file);
-        return;
+        return OC_STATUS_ERR_OUTOFMEMORY;
     }
 
     // Skip header lines
@@ -74,13 +87,13 @@ void read_gimp_palette(const char* filename, OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 };
 
-void save_gimp_palette(const char* filename, const OcPalette* palette) {
+OC_STATUS save_gimp_palette(const char* filename, const OcPalette* palette) {
     FILE* file = fopen(filename, "w");
     if (!file) {
-        perror("Failed to open file for writing");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Write the GIMP palette header
@@ -96,13 +109,13 @@ void save_gimp_palette(const char* filename, const OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void read_riff_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_riff_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        perror("Failed to open RIFF palette file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Read RIFF header
@@ -116,9 +129,8 @@ void read_riff_palette(const char* filename, OcPalette* palette) {
 
     // Verify RIFF and PAL identifiers
     if (memcmp(riff_id, "RIFF", 4) != 0 || memcmp(pad_id, "PAL ", 4) != 0) {
-        fprintf(stderr, "Invalid RIFF palette format\n");
         fclose(file);
-        return;
+        return OC_STATUS_ERR_NOTSUPPORTED;
     }
 
     // Skip "data" chunk identifier and size
@@ -158,13 +170,13 @@ void read_riff_palette(const char* filename, OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void save_riff_palette(const char* filename, const OcPalette* palette) {
+OC_STATUS save_riff_palette(const char* filename, const OcPalette* palette) {
     FILE* file = fopen(filename, "wb");
     if (!file) {
-        perror("Failed to open file for writing");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // 2 bytes for version
@@ -211,6 +223,7 @@ void save_riff_palette(const char* filename, const OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
 void read_utf16_string(FILE* file, char* output, int length) {
@@ -234,7 +247,7 @@ void read_utf16_string(FILE* file, char* output, int length) {
     wcstombs(output, wide_buffer, length);
 }
 
-void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
+int read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
 
     // Read color count
     unsigned short count;
@@ -245,6 +258,7 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
     palette->capacity = DEFAULT_PALETTE_CAPACITY;
     palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
 
+    unsigned char r, g, b;
     for (int i = 0; i < count; i++) {
 
         if (!resize_palette(palette)) {
@@ -277,7 +291,6 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
             break;
         case 1: // HSB color space
             unsigned char h, s, v;
-            unsigned char r, g, b;
             h = entry.w >> 8;
             s = entry.x >> 8;
             v = entry.y >> 8;
@@ -288,6 +301,31 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
             color->b = b;
             color->name[0] = '\0';
             break;
+        case 2: // CMYK color space
+            float c, m, y, k;
+            c = entry.w >> 8;
+            m = entry.x >> 8;
+            y = entry.y >> 8;
+            k = entry.z >> 8;
+
+            cmyk2rgb(c, m, y, k, &r, &g, &b);
+            color->r = r;
+            color->g = g;
+            color->b = b;
+            color->name[0] = '\0';
+            break;
+        case 7: // LAB color space
+            double L, A, B;
+            entry.w = entry.w >> 8;
+            entry.x = entry.x >> 8;
+            entry.y = entry.y >> 8;
+
+            rgb2lab(entry.w, entry.x, entry.y, &L, &A, &B);
+            color->r = (unsigned char)L;
+            color->g = (unsigned char)A;
+            color->b = (unsigned char)B;
+            color->name[0] = '\0';
+            break;
         case 8: // Grayscale
             unsigned char gray = entry.w >> 8;
             color->r = gray;
@@ -296,9 +334,8 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
             color->name[0] = '\0';
             break;
         default:
-            fprintf(stderr, "Unsupported ACO color space\n");
-            break;
-            // TODO: implement CMYK and LAB color space conversion
+            // Unsupported color space
+            return -1;
         }
 
         if (version == 2) {
@@ -313,13 +350,14 @@ void read_swatches(FILE* file, OcPalette* palette, unsigned short version) {
             }
         }
     }
+
+    return 0;
 }
 
-void read_aco_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_aco_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "rb"); // Open in binary mode
     if (!file) {
-        perror("Failed to open ACO file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     unsigned short version;
@@ -329,31 +367,37 @@ void read_aco_palette(const char* filename, OcPalette* palette) {
     version = BIG_ENDIAN_16(version); // Convert from big-endian
 
     if (version != 1 && version != 2) {
-        fprintf(stderr, "Invalid ACO version information\n");
+        // Invalid ACO version information
         fclose(file);
-        return;
+        return OC_STATUS_ERR_NOTSUPPORTED;
     }
 
-    read_swatches(file, palette, version);
+    if (read_swatches(file, palette, version) != 0) {
+        fclose(file);
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
     strcpy(palette->name, "Adobe Swatch");
     if (version == 1) {
         // check for version 2
         fread(&version, sizeof(unsigned short), 1, file);
         version = BIG_ENDIAN_16(version); // Convert from big-endian
         if (version == 2) {
-            read_swatches(file, palette, version);
+            if (read_swatches(file, palette, version) != 0) {
+                fclose(file);
+                return OC_STATUS_ERR_NOTSUPPORTED;
+            }
         }
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
 // Only supports RGB color space
-void save_aco_palette(const char* filename, const OcPalette* palette) {
+OC_STATUS save_aco_palette(const char* filename, const OcPalette* palette) {
     FILE* file = fopen(filename, "wb");
     if (!file) {
-        perror("Failed to open file for writing");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Write version 1 header and color count
@@ -420,13 +464,13 @@ void save_aco_palette(const char* filename, const OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void read_paintnet_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_paintnet_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "r");
     if (!file) {
-        perror("Failed to open Paint.NET palette file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     char line[256];
@@ -480,13 +524,13 @@ void read_paintnet_palette(const char* filename, OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void save_paintnet_palette(const char* filename, const OcPalette* palette) {
+OC_STATUS save_paintnet_palette(const char* filename, const OcPalette* palette) {
     FILE* file = fopen(filename, "w");
     if (!file) {
-        perror("Failed to open file for writing");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Write Paint.NET palette header
@@ -502,13 +546,13 @@ void save_paintnet_palette(const char* filename, const OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void read_act_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_act_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        perror("Failed to open ACT file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     fseek(file, 0, SEEK_END);
@@ -535,6 +579,9 @@ void read_act_palette(const char* filename, OcPalette* palette) {
 
     palette->capacity = DEFAULT_PALETTE_CAPACITY;
     palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+    if (palette->colors == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
 
     // Read RGB values (up to 256 colors)
     unsigned char rgb[3];
@@ -553,13 +600,13 @@ void read_act_palette(const char* filename, OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void save_act_palette(const char* filename, const OcPalette* palette) {
+OC_STATUS save_act_palette(const char* filename, const OcPalette* palette) {
     FILE* file = fopen(filename, "wb");
     if (!file) {
-        perror("Failed to open file for writing");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Write RGB values for up to 256 colors
@@ -585,13 +632,13 @@ void save_act_palette(const char* filename, const OcPalette* palette) {
     fwrite(&transparency_index, 2, 1, file);
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
-void read_ase_palette(const char* filename, OcPalette* palette) {
+OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        perror("Failed to open ASE file");
-        return;
+        return OC_STATUS_ERR_FILENOTFOUND;
     }
 
     // Read header
@@ -603,9 +650,8 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
     signature = BIG_ENDIAN_32(signature);
 
     if (signature != ASE_SIGNATURE) {
-        fprintf(stderr, "Invalid ASE file signature\n");
         fclose(file);
-        return;
+        return OC_STATUS_ERR_NOTSUPPORTED;
     }
 
     fread(&version_major, 2, 1, file);
@@ -653,8 +699,6 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
             fread(&color_model, 4, 1, file);
             color_model = BIG_ENDIAN_32(color_model);
 
-            
-
             OcPaletteColor* color = &palette->colors[palette->num_colors];
             strncpy(color->name, color_name, 255);
             color->name[255] = '\0';
@@ -666,18 +710,22 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
                 fread(&g, 4, 1, file);
                 fread(&b, 4, 1, file);
 
-                // Convert from big-endian float and scale to 0-255
-                union {
-                    float f;
-                    int i;
-                } ur, ug, ub;
-                ur.i = BIG_ENDIAN_32(*(int*)&r);
-                ug.i = BIG_ENDIAN_32(*(int*)&g);
-                ub.i = BIG_ENDIAN_32(*(int*)&b);
+                r = swap_float_endian(r);
+                g = swap_float_endian(g);
+                b = swap_float_endian(b);
 
-                color->r = (int)(ur.f * 255.0f);
-                color->g = (int)(ug.f * 255.0f);
-                color->b = (int)(ub.f * 255.0f);
+                // Convert from big-endian float and scale to 0-255
+                // union {
+                //     float f;
+                //     int i;
+                // } ur, ug, ub;
+                // ur.i = BIG_ENDIAN_32(*(int*)&r);
+                // ug.i = BIG_ENDIAN_32(*(int*)&g);
+                // ub.i = BIG_ENDIAN_32(*(int*)&b);
+
+                color->r = (int)(r * 255.0f);
+                color->g = (int)(g * 255.0f);
+                color->b = (int)(b * 255.0f);
 
                 palette->num_colors++;
             } else if (color_model == ASE_COLOR_GRAY) {
@@ -692,7 +740,54 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
 
                 color->r = color->g = color->b = (int)(ug.f * 255.0f);
                 palette->num_colors++;
+            } else if (color_model == ASE_COLOR_CMYK) {
+                float c, m, y, k;
+                fread(&c, 4, 1, file);
+                fread(&m, 4, 1, file);
+                fread(&y, 4, 1, file);
+                fread(&k, 4, 1, file);
+
+                // use custom function to maintain precision
+                c = swap_float_endian(c);
+                m = swap_float_endian(m);
+                y = swap_float_endian(y);
+                k = swap_float_endian(k);
+
+                unsigned char r, g, b;
+                cmyk2rgb(c, m, y, k, &r, &g, &b);
+                color->r = r;
+                color->g = g;
+                color->b = b;
+
+                palette->num_colors++;
+            } else if (color_model == ASE_COLOR_LAB) {
+                float L, a, B;
+                fread(&L, 4, 1, file);
+                fread(&a, 4, 1, file);
+                fread(&B, 4, 1, file);
+
+                L = swap_float_endian(L);
+                a = swap_float_endian(a);
+                B = swap_float_endian(B);
+
+                // scale from float to percentage
+                L *= 100.0f;
+
+                printf("lab: %f %f %f\n", L, a, B);
+
+                unsigned char r, g, b;
+                lab2rgb(L, a, B, &r, &g, &b);
+                color->r = r;
+                color->g = g;
+                color->b = b;
+
+                printf("rgb: %d %d %d\n", color->r, color->g, color->b);
+                palette->num_colors++;
+            } else {
+                fclose(file);
+                return OC_STATUS_ERR_NOTSUPPORTED;
             }
+
             // Skip color type (global or spot)
             fseek(file, 2, SEEK_CUR);
         } else if (block_type == ASE_BLOCK_GROUP_START) {
@@ -705,12 +800,12 @@ void read_ase_palette(const char* filename, OcPalette* palette) {
     }
 
     fclose(file);
+    return OC_STATUS_OK;
 }
 
 PaletteFormat detect_palette_format(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
-        perror("Failed to open palette file");
         return FORMAT_UNKNOWN;
     }
 

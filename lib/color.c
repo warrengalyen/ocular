@@ -235,10 +235,10 @@ void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned cha
 }
 
 void cmyk2rgb(float c, float m, float y, float k, unsigned char* R, unsigned char* G, unsigned char* B) {
-    // Convert from CMYK percentages (0-100) to RGB (0-255)
-    float r = 255 * (1.0f - c/100.0f) * (1.0f - k/100.0f);
-    float g = 255 * (1.0f - m/100.0f) * (1.0f - k/100.0f);
-    float b = 255 * (1.0f - y/100.0f) * (1.0f - k/100.0f);
+    // Convert from CMYK values (0-1.0) to RGB (0-255)
+    float r = 255.0f * (1.0f - c) * (1.0f - k);
+    float g = 255.0f * (1.0f - m) * (1.0f - k);
+    float b = 255.0f * (1.0f - y) * (1.0f - k);
     
     // Round and clamp values to valid byte range
     *R = (unsigned char)(r + 0.5f);
@@ -253,25 +253,19 @@ void rgb2cmyk(unsigned char R, unsigned char G, unsigned char B, float* c, float
     float b = B / 255.0f;
     
     // Find k (black)
-    float k_temp = 1.0f - fmaxf(r, fmaxf(g, b));
+    *k = 1.0f - fmaxf(r, fmaxf(g, b));
     
     // Handle pure black case
-    if (k_temp == 1.0f) {
+    if (*k == 1.0f) {
         *c = 0.0f;
         *m = 0.0f;
         *y = 0.0f;
     } else {
         // Calculate CMY values
-        *c = (1.0f - r - k_temp) / (1.0f - k_temp);
-        *m = (1.0f - g - k_temp) / (1.0f - k_temp);
-        *y = (1.0f - b - k_temp) / (1.0f - k_temp);
+        *c = (1.0f - r - *k) / (1.0f - *k);
+        *m = (1.0f - g - *k) / (1.0f - *k);
+        *y = (1.0f - b - *k) / (1.0f - *k);
     }
-    
-    // Convert to percentages (0-100)
-    *c *= 100.0f;
-    *m *= 100.0f;
-    *y *= 100.0f;
-    *k = k_temp * 100.0f;
 }
 
 void rgb2xyz(unsigned char R, unsigned char G, unsigned char B, double* X, double* Y, double* Z) {
@@ -409,16 +403,19 @@ void xyz2rgb(double X, double Y, double Z, unsigned char* R, unsigned char* G, u
         var_B = 12.92 * var_B;
     }
 
-    *R = (unsigned char)(ClampToByte(var_R * 255.0 + 0.5));
-    *G = (unsigned char)(ClampToByte(var_G * 255.0 + 0.5));
-    *B = (unsigned char)(ClampToByte(var_B * 255.0 + 0.5));
+    *R = (unsigned char)(var_R * 255.0 + 0.5);
+    *G = (unsigned char)(var_G * 255.0 + 0.5);
+    *B = (unsigned char)(var_B * 255.0 + 0.5);
 }
 
 void lab2rgb(double L, double a, double b, unsigned char* R, unsigned char* G, unsigned char* B) {
     
     double X, Y, Z;
+
     lab2xyz(L, a, b, &X, &Y, &Z);
+
     xyz2rgb(X, Y, Z, R, G, B);
+
 }
 
 void rgb2lab(unsigned char R, unsigned char G, unsigned char B, double* L, double* a, double* b) {

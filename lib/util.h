@@ -23,6 +23,13 @@
 #ifndef ClampToByte
     #define ClampToByte(v) (unsigned char)(((unsigned)(int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
 #endif
+#ifndef ClampToInt
+    #define ClampToInt(v) (int)(((int)(v)) < (255) ? (v) : (v < 0) ? (0) : (255))
+#endif
+#ifndef ClampToFloat
+    #define ClampToFloat(v) (float)(((float)(v)) < (1.0f) ? (v) : (v < 0) ? (0) : (1.0f))
+#endif
+
 #ifndef min
     #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif

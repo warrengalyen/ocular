@@ -13,6 +13,7 @@ Makefile
 demo/test_filters.h
 *.log
 *.sh
+!lib/build_update.sh
 /demo_ui
 /docs/out/html
 /docs/*.pdi
@@ -20,3 +21,4 @@ demo/test_filters.h
 *.zip
 /tests/
 /build/
+/demo_gui/

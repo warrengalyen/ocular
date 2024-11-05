@@ -5812,13 +5812,37 @@ extern "C" {
 
         PaletteFormat format = detect_palette_format(filename);
         switch (format) {
-            case FORMAT_GIMP: read_gimp_palette(filename, palette); return OC_STATUS_OK;
-            case FORMAT_RIFF: read_riff_palette(filename, palette); return OC_STATUS_OK;
-            case FORMAT_ACO: read_aco_palette(filename, palette); return OC_STATUS_OK;
-            case FORMAT_PAINTNET: read_paintnet_palette(filename, palette); return OC_STATUS_OK;
-            case FORMAT_ACT: read_act_palette(filename, palette); return OC_STATUS_OK;
-            case FORMAT_ASE: read_ase_palette(filename, palette); return OC_STATUS_OK;
-            default: fprintf(stderr, "Unsupported palette format\n"); return OC_STATUS_ERR_NOTSUPPORTED;
+            case FORMAT_GIMP: 
+                if (read_gimp_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_RIFF: 
+                if (read_riff_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_ACO: 
+                if (read_aco_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_PAINTNET: 
+                if (read_paintnet_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_ACT: 
+                if (read_act_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_ASE: 
+                if (read_ase_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            default: return OC_STATUS_ERR_NOTSUPPORTED;
         }
     }
 

@@ -105,7 +105,12 @@ int main(int argc, char** argv) {
     splitpath(in_file, drive, dir, fname, ext);
 
     OcPalette palette;
-    ocularLoadPalette(in_file, &palette);
+    OC_STATUS status = ocularLoadPalette(in_file, &palette);
+    if (status != OC_STATUS_OK) {
+        printf("Failed to load palette: %s\n", ocularGetStatusString(status));
+        ocularFreePalette(&palette);
+        return -1;
+    }
 
     printf("Palette name: %s\n", palette.name);
     printf("Total colors: %d\n", palette.num_colors);
@@ -114,8 +119,8 @@ int main(int argc, char** argv) {
     // TODO: fix this for windows so characters are not mangled
     render_palette_colors(&palette);
 
-    sprintf(out_file, "bin/palettes/swatch_test.aco", drive, dir, fname);
-    save_aco_palette(out_file, &palette);
+    //sprintf(out_file, "bin/palettes/swatch_test.aco", drive, dir, fname);
+    //save_aco_palette(out_file, &palette);
 
     // Must be called to free palette memory allocated during palette load
     ocularFreePalette(&palette);

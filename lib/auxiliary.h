@@ -13,6 +13,7 @@
 #define OCULAR_AUXILIARY_H
 
 #include "util.h"
+#include "core.h"
 
 OC_STATUS GetValidCoordinate(int Width, int Height, int Left, int Right, int Top, int Bottom, OcEdgeMode Edge, OcImage** Row, OcImage** Col);
 
