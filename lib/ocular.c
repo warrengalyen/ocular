@@ -1088,8 +1088,33 @@ extern "C" {
             return OC_STATUS_ERR_NOTSUPPORTED;
 
         // Ensure filter specific parameters are within valid ranges
-        // TODO: Add fast checks for redLevelParams, greenLevelParams, and blueLevelParams
-        //       Tthis filter uses a lot of parameters.
+        if (redLevelParams != NULL) {
+            if (redLevelParams->Enable) {
+                redLevelParams->levelMinimum = clamp(redLevelParams->levelMinimum, 0, 255);
+                redLevelParams->levelMaximum = clamp(redLevelParams->levelMaximum, 0, 255);
+                redLevelParams->levelMiddle = clamp(redLevelParams->levelMiddle, 0, 255);
+                redLevelParams->minOutput = clamp(redLevelParams->minOutput, 0, 255);
+                redLevelParams->maxOutput = clamp(redLevelParams->maxOutput, 0, 255);
+            } 
+        }
+        if (greenLevelParams != NULL) {
+            if (greenLevelParams->Enable) {
+                greenLevelParams->levelMinimum = clamp(greenLevelParams->levelMinimum, 0, 255);
+                greenLevelParams->levelMaximum = clamp(greenLevelParams->levelMaximum, 0, 255);
+                greenLevelParams->levelMiddle = clamp(greenLevelParams->levelMiddle, 0, 255);
+                greenLevelParams->minOutput = clamp(greenLevelParams->minOutput, 0, 255);
+                greenLevelParams->maxOutput = clamp(greenLevelParams->maxOutput, 0, 255);
+            }
+        }
+        if (blueLevelParams != NULL) {
+            if (blueLevelParams->Enable) {
+                blueLevelParams->levelMinimum = clamp(blueLevelParams->levelMinimum, 0, 255);
+                blueLevelParams->levelMaximum = clamp(blueLevelParams->levelMaximum, 0, 255);
+                blueLevelParams->levelMiddle = clamp(blueLevelParams->levelMiddle, 0, 255);
+                blueLevelParams->minOutput = clamp(blueLevelParams->minOutput, 0, 255);
+                blueLevelParams->maxOutput = clamp(blueLevelParams->maxOutput, 0, 255);
+            }
+        }
 
         unsigned char LevelMapR[256] = { 0 };
         unsigned char LevelMapG[256] = { 0 };
