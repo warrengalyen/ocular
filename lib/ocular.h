@@ -223,7 +223,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  original color for each pixel. Range [0.0-1.0]. Default 1.0.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity);
+    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     float* colorMatrix, float intensity);
 
     /** @brief Applies a simple sepia tone filter
      *  @ingroup group_color_filters
@@ -235,7 +236,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param intensity The degree to which the sepia tone replaces the normal image color. Range [0 - 100].
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
+    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                int intensity);
 
     /** @brief For a given color in the image, sets the alpha channel to 0.
      *  @ingroup group_color_filters
@@ -262,7 +264,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param intensity int intensity = 100
+     *  @param intensity The intensity of the lookup filter. Range [0 - 100].
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity);
@@ -449,7 +451,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param filterColorG The green channel color to use for the effect.
      *  @param filterColorB The blue channel color to use for the effect.
      *  @param intensity The degree to which the specific color replaces the normal
-     *  image color. Range [0.0 - 1.0]. Default 1.0.
+     *  image color. Range [0.0 - 1.0]. Default 100.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
@@ -489,7 +491,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param threshold The luminance threshold. Range [0.0 - 1.0]. Default. 0.5.
+     *  @param threshold The luminance threshold. Range [0 - 255].
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold);
@@ -558,8 +560,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param vibrance The vibrance adjustment to apply, using 0.0 as the default,
-     *  and a suggested min/max of around - 1.2 and 1.2, respectively.
+     *  @param vibrance The vibrance adjustment to apply. Range [0.0 - 1.0]
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularVibranceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float vibrance);
@@ -883,8 +884,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Width The width of the image in pixels.
      * @param Height The height of the image in pixels.
      * @param Stride The number of bytes in one row of pixels.
-     * @param PhotometricStandardDeviation Controls the broadness of the range filter.  The larger the value, the more obvious the blur. 
-     *  Range [1 - 255]
+     * @param PhotometricStandardDeviation Controls the broadness of the range filter.  
+     * The larger the value, the more obvious the blur. Range [1 - 255]
      * @param SpatialDecay Spatial standard deviation. The larger the value, the more obvious the blur.
      *  Range [0.01 - 0.250]
      * @param RangeFilter The type of range filter to use. [0, 1 or 2] [Gaussian|Hyperbolic Secant|Euler Constant]
@@ -928,7 +929,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Height The height of the image in pixels.
      * @param kernel_size The type of gaussian noise to apply. Gaus3x3 or Gaus5x5. Good default Gaus3x3
      * @param weak_threshold Pixel values below this limit are discarded. Range [0 - 255]. Good default 200.
-     * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. Good default 200.
+     * @param strong_threshold Pixel values above this limit are to be considered edge pixels. Range [0 - 255]. 
+     * Good default 200.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,

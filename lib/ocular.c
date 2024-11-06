@@ -58,62 +58,6 @@ extern "C" {
         true,
     }; */
 
-    //    OC_STATUS ocularGrayscaleFilter(OcImage* Input, OcImage* Output) {
-    
-    //        if (Input == NULL || Output == NULL)
-    //            return OC_STATUS_ERR_NULLREFERENCE;
-    //        if (Input->Data == NULL || Output->Data == NULL)
-    //            return OC_STATUS_ERR_NULLREFERENCE;
-    //        if (Input->Width != Output->Width || Input->Height != Output->Height || Input->Depth != Output->Depth)
-    //            return OC_STATUS_ERR_PARAMISMATCH;
-    //        if (Input->Depth != OC_DEPTH_8U || Output->Depth != OC_DEPTH_8U)
-    //            return OC_STATUS_ERR_NOTSUPPORTED;
-    //        if (Input->Channels != 3 || (Output->Channels != 3 && Output->Channels != 1))
-    //            return OC_STATUS_ERR_INVALIDPARAMETER;
-    
-    //        const int B_WT = (int)(0.114 * 256 + 0.5);
-    //        const int G_WT = (int)(0.587 * 256 + 0.5);
-    //        const int R_WT = 256 - B_WT - G_WT;
-    //        if (Input->Channels == 3) {
-    //            for (int Y = 0; Y < Input->Height; Y++) {
-    //                unsigned char* LinePS = Input->Data + Y * Input->Stride;
-    //                unsigned char* LinePD = Output->Data + Y * Output->Width;
-    //                int X = 0;
-    //                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
-    //                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
-    //                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[3] + G_WT * LinePS[4] + R_WT * LinePS[5]) >> 8);
-    //                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[6] + G_WT * LinePS[7] + R_WT * LinePS[8]) >> 8);
-    //                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[9] + G_WT * LinePS[10] + R_WT * LinePS[11]) >> 8);
-    //                }
-    //                for (; X < Input->Width; X++, LinePS += Input->Channels) {
-    //                    LinePD[X] = (unsigned char)(B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8;
-    //                }
-    //            }
-    //        } else if (Input->Channels == 4) {
-    //            for (int Y = 0; Y < Input->Height; Y++) {
-    //                unsigned char* LinePS = Input->Data + Y * Input->Stride;
-    //                unsigned char* LinePD = Output->Data + Y * Output->Stride;
-    //                int X = 0;
-    //                for (; X < Input->Width; X += 4, LinePS += Input->Channels * 4) {
-    //                    LinePD[X + 0] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
-    //                    LinePD[X + 1] = (unsigned char)((B_WT * LinePS[4] + G_WT * LinePS[5] + R_WT * LinePS[6]) >> 8);
-    //                    LinePD[X + 2] = (unsigned char)((B_WT * LinePS[8] + G_WT * LinePS[9] + R_WT * LinePS[10]) >> 8);
-    //                    LinePD[X + 3] = (unsigned char)((B_WT * LinePS[12] + G_WT * LinePS[13] + R_WT * LinePS[14]) >> 8);
-    //                }
-    //                for (; X < Input->Width; X++, LinePS += Input->Channels) {
-    //                    LinePD[X] = (unsigned char)((B_WT * LinePS[0] + G_WT * LinePS[1] + R_WT * LinePS[2]) >> 8);
-    //                }
-    //            }
-    //        } else if (Input->Channels == 1) {
-    //            if (Output != Input) {
-    //                memcpy(Output->Data, Input->Data, Input->Height * Input->Stride);
-    //            }
-    //        }
-    
-    //        // Reset channels
-    //        Output->Channels = 1;
-    //    }
-
     OC_STATUS ocularGrayscaleFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
         if (Input == NULL || Output == NULL)
@@ -180,6 +124,11 @@ extern "C" {
         if (Channels == 1 || Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        redAdjustment = clamp(redAdjustment, 0.0, 1.0);
+        greenAdjustment = clamp(greenAdjustment, 0.0, 1.0);
+        blueAdjustment = clamp(blueAdjustment, 0.0, 1.0);
+
         unsigned char AdjustMapR[256] = { 0 };
         unsigned char AdjustMapG[256] = { 0 };
         unsigned char AdjustMapB[256] = { 0 };
@@ -203,8 +152,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
-                         float satAdjustment, float lightAdjustment) {
+    OC_STATUS ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                             float hueAdjustment, float satAdjustment, float lightAdjustment) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -214,6 +163,10 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        hueAdjustment = clamp(hueAdjustment, 0.0, 360.0);
+        satAdjustment = clamp(satAdjustment, 0.0, 1.0);
+        lightAdjustment = clamp(lightAdjustment, 0.0, 1.0);
 
         float r, g, b;
         float h, s, l;
@@ -261,7 +214,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float thresholdMultiplier) {
+    OC_STATUS ocularAverageLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, 
+                                                    int Stride, float thresholdMultiplier) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -271,6 +225,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        thresholdMultiplier = clamp(thresholdMultiplier, 0.0, 1.0);
 
         unsigned char Luminance = 0;
         if (Channels == 1) {
@@ -332,8 +289,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, unsigned char* AverageG,
-                            unsigned char* AverageB, unsigned char* AverageA) {
+    OC_STATUS ocularAverageColor(unsigned char* Input, int Width, int Height, int Stride, unsigned char* AverageR, 
+                                 unsigned char* AverageG, unsigned char* AverageB, unsigned char* AverageA) {
 
         if (Input == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -479,9 +436,10 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float* colorMatrix, float intensity) {
+    OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     float* colorMatrix, float intensity) {
 
-        if (Input == NULL || Output == NULL)
+        if (Input == NULL || Output == NULL || colorMatrix == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || Stride <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
@@ -489,6 +447,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        intensity = clamp(intensity, 0.0, 1.0);
 
         unsigned char degreeMap[256 * 256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -589,7 +550,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity) {
+    OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -599,6 +561,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        intensity = clamp(intensity, 0, 100);
 
         float fIntensity = intensity / 100.0f;
 
@@ -611,8 +576,10 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char colorToReplaceR,
-                               unsigned char colorToReplaceG, unsigned char colorToReplaceB, float thresholdSensitivity, float smoothing) {
+    OC_STATUS ocularChromaKeyFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                    unsigned char colorToReplaceR, unsigned char colorToReplaceG, 
+                                    unsigned char colorToReplaceB, float thresholdSensitivity, 
+                                    float smoothing) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -623,7 +590,15 @@ extern "C" {
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        unsigned char maskY = (unsigned char)((19589 * colorToReplaceR + 38443 * colorToReplaceG + 7504 * colorToReplaceB) >> 16);
+        // Ensure filter specific parameters are within valid ranges
+        colorToReplaceR = ClampToByte(colorToReplaceR);
+        colorToReplaceG = ClampToByte(colorToReplaceG);
+        colorToReplaceB = ClampToByte(colorToReplaceB);
+        thresholdSensitivity = clamp(thresholdSensitivity, 0.0, 1.0);
+        smoothing = clamp(smoothing, 0.0, 1.0);
+
+        unsigned char maskY = (unsigned char)((19589 * colorToReplaceR + 38443 * colorToReplaceG + 7504 * 
+                                                colorToReplaceB) >> 16);
 
         unsigned char maskCr = (unsigned char)((46740 * (colorToReplaceR - maskY) >> 16) + 128);
 
@@ -636,8 +611,8 @@ extern "C" {
                 short* pBlendMap = blendMap + (Cr << 8);
                 for (int Cb = 0; Cb < 256; Cb++) {
                     pBlendMap[Cb] = (short)(255.0f *
-                                            smoothstep((float)iThresholdSensitivity, (float)iThresholdSensitivity + iSmoothing,
-                                                       vec2_distance((float)Cr, (float)Cb, (float)maskCr, (float)maskCb)));
+                                    smoothstep((float)iThresholdSensitivity, (float)iThresholdSensitivity + iSmoothing,
+                                                vec2_distance((float)Cr, (float)Cb, (float)maskCr, (float)maskCb)));
                 }
             }
             for (int Y = 0; Y < Height; Y++) {
@@ -667,8 +642,8 @@ extern "C" {
                 unsigned char* pBlendMap = blendMap + (Cr << 8);
                 for (int Cb = 0; Cb < 256; Cb++) {
                     pBlendMap[Cb] = (unsigned char)(255.0f *
-                                                    smoothstep((float)iThresholdSensitivity, (float)iThresholdSensitivity + iSmoothing,
-                                                               vec2_distance((float)Cr, (float)Cb, (float)maskCr, (float)maskCb)));
+                                    smoothstep((float)iThresholdSensitivity, (float)iThresholdSensitivity + iSmoothing,
+                                                vec2_distance((float)Cr, (float)Cb, (float)maskCr, (float)maskCb)));
                 }
             }
             for (int Y = 0; Y < Height; Y++) {
@@ -695,9 +670,10 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, int Height, int Stride, int intensity) {
+    OC_STATUS ocularLookupFilter(unsigned char* Input, unsigned char* Output, unsigned char* lookupTable, int Width, 
+                                 int Height, int Stride, int intensity) {
 
-        if (Input == NULL || Output == NULL)
+        if (Input == NULL || Output == NULL || lookupTable == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || Stride <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
@@ -705,6 +681,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        intensity = clamp(intensity, 0, 100);
 
         float preMap[256 * 5] = { 0 };
         float* pixelColorMap = &preMap[0];
@@ -741,12 +720,17 @@ extern "C" {
                 unsigned char B = pInput[2];
                 float green = pixelColorMap[G];
                 float red = pixelColorMap[R];
-                unsigned char* pLineLookup1 = &lookupTable[(((int)(quad1yMap[B] + green) << 9) + (int)(quad1xMap[B] + red)) * lookupChannels];
-                unsigned char* pLineLookup2 = &lookupTable[(((int)(quad2yMap[B] + green) << 9) + (int)(quad2xMap[B] + red)) * lookupChannels];
+                unsigned char* pLineLookup1 = &lookupTable[(((int)(quad1yMap[B] + green) << 9) + 
+                                                (int)(quad1xMap[B] + red)) * lookupChannels];
+                unsigned char* pLineLookup2 = &lookupTable[(((int)(quad2yMap[B] + green) << 9) + 
+                                                (int)(quad2xMap[B] + red)) * lookupChannels];
                 unsigned short fractB = fractMap[B];
-                pOutput[0] = (unsigned char)((int)(R * c1 + ((*pLineLookup1++ * (256 - fractB) + *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
-                pOutput[1] = (unsigned char)((int)(G * c1 + ((*pLineLookup1++ * (256 - fractB) + *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
-                pOutput[2] = (unsigned char)((int)(B * c1 + ((*pLineLookup1++ * (256 - fractB) + *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
+                pOutput[0] = (unsigned char)((int)(R * c1 + ((*pLineLookup1++ * (256 - fractB) + 
+                                                *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
+                pOutput[1] = (unsigned char)((int)(G * c1 + ((*pLineLookup1++ * (256 - fractB) + 
+                                                *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
+                pOutput[2] = (unsigned char)((int)(B * c1 + ((*pLineLookup1++ * (256 - fractB) + 
+                                                *pLineLookup2++ * fractB) >> 8) * c2) >> 8);
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -755,7 +739,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float saturation) {
+    OC_STATUS ocularSaturationFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     float saturation) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -766,11 +751,15 @@ extern "C" {
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        saturation = clamp(saturation, 0.0, 1.0);
+
         unsigned char SaturationMap[256 * 256] = { 0 };
         for (int gray = 0; gray < 256; gray++) {
             unsigned char* pSaturationMap = SaturationMap + (gray << 8);
             for (int i = 0; i < 256; i++) {
-                pSaturationMap[0] = (unsigned char)((mix_u8((unsigned char)gray, (unsigned char)i, saturation) + i) * 0.5f);
+                pSaturationMap[0] = (unsigned char)((mix_u8((unsigned char)gray, (unsigned char)i, saturation) + i) 
+                                                    * 0.5f);
                 pSaturationMap++;
             }
         }
@@ -781,7 +770,8 @@ extern "C" {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                unsigned char* pSaturationMap = SaturationMap + (((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16) << 8);
+                unsigned char* pSaturationMap = SaturationMap + (((13926 * pInput[0] + 46884 * pInput[1] + 4725 * 
+                                                pInput[2]) >> 16) << 8);
                 pOutput[0] = pSaturationMap[pInput[0]];
                 pOutput[1] = pSaturationMap[pInput[1]];
                 pOutput[2] = pSaturationMap[pInput[2]];
@@ -793,7 +783,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]) {
+    OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                 float gamma[]) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -804,7 +795,7 @@ extern "C" {
         if (Channels != 1 && Channels != 3)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        // check for valid parameter values
+        // Ensure filter specific parameters are within valid ranges
         for (int i = 0; i < Channels; i++) {
             if (gamma[i] <= 0)
                 return OC_STATUS_ERR_INVALIDPARAMETER;
@@ -835,7 +826,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast) {
+    OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                   float contrast) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -845,6 +837,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        contrast = clamp(contrast, 0.0, 4.0);
 
         unsigned char contrastMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -865,7 +860,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure) {
+    OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                   float exposure) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -875,6 +871,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        exposure = clamp(exposure, -10.0, 10.0);
 
         unsigned char exposureMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -895,7 +894,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness) {
+    OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     int brightness) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -905,6 +905,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        brightness = clamp(brightness, -1.0, 1.0);
 
         unsigned char BrightnessMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -925,9 +928,10 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char firstColorR,
-                                unsigned char firstColorG, unsigned char firstColorB, unsigned char secondColorR,
-                                unsigned char secondColorG, unsigned char secondColorB, int intensity) {
+    OC_STATUS ocularFalseColorFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     unsigned char firstColorR, unsigned char firstColorG, unsigned char firstColorB, 
+                                     unsigned char secondColorR, unsigned char secondColorG, unsigned char secondColorB, 
+                                     int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -937,6 +941,15 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        firstColorR = ClampToByte(firstColorR);
+        firstColorG = ClampToByte(firstColorG);
+        firstColorB = ClampToByte(firstColorB);
+        secondColorR = ClampToByte(secondColorR);
+        secondColorG = ClampToByte(secondColorG);
+        secondColorB = ClampToByte(secondColorB);
+        intensity = clamp(intensity, 0, 100);
 
         unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
         int c1 = 256 * (100 - sIntensity) / 100;
@@ -955,7 +968,8 @@ extern "C" {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                unsigned char luminanceWeighting = (unsigned char)((13926 * pInput[0] + 46884 * pInput[1] + 4725 * pInput[2]) >> 16);
+                unsigned char luminanceWeighting = (unsigned char)((13926 * pInput[0] + 46884 * pInput[1] + 4725 * 
+                                                                  pInput[2]) >> 16);
 
                 pOutput[0] = (unsigned char)((pInput[0] * c1 + ColorMapR[luminanceWeighting] * c2) >> 8);
                 pOutput[1] = (unsigned char)((pInput[1] * c1 + ColorMapG[luminanceWeighting] * c2) >> 8);
@@ -968,7 +982,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float distance, float slope, int intensity) {
+    OC_STATUS ocularHazeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                               float distance, float slope, int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -978,6 +993,11 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels == 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        distance = clamp(distance, -0.3, 0.3);
+        slope = clamp(slope, -0.3, 0.3);
+        intensity = clamp(intensity, 0, 100);
 
         unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
         int c1 = 256 * (100 - sIntensity) / 100;
@@ -1004,11 +1024,14 @@ extern "C" {
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
                 pOutput[0] =
-                        (unsigned char)((int)(pInput[0] * c1 + ((ClampToByte(pInput[0] - distanceColorMap[Y]) * patchDistanceMap[Y]) >> 8) * c2) >> 8);
+                        (unsigned char)((int)(pInput[0] * c1 + ((ClampToByte(pInput[0] - distanceColorMap[Y]) * 
+                                                                 patchDistanceMap[Y]) >> 8) * c2) >> 8);
                 pOutput[1] =
-                        (unsigned char)((int)(pInput[1] * c1 + ((ClampToByte(pInput[1] - distanceColorMap[Y]) * patchDistanceMap[Y]) >> 8) * c2) >> 8);
+                        (unsigned char)((int)(pInput[1] * c1 + ((ClampToByte(pInput[1] - distanceColorMap[Y]) * 
+                                                                 patchDistanceMap[Y]) >> 8) * c2) >> 8);
                 pOutput[2] =
-                        (unsigned char)((int)(pInput[2] * c1 + ((ClampToByte(pInput[2] - distanceColorMap[Y]) * patchDistanceMap[Y]) >> 8) * c2) >> 8);
+                        (unsigned char)((int)(pInput[2] * c1 + ((ClampToByte(pInput[2] - distanceColorMap[Y]) * 
+                                                                 patchDistanceMap[Y]) >> 8) * c2) >> 8);
                 pInput += Channels;
                 pOutput += Channels;
             }
@@ -1019,7 +1042,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity) {
+    OC_STATUS ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                   float opacity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1029,6 +1053,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        opacity = clamp(opacity, 0.0, 1.0);
 
         unsigned char opacityMap[256] = { 0 };
         for (unsigned int pixel = 0; pixel < 256; pixel++) {
@@ -1048,7 +1075,8 @@ extern "C" {
     }
 
     OC_STATUS ocularLevelsFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                            ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, ocularLevelParams* blueLevelParams) {
+                            ocularLevelParams* redLevelParams, ocularLevelParams* greenLevelParams, 
+                            ocularLevelParams* blueLevelParams) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1058,6 +1086,10 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        // TODO: Add fast checks for redLevelParams, greenLevelParams, and blueLevelParams
+        //       Tthis filter uses a lot of parameters.
 
         unsigned char LevelMapR[256] = { 0 };
         unsigned char LevelMapG[256] = { 0 };
@@ -1117,6 +1149,9 @@ extern "C" {
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        hueAdjust = clamp(hueAdjust, 0.0f, 360.0f);
+
         hueAdjust = fmodf(hueAdjust, 360.0f) * 3.14159265358979323846f / 180.0f;
         float hueMap[256 * 256] = { 0 };
         float ChromaMap[256 * 256] = { 0 };
@@ -1164,9 +1199,10 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowTintR,
-                                         float shadowTintG, float shadowTintB, float highlightTintR, float highlightTintG,
-                                         float highlightTintB, float shadowTintIntensity, float highlightTintIntensity) {
+    OC_STATUS ocularHighlightShadowTintFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                              float shadowTintR, float shadowTintG, float shadowTintB, float highlightTintR,    
+                                              float highlightTintG, float highlightTintB, float shadowTintIntensity, 
+                                              float highlightTintIntensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1176,6 +1212,16 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        shadowTintR = clamp(shadowTintR, 0.0f, 1.0f);
+        shadowTintG = clamp(shadowTintG, 0.0f, 1.0f);
+        shadowTintB = clamp(shadowTintB, 0.0f, 1.0f);
+        highlightTintR = clamp(highlightTintR, 0.0f, 1.0f);
+        highlightTintG = clamp(highlightTintG, 0.0f, 1.0f);
+        highlightTintB = clamp(highlightTintB, 0.0f, 1.0f);
+        shadowTintIntensity = clamp(shadowTintIntensity, 0.0f, 1.0f);
+        highlightTintIntensity = clamp(highlightTintIntensity, 0.0f, 1.0f);
 
         unsigned char HighlightShadowMapR[256 * 256] = { 0 };
         unsigned char HighlightShadowMapG[256 * 256] = { 0 };
@@ -1220,7 +1266,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights) {
+    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                          float shadows, float highlights) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1231,6 +1278,10 @@ extern "C" {
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        shadows = clamp(shadows, 0.0f, 1.0f);
+        highlights = clamp(highlights, 0.0f, 1.0f);
+
         short luminanceWeightingMap[256] = { 0 };
         short shadowMap[256] = { 0 };
         short highlightMap[256] = { 0 };
@@ -1240,11 +1291,13 @@ extern "C" {
             luminanceWeightingMap[pixel] = (short)(pixel * 0.3f);
             float luminance = (1.0f / 255.0f) * pixel;
             shadowMap[pixel] = (short)(255.0f *
-                                       clamp((powf(luminance, 1.0f / (shadows + 1.0f)) + (-0.76f) * powf(luminance, 2.0f / (shadows + 1.0f))) - luminance,
+                                       clamp((powf(luminance, 1.0f / (shadows + 1.0f)) + (-0.76f) * 
+                                             powf(luminance, 2.0f / (shadows + 1.0f))) - luminance,
                                              0.0f, 1.0f));
             highlightMap[pixel] =
                     (short)(255.0f *
-                            clamp((1.0f - (powf(1.0f - luminance, 1.0f / (2.0f - highlights)) + (-0.8f) * powf(1.0f - luminance, 2.0f / (2.0f - highlights)))) - luminance,
+                            clamp((1.0f - (powf(1.0f - luminance, 1.0f / (2.0f - highlights)) + (-0.8f) * 
+                                  powf(1.0f - luminance, 2.0f / (2.0f - highlights)))) - luminance,
                                   -1.0f, 0.0f));
         }
         for (int luminance = 0; luminance < 256; luminance++) {
@@ -1258,7 +1311,8 @@ extern "C" {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                const short luminance = luminanceWeightingMap[pInput[0]] + luminanceWeightingMap[pInput[1]] + luminanceWeightingMap[pInput[2]];
+                const short luminance = luminanceWeightingMap[pInput[0]] + luminanceWeightingMap[pInput[1]] + 
+                                        luminanceWeightingMap[pInput[2]];
                 const short shadow = shadowMap[luminance];
                 const short highlight = highlightMap[luminance];
                 short lshpixel = (luminance + shadow + highlight);
@@ -1274,8 +1328,9 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char filterColorR,
-                                unsigned char filterColorG, unsigned char filterColorB, int intensity) {
+    OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     unsigned char filterColorR, unsigned char filterColorG, unsigned char filterColorB, 
+                                     int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1286,7 +1341,13 @@ extern "C" {
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        unsigned short sIntensity = (unsigned short)max(min(intensity, 100), 0);
+        // Ensure filter specific parameters are within valid ranges
+        filterColorR = ClampToByte(filterColorR);
+        filterColorG = ClampToByte(filterColorG);
+        filterColorB = ClampToByte(filterColorB);
+        intensity = max(min(intensity, 100), 0);
+
+        unsigned short sIntensity = (unsigned short)intensity;
         int c1 = 256 * (100 - sIntensity) / 100;
         int c2 = 256 * (100 - (100 - sIntensity)) / 100;
         float fColorR = (float)filterColorR * (1.0f / 255.0f);
@@ -1350,8 +1411,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, unsigned char colorG,
-                                   unsigned char colorB, unsigned char colorAlpha) {
+    OC_STATUS ocularSolidColorGenerator(unsigned char* Output, int Width, int Height, int Stride, unsigned char colorR, 
+                                        unsigned char colorG, unsigned char colorB, unsigned char colorAlpha) {
 
         if (Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1361,6 +1422,12 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        colorR = ClampToByte(colorR);
+        colorG = ClampToByte(colorG);
+        colorB = ClampToByte(colorB);
+        colorAlpha = ClampToByte(colorAlpha);
 
         if (Channels == 4) {
             for (int Y = 0; Y < Height; Y++) {
@@ -1388,7 +1455,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, unsigned char threshold) {
+    OC_STATUS ocularLuminanceThresholdFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, 
+                                             int Stride, unsigned char threshold) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1398,6 +1466,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        threshold = ClampToByte(threshold);
 
         if (Channels == 1) {
 
@@ -1522,6 +1593,11 @@ extern "C" {
         if (channels != 3 && channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        colorCoeff = clamp(colorCoeff, 0, 127);
+        cutLimit = clamp(cutLimit, 0.0f, 1.0f);
+        contrast = clamp(contrast, 0.0f, 1.0f);
+
         int numberOfPixels = height * width;
         unsigned int histogramYcbcr[768] = { 0 };
         unsigned int* histogramY = &histogramYcbcr[0];
@@ -1576,7 +1652,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float temperature, float tint) {
+    OC_STATUS ocularWhiteBalanceFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                       float temperature, float tint) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1587,8 +1664,13 @@ extern "C" {
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        temperature = clamp(temperature, 2000.0f, 8000.0f); // These should be good working ranges for photography
+        tint = clamp(tint, -200.0f, 200.0f);
+
         float Temperature = temperature;
-        Temperature = Temperature < 5000 ? (float)(0.0004 * (Temperature - 5000.0)) : (float)(0.00006 * (Temperature - 5000.0));
+        Temperature = Temperature < 5000 ? (float)(0.0004 * (Temperature - 5000.0)) : 
+                                           (float)(0.00006 * (Temperature - 5000.0));
 
         float Tint = tint;
         Tint = (float)(Tint / 100.0f);
@@ -1654,6 +1736,9 @@ extern "C" {
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        vibrance = clamp(vibrance, -1.0f, 1.0f);
+
         int iVibrance = (int)(-(vibrance * 256));
         unsigned char mx = 0;
         int amt = 0;
@@ -1689,6 +1774,15 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        skinToneAdjust = clamp(skinToneAdjust, -1.0f, 1.0f);
+        skinHue = clamp(skinHue, 0.0f, 1.0f);
+        skinHueThreshold = clamp(skinHueThreshold, 0.0f, 1.0f);
+        maxHueShift = clamp(maxHueShift, 0.0f, 1.0f);
+        maxSaturationShift = clamp(maxSaturationShift, 0.0f, 1.0f);
+        // 0 = pink/green, 1 = pink/orange
+        upperSkinToneColor = clamp(upperSkinToneColor, 0, 1);
 
         int maxSatShiftAdjust = (int)(maxSaturationShift * 255.0f * skinToneAdjust);
         float maxHueShiftAdjust = maxHueShift * skinToneAdjust;
@@ -1833,7 +1927,6 @@ extern "C" {
         const float* down_prev_color = down_color;
         const float* down_prev_factor = down_factor;
 
-
         int last_index = Stride * Height - 1;
         const unsigned char* src_up_color = Input + last_index;
         const unsigned char* src_color_last_hor = Output + last_index; // result of horizontal pass filter
@@ -1899,7 +1992,8 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange) {
+    OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                    float sigmaSpatial, float sigmaRange) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1909,6 +2003,10 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        sigmaSpatial = clamp(sigmaSpatial, 0.0f, 1.0f);
+        sigmaRange = clamp(sigmaRange, 0.0f, 1.0f);
 
         int reserveWidth = Width;
         int reserveHeight = Height;
@@ -2197,7 +2295,8 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma) {
+    OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                       float GaussianSigma) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -2207,6 +2306,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        GaussianSigma = max(GaussianSigma, 0.0f);
 
         float a0, a1, a2, a3, b1, b2, cprev, cnext;
 
@@ -2246,7 +2348,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity) {
+    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     float GaussianSigma, int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -2257,7 +2360,10 @@ extern "C" {
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        intensity = max(min(intensity, 100), 0);
+        // Ensure filter specific parameters are within valid ranges
+        GaussianSigma = max(GaussianSigma, 0.0f);
+        intensity = clamp(intensity, 0, 100);
+
         int c1 = 256 * (100 - intensity) / 100;
         int c2 = 256 * (100 - (100 - intensity)) / 100;
 
@@ -2770,7 +2876,8 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    OC_STATUS ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                  int Radius) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -2780,8 +2887,9 @@ extern "C" {
         int Channels = Stride / Width;
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
-        if (Radius < 1 || Radius >= 127)
-            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure Radius is within valid range
+        Radius = clamp(Radius, 1, 127);
 
         unsigned char *temp = (unsigned char*)malloc(Width * Height * Channels);
         if (temp == NULL) {
@@ -2794,7 +2902,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Threshold) {
+    OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     int Radius, int Threshold) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -2804,8 +2913,10 @@ extern "C" {
         int Channel = Stride / Width;
         if ((Channel != 1) && (Channel != 3))
             return OC_STATUS_ERR_NOTSUPPORTED;
-        if (Radius < 1 || Radius >= 127 || Threshold < 2 || Threshold > 255)
-            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure Radius and Threshold are within valid ranges
+        Radius = clamp(Radius, 1, 127);
+        Threshold = clamp(Threshold, 2, 255);
 
         if (Channel == 1) {
             unsigned short* ColHist = (unsigned short*)_aligned_malloc(256 * (Width + Radius + Radius) * sizeof(unsigned short), 32);
@@ -2931,6 +3042,13 @@ extern "C" {
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
             return OC_STATUS_ERR_NOTSUPPORTED;
 
+        // Ensure filter specific parameters are within valid ranges
+        PhotometricStandardDeviation = clamp(PhotometricStandardDeviation, 1.0f, 255.0f);
+        SpatialDecay = clamp(SpatialDecay, 0.01f, 0.250f);
+        if (RangeFilter != 0 && RangeFilter != 1 && RangeFilter != 2) {
+            RangeFilter = 0; // Default to Gaussian
+        }
+
         float spatialContraDecay = 1.0f - SpatialDecay;
         float lambda = expf(-SpatialDecay);
         float rho = lambda + SpatialDecay / (2.0f - (spatialContraDecay + SpatialDecay));
@@ -3041,7 +3159,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius, float sharpness, int intensity) {
+    OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                    float Radius, float sharpness, int intensity) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3052,7 +3171,11 @@ extern "C" {
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        intensity = max(min(intensity, 100), 0);
+        // Ensure filter specific parameters are within valid ranges
+        Radius = max(Radius, 1.0f);
+        sharpness = clamp(sharpness, 0.0f, 1.0f);
+        intensity = clamp(intensity, 0, 100);
+
         int c1 = 256 * (100 - intensity) / 100;
         int c2 = 256 * (100 - (100 - intensity)) / 100;
         // Sharpen: High Contrast Overlay
@@ -3152,13 +3275,17 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int smoothingLevel, bool applySkinFilter) {
+    OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                        int smoothingLevel, bool applySkinFilter) {
 
         int Channels = Stride / Width;
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || Channels == 1)
             return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure filter specific parameters are within valid ranges
+        smoothingLevel = clamp(smoothingLevel, 0, 100);
 
         // 1. Detect skin color, adapt radius according to skin color ratio
         unsigned int skinSum = skinDetection(Input, Width, Height, Channels);
@@ -3199,8 +3326,9 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth, int outHeight,
-                              float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB) {
+    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
+                                    int outWidth, int outHeight, float angle, bool keepSize, int fillColorR, 
+                                    int fillColorG, int fillColorB) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3210,6 +3338,12 @@ extern "C" {
         int Channels = Stride / Width;
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
             return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        angle = clamp(angle, -360.0f, 360.0f);
+        fillColorR = clamp(fillColorR, 0, 255);
+        fillColorG = clamp(fillColorG, 0, 255);
+        fillColorB = clamp(fillColorB, 0, 255);
 
         float oldXradius = (float)(Width - 1) / 2;
         float oldYradius = (float)(Height - 1) / 2;
@@ -3337,13 +3471,17 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX, int cropY,
-                         int dstWidth, int dstHeight, int dstStride) {
+    OC_STATUS ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, 
+                                int cropX, int cropY, int dstWidth, int dstHeight, int dstStride) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || dstWidth <= 0 || dstHeight <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure filter specific parameters are within valid ranges
+        cropX = clamp(cropX, 0, Width - 1);
+        cropY = clamp(cropY, 0, Height - 1);
 
         int Channels = srcStride / Width;
 
@@ -3359,7 +3497,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcDirection direction) {
+    OC_STATUS ocularFlipImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                OcDirection direction) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3393,12 +3532,17 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int maxWindowSize, int Threshold) {
+    OC_STATUS ocularDespeckle(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                int maxWindowSize, int Threshold) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || maxWindowSize <= 0 || Threshold <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure filter specific parameters are within valid ranges
+        maxWindowSize = clamp(maxWindowSize, 1, 127);
+        Threshold = clamp(Threshold, 2, 255);
 
         int windowSize, x, y, c;
         unsigned char* window = (unsigned char*)malloc(maxWindowSize * maxWindowSize * sizeof(unsigned char));
@@ -3463,7 +3607,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool* Skewed) {
+    OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                    bool* Skewed) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3497,12 +3642,16 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction) {
+    OC_STATUS ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                float fraction) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || fraction <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure filter specific parameters are within valid ranges
+        fraction = clamp(fraction, 0.001f, 0.1f);
 
         int Channels = Stride / Width;
         switch (Channels) {
@@ -3695,7 +3844,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcAutoThresholdMethod method) {
+    OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                    OcAutoThresholdMethod method) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3708,7 +3858,7 @@ extern "C" {
 
         int histogram[256] = { 0 };
         int* histogramSmooth[256] = { 0 }; // for future use
-        int threshold;
+        int threshold = 0;
 
         // get histogram
         for (int y = 0; y < Height; y++) {
@@ -3754,8 +3904,8 @@ extern "C" {
 
     OC_STATUS ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
 
-        // Implementation of the paper "Adaptive and integrated neighborhood-dependent approach for nonlinear enhancement of color images",
-        // but it has been deeply improved.
+        // Implementation of the paper "Adaptive and integrated neighborhood-dependent approach for nonlinear 
+        // enhancement of color images", but it has been deeply improved.
         // Reference: https://ui.adsabs.harvard.edu/abs/2005JEI....14d3006T/abstract
 
         int channels = Stride / Width;
@@ -3857,13 +4007,16 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
-                          int mStride, OcBlendMode blendMode, int alpha) {
+    OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, 
+                               int mWidth, int mHeight, int mStride, OcBlendMode blendMode, int alpha) {
 
         if (baseInput == NULL || mixInput == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (bWidth <= 0 || bHeight <= 0 || mWidth <= 0 || mHeight <= 0 || bStride <= 0 || mStride <= 0)
             return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Ensure filter specific parameters are within valid ranges
+        alpha = clamp(alpha, 0, 100);
 
         for (int y = 0; y < bHeight; y++) {
             unsigned char* pBaseInput = baseInput + (y * bStride);
@@ -3903,6 +4056,11 @@ extern "C" {
         if (Channels == 1) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        redBalance = clamp(redBalance, -100, 100);
+        greenBalance = clamp(greenBalance, -100, 100);
+        blueBalance = clamp(blueBalance, -100, 100);
 
         unsigned char lookupR[256], lookupG[256], lookupB[256];
 
@@ -3964,6 +4122,11 @@ extern "C" {
         if (width <= 0 || height <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        scale = clamp(scale, 16, 250);
+        numScales = clamp(numScales, 1.0f, 8.0f);
+        dynamic = clamp(dynamic, 0.05f, 4.0f);
 
         RetinexParams params = {
             .scales_mode = mode,
@@ -4136,6 +4299,13 @@ extern "C" {
         if (Channels != 1) {    
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+        
+        // Ensure filter specific parameters are within valid ranges
+        if (kernel_size != CannyGaus3x3 && kernel_size != CannyGaus5x5) {
+            kernel_size = CannyGaus3x3;
+        }
+        weak_threshold = clamp(weak_threshold, 0, 255);
+        strong_threshold = clamp(strong_threshold, 0, 255);
 
         // Sobel, as for why this can be used instead of Gaussian derivative, see
         // https://medium.com/@haidarlina4/sobel-vs-canny-edge-detection-techniques-step-by-step-implementation-11ae6103a56a
@@ -4466,11 +4636,15 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, int Height, int Width, int threshold) {
+    OC_STATUS ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, 
+                                       int Height, int Width, int threshold) {
 
         if ((Input == NULL) || (LineNumber == NULL)) {
             return OC_STATUS_ERR_NULLREFERENCE;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        threshold = min(threshold, 1); // max number of lines to return
 
         float diagonalLength = sqrt((float)(Height * Height + Width * Width));
         float minAngle = 0;
@@ -4551,12 +4725,24 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, unsigned char R,
-                             unsigned char G, unsigned char B) {
+    OC_STATUS ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2, 
+                             unsigned char R, unsigned char G, unsigned char B) {
 
         if (canvas == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
         }
+        if (width <= 0 || height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
+        // Ensure parmeters are within valid ranges
+        x1 = clamp(x1, 0, width - 1);
+        x2 = clamp(x2, 0, width - 1);
+        y1 = clamp(y1, 0, height - 1);
+        y2 = clamp(y2, 0, height - 1);
+        R = ClampToByte(R);
+        G = ClampToByte(G);
+        B = ClampToByte(B);
 
         int channels = stride / width;
 
@@ -4758,8 +4944,8 @@ extern "C" {
         return has_image_size;
     }
 
-    OC_STATUS ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, float* kernel,
-                                   unsigned char filterW, unsigned char cfactor, unsigned char bias) {
+    OC_STATUS ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, 
+                                        float* kernel, unsigned char filterW, unsigned char cfactor, unsigned char bias) {
 
         if (input == NULL || output == NULL || kernel == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -4767,6 +4953,11 @@ extern "C" {
         if (width <= 0 || height <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        filterW = min(filterW, 3); // we should be using at least 3x3
+        cfactor = clamp(cfactor, 1, 255);
+        bias = clamp(bias, 0, 255);
 
         int factor = 256 / cfactor;
         int halfW = (filterW - 1) / 2;
@@ -4819,7 +5010,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Distance, int Angle) {
+    OC_STATUS ocularMotionBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     int Distance, int Angle) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -4827,6 +5019,10 @@ extern "C" {
         if (Width <= 0 || Height <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        Distance = min(Distance, 1);
+        Angle = clamp(Angle, -180, 180);
 
         int channels = Stride / Width;
 
@@ -4871,7 +5067,8 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
+    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                int centerX, int centerY, int intensity) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -4885,8 +5082,10 @@ extern "C" {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
 
-        centerX = min(Width - 1, max(0, centerX));
-        centerY = min(Height - 1, max(0, centerY));
+        // Ensure center coordinates are within valid ranges
+        centerX = clamp(centerX, 0, Width - 1);
+        centerY = clamp(centerY, 0, Height - 1);
+        intensity = clamp(intensity, 0, 100);
 
         unsigned char* pIn = NULL;
         unsigned char* pOut = Output;
@@ -4950,8 +5149,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int sampleRadius, float blurAmount,
-                        int centerX, int centerY) {
+    OC_STATUS ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                              int sampleRadius, float blurAmount, int centerX, int centerY) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -4959,6 +5158,12 @@ extern "C" {
         if (Width <= 0 || Height <= 0 || Stride <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        sampleRadius = clamp(sampleRadius, 10, 200);
+        blurAmount = clamp(blurAmount, 0.1f, 1.0f);
+        centerX = clamp(centerX, 0, Width - 1);
+        centerY = clamp(centerY, 0, Height - 1);
 
         int Channels = Stride / Width;
         float maxDistance = sqrtf(Width * Width + Height * Height) / 2.0f;
@@ -5011,7 +5216,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                int Radius, OcEdgeMode edgeMode) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5024,6 +5230,12 @@ extern "C" {
 
         if (channels != 3) {
             return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
+        if (edgeMode != OC_EDGE_WRAP && edgeMode != OC_EDGE_MIRROR) {
+            edgeMode = OC_EDGE_WRAP;
         }
 
         Radius = Radius != 0 ? Radius : 3;
@@ -5093,6 +5305,9 @@ extern "C" {
         if ((Channel != 1) && (Channel != 3)) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
 
         const int Level = 256;
 
@@ -5195,6 +5410,9 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
+
         int Channels = Stride / Width;
 
         if (Channels == 1) {
@@ -5256,6 +5474,9 @@ extern "C" {
         if (Width <= 0 || Height <= 0 || Stride <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
 
         int Channels = Stride / Width;
 
@@ -5323,6 +5544,9 @@ extern "C" {
         if (Channels != 1 && Channels != 3 && Channels != 4) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -5407,6 +5631,9 @@ extern "C" {
         if (Channels != 1 && Channels != 3 && Channels != 4) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         };
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -5494,6 +5721,9 @@ extern "C" {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
 
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
+
         // Create temporary buffer for blur result
         unsigned char* blurBuffer = (unsigned char*)malloc(Width * Height * Stride);
         if (blurBuffer == NULL) {
@@ -5533,7 +5763,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
+    OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                  int blockSize) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5546,6 +5777,9 @@ extern "C" {
         if (channels != 1 && channels != 3) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        blockSize = min(blockSize, 1);
 
         int pPos;
         for (int y = 0; y < Height; y += blockSize) {
@@ -5595,7 +5829,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
+    OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                   int radius, int intensity) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5608,6 +5843,10 @@ extern "C" {
         if (Channels != 3) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        radius = min(radius, 0);
+        intensity = clamp(intensity, 0, 100);
 
         int intensityCount[256];
         int sumR[256];
@@ -5686,7 +5925,8 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range) {
+    OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                       int Radius, int Range) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5694,6 +5934,10 @@ extern "C" {
         if (Width <= 0 || Height <= 0 || Stride <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+
+        // Ensure filter specific parameters are within valid ranges
+        Radius = min(Radius, 0);
+        Range = clamp(Range, 1, 20);
 
         int Channels = Stride / Width;
 
