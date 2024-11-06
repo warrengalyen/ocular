@@ -98,6 +98,5 @@ EXPORTS
     ocularMinFilter @96
     ocularMaxFilter @97
     ocularHighPassFilter @98
-    ocularFilmNoirEffect @99
-    ocularGetStatusString @100
-    ocularGetVersion @101
+    ocularGetStatusString @99
+    ocularGetVersion @100

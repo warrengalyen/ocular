@@ -34,11 +34,13 @@ set(MODULE_FILES
 add_library(ocular STATIC ${MODULE_FILES})
 
 # Pre-build step to update VERSION_BUILD
-add_custom_command(
-    TARGET ocular
-    PRE_BUILD
-    COMMAND bash build_update.sh
-)
+if (!MSVC)
+    add_custom_command(
+        TARGET ocular
+        PRE_BUILD
+        COMMAND bash build_update.sh
+    )
+endif ()
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to it

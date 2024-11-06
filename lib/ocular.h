@@ -1181,24 +1181,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * */
     OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
 
-    /**
-     * @brief Applies a film noir effect to an image to mimic the high-contrast style of 40's noir films.
-     * @ingroup group_ip_filters
-     * @param Input The image input data buffer.
-     * @param Output The image output data buffer.  
-     * @param Width The width of the image in pixels.
-     * @param Height The height of the image in pixels.
-     * @param Stride The number of bytes in one row of pixels.
-     * @param shadowCutoff Adjusts the dynamic range of the shadows. Range [0-100].
-     * @param highlightCutoff Adjusts the dynamic range of the highlights. Range [0-100].
-     * @param contrastBoost Apply a contrast boost to enhance the image's details. Range [0-100].
-     * @param contrastMidpoint Adjusts the midpoints of the contrast boost. Range [0-100].
-     * @param grainPercentage Adds random noise to simulate film grain. Range [0-100].
-     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularFilmNoirEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadowCutoff,
-                             float highlightCutoff, float contrastBoost, float contrastMidpoint, float grainPercentage);
-
     //------------------------Distort-------------------------
 
     //--------------------------Misc--------------------------

@@ -97,7 +97,6 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Pixelate (Mosaic)
 - Oil Paint
 - Frosted Glass
-- Film Noir
 
 #### OCR Pre-preprocessing
 
@@ -171,4 +170,4 @@ This is currently available in the `demo-gui` branch and is very much a work-in-
 
 Ocular is under the MIT license.
 
-Ocular uses code ported from 3d parties. See the [LICENSE](LICENSE) file for details.
+See the [LICENSE](LICENSE) file for details.
