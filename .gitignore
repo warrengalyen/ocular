@@ -14,7 +14,6 @@ demo/test_filters.h
 *.log
 *.sh
 !lib/build_update.sh
-/demo_ui
 /docs/out/html
 /docs/*.pdi
 /test_images/
