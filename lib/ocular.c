@@ -5092,8 +5092,7 @@ extern "C" {
         }
     }
 
-    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                int centerX, int centerY, int intensity) {
+    OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5107,67 +5106,107 @@ extern "C" {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
 
-        // Ensure center coordinates are within valid ranges
+        // Ensure filter specific parameters are within valid ranges
         centerX = clamp(centerX, 0, Width - 1);
         centerY = clamp(centerY, 0, Height - 1);
-        intensity = clamp(intensity, 0, 100);
+        intensity = clamp(intensity, 1, 100);
 
-        unsigned char* pIn = NULL;
-        unsigned char* pOut = Output;
-        int newX, newY = 0;
-        float angle = 0;
+        // Pre-calculate angle increment and inverse intensity
+        const float angleIncrement = 0.005f;
+        const float invIntensity = 1.0f / intensity;
+
+        // Process image in chunks for better cache utilization
+        const int CHUNK_SIZE = 32;
 
         if (channels == 1) {
-            int stride = Stride - Width;
-            float g;
-            for (int y = 0; y < Height; y++) {
-                for (int x = 0; x < Width; x++) {
-                    g = 0;
+            for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+                for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                    int endY = min(blockY + CHUNK_SIZE, Height);
+                    int endX = min(blockX + CHUNK_SIZE, Width);
 
-                    float distance = sqrt((y - centerY) * (y - centerY) + (x - centerX) * (x - centerX));
-                    angle = atan2((double)(y - centerY), (double)(x - centerX));
-                    for (int n = 0; n < intensity; n++) {
-                        angle = angle + 0.005;
-                        newX = (int)(distance * fastCos(angle) + (double)centerX);
-                        newY = (int)(distance * fastSin(angle) + (double)centerY);
-                        newX = min(Width - 1, max(0, newX));
-                        newY = min(Height - 1, max(0, newY));
-                        pIn = Input + newY * Stride + newX;
-                        g = g + pIn[0];
+                    for (int y = blockY; y < endY; y++) {
+                        unsigned char* pOut = Output + y * Stride;
+
+                        for (int x = blockX; x < endX; x++) {
+                            float dx = (float)(x - centerX);
+                            float dy = (float)(y - centerY);
+                            float distance = sqrtf(dx * dx + dy * dy);
+                            float angle = atan2f(dy, dx);
+
+                            float sum = 0.0f;
+
+                            // Unroll the intensity loop for better performance
+                            for (int n = 0; n < intensity; n += 4) {
+                                // Process 4 samples at once
+                                for (int k = 0; k < 4 && (n + k) < intensity; k++) {
+                                    float curAngle = angle + (n + k) * angleIncrement;
+                                    float cosAngle = fastCos(curAngle);
+                                    float sinAngle = fastSin(curAngle);
+
+                                    int newX = (int)(distance * cosAngle + centerX);
+                                    int newY = (int)(distance * sinAngle + centerY);
+
+                                    // Clamp coordinates
+                                    newX = min(Width - 1, max(0, newX));
+                                    newY = min(Height - 1, max(0, newY));
+
+                                    sum += Input[newY * Stride + newX];
+                                }
+                            }
+
+                            pOut[x] = ClampToByte(sum * invIntensity);
+                        }
                     }
-                    pOut[0] = ClampToByte(g / intensity);
-                    pOut++;
                 }
-                pOut += stride;
             }
-        }
+        } 
         if (channels == 3) {
-            int stride = Stride - Width * 3;
-            float r, g, b;
-            for (int y = 0; y < Height; y++) {
-                for (int x = 0; x < Width; x++) {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                    float distance = sqrt((y - centerY) * (y - centerY) + (x - centerX) * (x - centerX));
-                    angle = atan2((double)(y - centerY), (double)(x - centerX));
-                    for (int n = 0; n < intensity; n++) {
-                        angle = angle + 0.005;
-                        newX = (int)(distance * fastCos(angle) + (double)centerX);
-                        newY = (int)(distance * fastSin(angle) + (double)centerY);
-                        newX = min(Width - 1, max(0, newX));
-                        newY = min(Height - 1, max(0, newY));
-                        pIn = Input + newY * Stride + newX * 3;
-                        r = r + pIn[0];
-                        g = g + pIn[1];
-                        b = b + pIn[2];
+            for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+                for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                    int endY = min(blockY + CHUNK_SIZE, Height);
+                    int endX = min(blockX + CHUNK_SIZE, Width);
+
+                    float sums[3];
+
+                    for (int y = blockY; y < endY; y++) {
+                        unsigned char* pOut = Output + y * Stride;
+
+                        for (int x = blockX; x < endX; x++) {
+                            float dx = (float)(x - centerX);
+                            float dy = (float)(y - centerY);
+                            float distance = sqrtf(dx * dx + dy * dy);
+                            float angle = atan2f(dy, dx);
+
+                            sums[0] = sums[1] = sums[2] = 0.0f;
+
+                            // Unroll the intensity loop
+                            for (int n = 0; n < intensity; n += 4) {
+                                // Process 4 samples at once
+                                for (int k = 0; k < 4 && (n + k) < intensity; k++) {
+                                    float curAngle = angle + (n + k) * angleIncrement;
+                                    float cosAngle = fastCos(curAngle);
+                                    float sinAngle = fastSin(curAngle);
+
+                                    int newX = (int)(distance * cosAngle + centerX);
+                                    int newY = (int)(distance * sinAngle + centerY);
+
+                                    // Clamp coordinates
+                                    newX = min(Width - 1, max(0, newX));
+                                    newY = min(Height - 1, max(0, newY));
+
+                                    const unsigned char* pIn = Input + (newY * Stride + newX * 3);
+                                    sums[0] += pIn[0];
+                                    sums[1] += pIn[1];
+                                    sums[2] += pIn[2];
+                                }
+                            }
+
+                            pOut[x * 3] = ClampToByte(sums[0] * invIntensity);
+                            pOut[x * 3 + 1] = ClampToByte(sums[1] * invIntensity);
+                            pOut[x * 3 + 2] = ClampToByte(sums[2] * invIntensity);
+                        }
                     }
-                    pOut[0] = ClampToByte(r / intensity);
-                    pOut[1] = ClampToByte(g / intensity);
-                    pOut[2] = ClampToByte(b / intensity);
-                    pOut += 3;
                 }
-                pOut += stride;
             }
         }
 
