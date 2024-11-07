@@ -17,18 +17,17 @@ endif ()
 
 # Call the function to get the current VERSION_BUILD
 # get_version_build()
-
 set(MODULE_FILES
-        auxiliary.c
-        core.c
-        color.c
-        threshold.c
-        util.c
-        ocr.c
-        palette.c
-        retinex.c
-        ocular.c
-        ocular.h
+    auxiliary.c
+    core.c
+    color.c
+    threshold.c
+    util.c
+    ocr.c
+    palette.c
+    dither.c
+    retinex.c
+    ocular.c
 )
 
 add_library(ocular STATIC ${MODULE_FILES})

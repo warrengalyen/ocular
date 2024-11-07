@@ -10,16 +10,21 @@ CMakeCache.txt
 *.cmake
 Makefile
 /bin
-demo/test_filters.h
 *.log
 *.sh
-!lib/build_update.sh
 !dll/generate_csharp_def.sh
-/docs/out/html
-/docs/*.pdi
-/test_images/
 *.zip
 /tests/
 /build/
+
+# local dev specific files
+/docs/out/html
+/docs/*.pdi
+/test_images/
 /demo_gui/
-/lib/*.txt
+demo/*_filters.h
+lib/*.txt
+!lib/build_update.sh
+dll/generate_def.bat
+
+/demo_ui/
