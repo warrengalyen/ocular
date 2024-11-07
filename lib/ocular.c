@@ -5041,55 +5041,94 @@ extern "C" {
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
         }
-        if (Width <= 0 || Height <= 0) {
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Distance = min(Distance, 1);
+        Distance = max(Distance, 1); // Changed from min to max since we want at least 1 pixel distance
         Angle = clamp(Angle, -180, 180);
 
         int channels = Stride / Width;
 
-        Angle = Angle % 360;
-        Distance = clamp(Distance, 1, 200);
+        // Pre-calculate angle and direction
+        float radian = ((float)(Angle % 360) + 180.0f) / 180.0f * M_PI;
+        int dx = (int)((float)Distance * fastCos(radian) + 0.5f);
+        int dy = (int)((float)Distance * fastSin(radian) + 0.5f);
 
-        float radian = ((float)Angle + 180.0) / 180.0 * M_PI;
-        int dx = (int)((float)Distance * fastCos(radian) + 0.5);
-        int dy = (int)((float)Distance * fastSin(radian) + 0.5);
+        // Pre-calculate sign to avoid branching in loop
+        int sign = (dx == 0) ? 0 : (dx < 0 ? -1 : 1);
+        int absDistance = abs(dx);
 
-        int sign;
-        if (dx < 0)
-            sign = -1;
-        if (dx > 0)
-            sign = 1;
+        // Process image in chunks for better cache utilization
+        const int CHUNK_SIZE = 32;
+        for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+            for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                int endY = min(blockY + CHUNK_SIZE, Height);
+                int endX = min(blockX + CHUNK_SIZE, Width);
 
-        int sum, count;
-        int xOffset, yOffset;
-        unsigned char* pOffset;
-        for (int y = 0; y < Height; y++) {
-            unsigned char* pInput = Input + (y * Stride);
-            unsigned char* pOutput = Output + (y * Stride);
-            for (int x = 0; x < Width; x++) {
-                for (int c = 0; c < channels; c++) {
-                    sum = 0, count = 0;
-                    for (int p = 0; p < abs(dx); p++) {
-                        yOffset = y + p * sign;
-                        xOffset = x + p * sign;
-                        if (yOffset >= 0 && yOffset < Height && xOffset >= 0 && xOffset < Width) {
-                            pOffset = Input + (yOffset * Stride);
-                            count++;
-                            sum += pOffset[xOffset * channels + c];
+                // Pre-allocate arrays for accumulation
+                int sums[4] = { 0 }; // Support up to 4 channels
+                float invCount;
+
+                for (int y = blockY; y < endY; y++) {
+                    unsigned char* pInput = Input + (y * Stride);
+                    unsigned char* pOutput = Output + (y * Stride);
+
+                    for (int x = blockX; x < endX; x++) {
+                        // Reset sums for new pixel
+                        memset(sums, 0, sizeof(sums));
+                        int count = 0;
+
+                        // Vectorizable inner loop
+                        for (int p = 0; p < absDistance; p++) {
+                            int yOffset = y + p * sign;
+                            int xOffset = x + p * sign;
+
+                            if (yOffset >= 0 && yOffset < Height && xOffset >= 0 && xOffset < Width) {
+                                unsigned char* pOffset = Input + (yOffset * Stride + xOffset * channels);
+                                count++;
+
+                                // Unrolled channel accumulation
+                                switch (channels) {
+                                case 4:
+                                    sums[3] += pOffset[3];
+                                    // fallthrough
+                                case 3:
+                                    sums[2] += pOffset[2];
+                                    sums[1] += pOffset[1];
+                                    sums[0] += pOffset[0];
+                                    break;
+                                case 1: sums[0] += pOffset[0]; break;
+                                }
+                            }
                         }
-                    }
-                    if (count == 0) {
-                        pOutput[x * channels + c] = pInput[x * channels + c];
-                    } else {
-                        pOutput[x * channels + c] = ClampToByte(sum / (float)count + 0.5);
+
+                        // Write output
+                        if (count == 0) {
+                            // Direct copy if no valid samples
+                            memcpy(pOutput + x * channels, pInput + x * channels, channels);
+                        } else {
+                            // Pre-calculate inverse count for multiplication instead of division
+                            invCount = 1.0f / count;
+                            switch (channels) {
+                            case 4:
+                                pOutput[x * channels + 3] = ClampToByte(sums[3] * invCount + 0.5f);
+                                // fallthrough
+                            case 3:
+                                pOutput[x * channels + 2] = ClampToByte(sums[2] * invCount + 0.5f);
+                                pOutput[x * channels + 1] = ClampToByte(sums[1] * invCount + 0.5f);
+                                pOutput[x * channels + 0] = ClampToByte(sums[0] * invCount + 0.5f);
+                                break;
+                            case 1: pOutput[x * channels] = ClampToByte(sums[0] * invCount + 0.5f); break;
+                            }
+                        }
                     }
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
     OC_STATUS ocularRadialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int centerX, int centerY, int intensity) {
