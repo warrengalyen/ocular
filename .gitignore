@@ -14,6 +14,7 @@ demo/test_filters.h
 *.log
 *.sh
 !lib/build_update.sh
+!dll/generate_csharp_def.sh
 /docs/out/html
 /docs/*.pdi
 /test_images/
