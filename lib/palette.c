@@ -128,7 +128,9 @@ void freeKDTree(KDNode* node) {
     free(node);
 }
 
-void applyColorRemapKDTree(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette) {
+bool applyColorRemapKDTree(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette) {
+
+    bool success = false;
 
     // convert palette to array of OcColor
     OcColor* colors = (OcColor*)malloc(palette->num_colors * sizeof(OcColor));
@@ -163,9 +165,13 @@ void applyColorRemapKDTree(unsigned char* input, unsigned char* output, int widt
         }
     }
 
+    success = true;
+
     // Clean up k-d tree
     freeKDTree(root);
     free(colors);
+
+    return success;
 }
 
 /* End Palette mapping  --------------------------------------------*/

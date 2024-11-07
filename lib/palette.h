@@ -104,7 +104,7 @@ OcColor* findNearestNeighbor(KDNode* root, OcColor* target);
 void freeKDTree(KDNode* node);
 
 // Apply color remap using k-d tree for nearest neighbor search
-void applyColorRemapKDTree(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette);
+bool applyColorRemapKDTree(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette);
 
 
 /* End Palette mapping  ---------------------------------------------*/

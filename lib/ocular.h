@@ -25,6 +25,7 @@ extern "C" {
 #include "core.h"
 #include "interpolate.h"
 #include "palette.h"
+#include "dither.h"
 #include "version.h"
 // #include "fft.h"
 #include <math.h>
@@ -1182,6 +1183,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      * */
     OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
+
+    /**
+     * @brief Reduces the numbers of unique colors in an image using a palette file with optional dithering.
+     * @ingroup group_ip_general
+     * @param input The image input data buffer.
+     * @param output The image output data buffer.
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param channels The number of color channels in the image.
+     * @param filename The path to the palette file. 
+     * @param method The dithering method to use. See OcDitherMethod in dither.h.
+     * @param amount The amount of dithering to apply. Range [0 - 100].
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                        const char* filename, OcDitherMethod method, int amount);
 
     //------------------------Distort-------------------------
 

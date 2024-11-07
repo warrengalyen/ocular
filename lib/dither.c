@@ -2,8 +2,10 @@
 #include "color.h"
 #include "util.h"
 
-void applyErrorDiffusionDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
+bool applyErrorDiffusionDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
                                KDNode* tree, const DitherMatrix* matrix, float amount) {
+
+    bool success = false;
     // Allocate error buffers
     float* errorR = (float*)calloc(width * height, sizeof(float));
     float* errorG = (float*)calloc(width * height, sizeof(float));
@@ -61,13 +63,19 @@ void applyErrorDiffusionDither(unsigned char* input, unsigned char* output, int 
         }
     }
 
+    success = true;
+
     free(errorR);
     free(errorG);
     free(errorB);
+
+    return success;
 }
 
-void applyOrderedDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
+bool applyOrderedDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
                         const OrderedDitherMatrix* matrix, float amount) {
+
+    bool success = false;
 
     // Convert palette to array of OcColor for KD-tree
     OcColor* colors = (OcColor*)malloc(palette->num_colors * sizeof(OcColor));
@@ -110,13 +118,17 @@ void applyOrderedDither(unsigned char* input, unsigned char* output, int width, 
         }
     }
 
+    success = true;
+
     // Cleanup
     freeKDTree(tree);
     free(colors);
+
+    return success;
 }
 
 
-void applyDithering(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
+bool applyDithering(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
                     OcDitherMethod method, float amount) {
     // Convert palette to array of OcColor
     OcColor* colors = (OcColor*)malloc(palette->num_colors * sizeof(OcColor));
@@ -125,6 +137,8 @@ void applyDithering(unsigned char* input, unsigned char* output, int width, int 
         colors[i].G = palette->colors[i].g;
         colors[i].B = palette->colors[i].b;
     }
+
+    bool success = false;
 
     // Build KD-tree for faster nearest neighbor search
     KDNode* tree = buildKDTree(colors, palette->num_colors);
@@ -145,18 +159,28 @@ void applyDithering(unsigned char* input, unsigned char* output, int width, int 
         case OC_DITHER_BAYER_4X4: orderedMatrix = &BAYER_4X4_MATRIX; break;
         case OC_DITHER_BAYER_8X8: orderedMatrix = &BAYER_8X8_MATRIX; break;
         case OC_DITHER_NONE:
-        default: applyColorRemapKDTree(input, output, width, height, channels, palette); goto cleanup;
+        default: 
+            if (applyColorRemapKDTree(input, output, width, height, channels, palette)) {
+                success = true;
+            }
+            goto cleanup;
     }
 
     if (matrix) {
-        applyErrorDiffusionDither(input, output, width, height, channels, palette, tree, matrix, amount);
+        if (applyErrorDiffusionDither(input, output, width, height, channels, palette, tree, matrix, amount)) {
+            success = true;
+        }
     } else if (orderedMatrix) {
-        applyOrderedDither(input, output, width, height, channels, palette, orderedMatrix, amount);
+        if (applyOrderedDither(input, output, width, height, channels, palette, orderedMatrix, amount)) {
+            success = true;
+        }
     }
 
 cleanup:
     freeKDTree(tree);
     free(colors);
+
+    return success;
 }
 
 

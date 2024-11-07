@@ -16,17 +16,17 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
 endif ()
 
 set(MODULE_FILES
-        ../lib/auxiliary.c
-        ../lib/core.c
-        ../lib/color.c
-        ../lib/threshold.c
-        ../lib/util.c
-        ../lib/ocr.c
-        ../lib/palette.c
-        ../lib/retinex.c
-        ../lib/ocular.c
-        ocular.h
-        dlib_export.h
+    ../lib/auxiliary.c
+    ../lib/core.c
+    ../lib/color.c
+    ../lib/threshold.c
+    ../lib/util.c
+    ../lib/ocr.c
+    ../lib/palette.c
+    ../lib/dither.c
+    ../lib/retinex.c
+    ../lib/ocular.c
+    dlib_export.h
 )
 if (WIN32)
     # prevent exporting all symbols
@@ -45,12 +45,12 @@ set_target_properties(ocular_dll PROPERTIES PREFIX "")
 set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
 
 # Copy compiled dll to demo_ui for testing
-#if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
-#    add_custom_command(
-#            TARGET ocular_dll POST_BUILD
-#            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui"
-#            COMMAND_EXPAND_LISTS)
-#endif ()
+if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
+   add_custom_command(
+           TARGET ocular_dll POST_BUILD
+           COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui/bin/debug"
+           COMMAND_EXPAND_LISTS)
+endif ()
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to

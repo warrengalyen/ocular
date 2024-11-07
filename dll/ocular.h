@@ -20,6 +20,7 @@ extern "C" {
 #include "../lib/ocr.h"
 #include "../lib/interpolate.h"
 #include "../lib/palette.h"
+#include "../lib/dither.h"
 #include "dlib_export.h"
 
     // Parameters for Levels filter
@@ -215,7 +216,7 @@ extern "C" {
     DLIB_EXPORT bool ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     DLIB_EXPORT OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
-                                           CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
+                                                CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
     DLIB_EXPORT OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
@@ -227,11 +228,14 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
 
+    DLIB_EXPORT OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                                    const char* filename, OcDitherMethod method, int amount);
+
     DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
                                              int numLine, float* Radius, float* Theta);
 
     DLIB_EXPORT OC_STATUS ocularDrawLine(unsigned char* canvas, int width, int height, int stride, int x1, int y1, int x2, int y2,
-                                    unsigned char R, unsigned char G, unsigned char B);
+                                         unsigned char R, unsigned char G, unsigned char B);
 
     //--------------------------Image processing--------------------------
 

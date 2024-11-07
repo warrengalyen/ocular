@@ -184,13 +184,13 @@ static const OrderedDitherMatrix BAYER_8X8_MATRIX = {
     .threshold = (float*)BAYER_8X8_THRESHOLD
 };
 
-void applyErrorDiffusionDither(unsigned char* input, unsigned char* output, int width, int height, int channels,
+bool applyErrorDiffusionDither(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                OcPalette* palette, KDNode* tree, const DitherMatrix* matrix, float amount);
 
-void applyOrderedDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
+bool applyOrderedDither(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
                         const OrderedDitherMatrix* matrix, float amount);
 
-void applyDithering(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
+bool applyDithering(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette,
                     OcDitherMethod method, float amount);                             
 
 #endif // OCULAR_DITHER_H

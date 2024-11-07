@@ -100,3 +100,4 @@ EXPORTS
     ocularHighPassFilter @98
     ocularGetStatusString @99
     ocularGetVersion @100
+    ocularPalettetizeFromFile @101

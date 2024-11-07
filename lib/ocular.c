@@ -6078,6 +6078,35 @@ extern "C" {
         }
     }
 
+    OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                        const char* filename, OcDitherMethod method, int amount) {
+
+        if (input == NULL || output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (access(filename, 0) == -1) {
+            return OC_STATUS_ERR_FILENOTFOUND;
+        }
+        if (method < OC_DITHER_NONE || method > OC_DITHER_BAYER_8X8) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+        amount = clamp(amount, 0, 100);
+
+        OcPalette palette;
+        OC_STATUS status = ocularLoadPalette(filename, &palette);
+        if (status != OC_STATUS_OK) {
+            return status;
+        }
+
+        if (!applyDithering(input, output, width, height, channels, &palette, method, amount)) {
+            return OC_STATUS_ERR_UNKNOWN;
+        }
+
+        ocularFreePalette(&palette);
+
+        return OC_STATUS_OK;
+    };
+
     OC_STATUS ocularLoadPalette(const char* filename, OcPalette* palette) {
 
         PaletteFormat format = detect_palette_format(filename);
