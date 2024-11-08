@@ -24,6 +24,7 @@ set(MODULE_FILES
     ../lib/ocr.c
     ../lib/palette.c
     ../lib/dither.c
+    ../lib/quanitize.c
     ../lib/retinex.c
     ../lib/ocular.c
     dlib_export.h

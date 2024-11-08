@@ -26,6 +26,7 @@ set(MODULE_FILES
     ocr.c
     palette.c
     dither.c
+    quanitize.c
     retinex.c
     ocular.c
 )

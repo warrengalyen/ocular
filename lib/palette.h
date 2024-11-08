@@ -75,40 +75,6 @@ typedef struct {
 #define ASE_COLOR_LAB 0x4C414220  // "LAB " in hex
 #define ASE_COLOR_GRAY 0x47726179 // "Gray" in hex
 
-/* Palette mapping  -------------------------------------------------*/
-
-// for k-d tree nodes
-typedef struct KDNode {
-    OcColor* color;
-    struct KDNode* left;
-    struct KDNode* right;
-    int depth;
-} KDNode;
-
-// Compare colors for qsort based on current axis
-int compareColors(const void* a, const void* b, int axis);
-
-// Build k-d tree from array of colors
-KDNode* buildKDTree(OcColor* colors, int numColors);
-
-// Calculate Euclidean distance between two colors
-float colorDistance(OcColor* c1, OcColor* c2);
-
-// Recursively search for nearest neighbor in k-d tree
-void searchNearest(KDNode* node, OcColor* target, OcColor** best, float* bestDist);
-
-// Find nearest neighbor in k-d tree
-OcColor* findNearestNeighbor(KDNode* root, OcColor* target);
-
-// Free k-d tree memory
-void freeKDTree(KDNode* node);
-
-// Apply color remap using k-d tree for nearest neighbor search
-bool applyColorRemapKDTree(unsigned char* input, unsigned char* output, int width, int height, int channels, OcPalette* palette);
-
-
-/* End Palette mapping  ---------------------------------------------*/
-
 
 // Convert a float from big-endian to little-endian, byte by byte, maintaining precision
 static float swap_float_endian(float value);
