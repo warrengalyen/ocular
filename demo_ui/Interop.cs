@@ -227,8 +227,8 @@ namespace OcularDemo
 
         [DllImport("ocular.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern unsafe void ocularMotionBlurFilter(
-            byte* Src, byte* Dest, int Width, int Height, int Channels,
-            int radius, int angle);
+            byte* Src, byte* Dest, int Width, int Height, int Stride,
+            int distance, int angle);
 
 
         [DllImport("ocular.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]

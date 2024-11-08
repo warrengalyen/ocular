@@ -33,11 +33,12 @@ namespace OcularDemo
             this.TimeUse = Label;
             this.Stride = this.WIDTHBYTES(this.canvas.Image.Width * this.canvas.Channel);
             this.Clone = (byte*)(void*)Marshal.AllocHGlobal(this.canvas.Image.Height * this.Stride);
-            TwoParamDialog.CopyMemory((void*)this.Clone, (void*)Parent.ImageData, this.canvas.Image.Height * this.Stride);
+            CopyMemory((void*)this.Clone, (void*)Parent.ImageData, this.canvas.Image.Height * this.Stride);
         }
 
         private unsafe void UpdateCanvas()
         {
+            Console.WriteLine("test");
             if (this.Locked)
                 return;
             if (this.ChkPreview.Checked)
@@ -60,6 +61,7 @@ namespace OcularDemo
                         break;
                     case FilterType.BILATERAL:
                         OcularInterop.ocularBilateralFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Stride, (float)this.AdjustLevel.Value * 0.01f, (float)this.AdjustLevel2.Value * 0.01f);
+                        OcularInterop.ocularBilateralFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Stride, (float)this.AdjustLevel.Value * 0.01f, (float)this.AdjustLevel2.Value * 0.01f);
                         break;
                     case FilterType.UNSHARP_MASK:
                         OcularInterop.ocularUnsharpMaskFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Stride, (float)this.AdjustLevel.Value, this.AdjustLevel2.Value);
@@ -68,7 +70,7 @@ namespace OcularDemo
                         OcularInterop.ocularHighlightShadowFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Stride, (float)this.AdjustLevel.Value * 0.01f, (float)this.AdjustLevel2.Value * 0.01f);
                         break;
                     case FilterType.MOTION_BLUR:
-                        OcularInterop.ocularMotionBlurFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Channel, this.AdjustLevel2.Value, this.AdjustLevel.Value);
+                        OcularInterop.ocularMotionBlurFilter(this.Clone, this.canvas.ImageData, this.canvas.Image.Width, this.canvas.Image.Height, this.canvas.Stride, this.AdjustLevel.Value, this.AdjustLevel2.Value);
                         break;
                     default:
                         throw new NotImplementedException();
@@ -79,7 +81,7 @@ namespace OcularDemo
             }
             else
             {
-                TwoParamDialog.CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
+                CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
             }
             this.canvas.Refresh();
         }
@@ -93,7 +95,6 @@ namespace OcularDemo
         {
             this.AdjustLevel.Value = (int)this.AdjustLevelUpDown.Value;
             this.UpdateCanvas();
-
         }
 
         private void AdjustLevel2_Scroll(object sender, EventArgs e)
@@ -105,14 +106,13 @@ namespace OcularDemo
         {
             this.AdjustLevel2.Value = (int)this.AdjustLevelUpDown2.Value;
             this.UpdateCanvas();
-
         }
 
         private unsafe void TwoParamDialog_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (this.DialogResult != DialogResult.OK)
             {
-                TwoParamDialog.CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
+                CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
                 this.canvas.Refresh();
             }
             if ((IntPtr)this.Clone == IntPtr.Zero)
@@ -127,7 +127,7 @@ namespace OcularDemo
 
         private unsafe void btnCancel_Click(object sender, EventArgs e)
         {
-            TwoParamDialog.CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
+            CopyMemory((void*)this.canvas.ImageData, (void*)this.Clone, this.canvas.Image.Height * this.Stride);
             this.canvas.Refresh();
         }
 
@@ -245,20 +245,20 @@ namespace OcularDemo
                     break;
                 case FilterType.MOTION_BLUR:
                     this.Locked = true;
-                    this.lblAdjust.Text = "Angle:";
-                    this.AdjustLevel.Minimum = 0;
-                    this.AdjustLevel.Maximum = 359;
-                    this.AdjustLevel.Value = 30;
-                    this.AdjustLevelUpDown.Minimum = 0;
-                    this.AdjustLevelUpDown.Maximum = 359;
-                    this.AdjustLevelUpDown.Value = 30;
-                    this.lblAdjust2.Text = "Distance:";
-                    this.AdjustLevel2.Minimum = 1;
-                    this.AdjustLevel2.Maximum = 100;
-                    this.AdjustLevel2.Value = 5;
-                    this.AdjustLevelUpDown2.Minimum = 1;
-                    this.AdjustLevelUpDown2.Maximum = 100;
-                    this.AdjustLevelUpDown2.Value = 5;
+                    this.lblAdjust.Text = "Distance:";
+                    this.AdjustLevel.Minimum = 1;
+                    this.AdjustLevel.Maximum = 100;
+                    this.AdjustLevel.Value = 5;
+                    this.AdjustLevelUpDown.Minimum = 1;
+                    this.AdjustLevelUpDown.Maximum = 100;
+                    this.AdjustLevelUpDown.Value = 5;
+                    this.lblAdjust2.Text = "Angle:";
+                    this.AdjustLevel2.Minimum = -180;
+                    this.AdjustLevel2.Maximum = 180;
+                    this.AdjustLevel2.Value = 30;
+                    this.AdjustLevelUpDown2.Minimum = -180;
+                    this.AdjustLevelUpDown2.Maximum = 180;
+                    this.AdjustLevelUpDown2.Value = 30;
                     this.Locked = false;
                     break;
                 default:

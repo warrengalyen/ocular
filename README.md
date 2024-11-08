@@ -58,6 +58,9 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Image Blending (supports 27 Photoshop modes)
 - Color Balance
 - Retinex (Multi-Scale with Color Restoration)
+- Palettize
+  - from file (remaps colors to closest color in palette file with optional dithering)
+  - from image (reduces unique colors using color quantization with optional dithering)
 
 ### Image Processing Filters
 
@@ -117,6 +120,14 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Flip (Vertical/Horizontal)
 - Bilinear image rotation
 - Hough transform line detection
+
+### Color Quantization
+
+- Median Cut, Octree
+
+### Dithering
+
+- Ordered Bayer (4x4 and 8x8), Atkinson, Burkes, Sierra, Sierra Two-Row, Sierra Lite, Stucki, Jarvis-Judice-Ninke, Single Neighbor, Floyd-Steinberg
 
 ### Color Space Conversion
 

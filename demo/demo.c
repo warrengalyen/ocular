@@ -9,10 +9,7 @@
 #endif
 
 #include "../lib/ocular.h"
-
-#if __has_include("test_filters.h")
-    #include "test_filters.h"
-#endif
+#include "../lib/dither.h"
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
@@ -20,6 +17,10 @@
 
 #include "stb_image.h"
 #include "stb_image_write.h"
+
+#if __has_include("test_filters.h")
+    // #include "test_filters.h"
+#endif
 
 #define AUTO_OPEN_OUTPUT_IMAGE // comment out to disable
 
@@ -30,6 +31,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+// #include <float.h>
 
 #if defined(AUTO_OPEN_OUTPUT_IMAGE)
     #if defined(_WIN32) || defined(_WIN64)
@@ -110,6 +112,8 @@ void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
     }
 }
 
+
+
 int main(int argc, char** argv) {
 
     printf("Ocular Image Processing library v%s\n", ocularGetVersion());
@@ -143,19 +147,41 @@ int main(int argc, char** argv) {
     int stride = width * channels;
 
     if (input) {
-        unsigned char* output = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);
+        // Make sure we allocate enough memory for the output
+        unsigned char* output = (unsigned char*)malloc(width * height * channels);
         if (output) {
             double startTime = now();
             printf("Processing image...\n");
 
-            OC_STATUS status = ocularFilmNoirEffect(input, output, width, height, stride, 10, 90, 10, 50, 50);
+
+            // Load the palette
+            char palettePath[1024];
+            char workingDir[1024];
+            
+            // Add error checking for getcwd
+            if (getcwd(workingDir, sizeof(workingDir)) == NULL) {
+                fprintf(stderr, "Error getting current working directory\n");
+                return -1;
+            }
+
+            // Check if the directory exists before trying to load
+            sprintf(palettePath, "%s\\bin\\palettes\\gimp\\crayola-1958.gpl", workingDir);
+            if (access(palettePath, F_OK) == -1) {
+                fprintf(stderr, "Palette file not found at: %s\n", palettePath);
+                return -1;
+            }
+
+            // OC_STATUS status = ocularPalettetizeFromFile(input, output, width, height, channels, palettePath, OC_DITHER_FLOYD_STEINBERG, 50);
+            OC_STATUS status =
+                    ocularPalettetizeFromImage(input, output, width, height, channels, OC_QUANTIZE_OCTREE, 25, OC_DITHER_FLOYD_STEINBERG, 50);
             if (status != OC_STATUS_OK) {
-                printf("Error: %s\n", ocularGetStatusString(status));
+                fprintf(stderr, "Error palettetizing image: %s\n", ocularGetStatusString(status));
                 return -1;
             }
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+            
             saveImage(out_file, width, height, channels, output);
 
 // Open the output image in the associated application
@@ -177,7 +203,6 @@ int main(int argc, char** argv) {
         system(openCommand);
     #endif
 #endif
-
             free(output);
         }
         free(input);
@@ -187,3 +212,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
