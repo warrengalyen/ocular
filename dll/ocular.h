@@ -231,6 +231,9 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     const char* filename, OcDitherMethod method, int amount);
 
+    DLIB_EXPORT OC_STATUS ocularPalettetizeFromImage(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                                    OcQuantizeMethod method, int maxColors, int amount);
+
     DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
                                              int numLine, float* Radius, float* Theta);
 

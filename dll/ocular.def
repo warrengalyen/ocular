@@ -101,3 +101,4 @@ EXPORTS
     ocularGetStatusString @99
     ocularGetVersion @100
     ocularPalettetizeFromFile @101
+    ocularPalettetizeFromImage @102

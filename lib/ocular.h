@@ -26,6 +26,7 @@ extern "C" {
 #include "interpolate.h"
 #include "palette.h"
 #include "dither.h"
+#include "quanitize.h"
 #include "version.h"
 // #include "fft.h"
 #include <math.h>
@@ -1186,7 +1187,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Reduces the numbers of unique colors in an image using a palette file with optional dithering.
-     * @ingroup group_ip_general
+     * @ingroup group_ip_color
      * @param input The image input data buffer.
      * @param output The image output data buffer.
      * @param width The width of the image in pixels.
@@ -1199,6 +1200,24 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                         const char* filename, OcDitherMethod method, int amount);
+
+    /**
+     * @brief Generates an optimal palette from the image using color quantization applies it with optional dithering.
+     * @ingroup group_ip_color
+     * @param input The image input data buffer.
+     * @param output The image output data buffer.
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param channels The number of color channels in the image.
+     * @param quantizeMethod The quantization method to use. [OC_QUANTIZE_MEDIAN_CUT, OC_QUANTIZE_NEUQUANT]
+     * @param maxColors The maximum number of colors to use in the palette.
+     * @param ditherMethod The dithering method to use. See OcDitherMethod in dither.h.
+     * @param ditherAmount The amount of dithering to apply. Range [0 - 100].
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularPalettetizeFromImage(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                         OcQuantizeMethod quantizeMethod, int maxColors, OcDitherMethod ditherMethod, 
+                                         int ditherAmount);
 
     //------------------------Distort-------------------------
 

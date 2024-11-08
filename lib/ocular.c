@@ -6090,15 +6090,20 @@ extern "C" {
         if (method < OC_DITHER_NONE || method > OC_DITHER_BAYER_8X8) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
+        if (channels != 3 && channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
         amount = clamp(amount, 0, 100);
 
         OcPalette palette;
         OC_STATUS status = ocularLoadPalette(filename, &palette);
         if (status != OC_STATUS_OK) {
+            ocularFreePalette(&palette);
             return status;
         }
 
         if (!applyDithering(input, output, width, height, channels, &palette, method, amount)) {
+            ocularFreePalette(&palette);
             return OC_STATUS_ERR_UNKNOWN;
         }
 
@@ -6106,6 +6111,47 @@ extern "C" {
 
         return OC_STATUS_OK;
     };
+
+    OC_STATUS ocularPalettetizeFromImage(unsigned char* input, unsigned char* output, int width, int height, int channels,
+                                         OcQuantizeMethod quantizeMethod, int maxColors, OcDitherMethod ditherMethod, 
+                                         int ditherAmount) {
+
+        if (input == NULL || output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (width <= 0 || height <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+        if (channels != 3 && channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+        ditherAmount = clamp(ditherAmount, 0, 100);
+        maxColors = clamp(maxColors, 1, 256);
+        
+        OcPalette palette;
+        if (quantizeMethod == OC_QUANTIZE_MEDIAN_CUT) {
+            if (!generateOptimalPaletteMedianCut(input, width, height, channels, maxColors, &palette)) {
+                ocularFreePalette(&palette);
+                return OC_STATUS_ERR_UNKNOWN;
+            }
+        } else if (quantizeMethod == OC_QUANTIZE_OCTREE) {
+            if (!generateOptimalPaletteOctree(input, width, height, channels, maxColors, &palette)) {
+                ocularFreePalette(&palette);
+                return OC_STATUS_ERR_UNKNOWN;
+            }
+        } else {
+            return OC_STATUS_ERR_INVALIDPARAMETER; // must be one of the above
+        }
+
+        if (!applyDithering(input, output, width, height, channels, &palette, ditherMethod, ditherAmount)) {
+            ocularFreePalette(&palette);
+            return OC_STATUS_ERR_UNKNOWN;
+        }
+
+        ocularFreePalette(&palette);
+
+        return OC_STATUS_OK;
+    }
 
     OC_STATUS ocularLoadPalette(const char* filename, OcPalette* palette) {
 
