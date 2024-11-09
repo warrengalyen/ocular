@@ -26,5 +26,6 @@ demo/*_filters.h
 lib/*.txt
 !lib/build_update.sh
 dll/generate_def.bat
-
+lib/ftt*
+lib/neuquant*
 /demo_ui/
