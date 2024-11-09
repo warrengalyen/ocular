@@ -3325,7 +3325,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride, unsigned char* Output,
+    OC_STATUS ocularResamplingFilter(unsigned char* Input, int Width, int Height, unsigned int Stride, unsigned char* Output,
                                 int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode) {
 
         int Channels = Stride / Width;

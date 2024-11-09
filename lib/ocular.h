@@ -1061,7 +1061,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  [OC_INTERPOLATION_NEAREST_NEIGHBOR, OC_INTERPOLATION_BILINEAR, OC_INTERPOLATION_BICUBIC, OC_INTERPOLATION_LANCZOS]
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularResamplingFilter(unsigned char* Input, unsigned int Width, unsigned int Height, unsigned int Stride,
+    OC_STATUS ocularResamplingFilter(unsigned char* Input, int Width, int Height, unsigned int Stride,
                                     unsigned char* Output, int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
 
     /**
@@ -1187,13 +1187,13 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Reduces the numbers of unique colors in an image using a palette file with optional dithering.
-     * @ingroup group_ip_color
+     * @ingroup group_color_filters
      * @param input The image input data buffer.
      * @param output The image output data buffer.
      * @param width The width of the image in pixels.
      * @param height The height of the image in pixels.
      * @param channels The number of color channels in the image.
-     * @param filename The path to the palette file. 
+     * @param filename The path to the palette file.
      * @param method The dithering method to use. See OcDitherMethod in dither.h.
      * @param amount The amount of dithering to apply. Range [0 - 100].
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
@@ -1202,8 +1202,9 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                         const char* filename, OcDitherMethod method, int amount);
 
     /**
-     * @brief Generates an optimal palette from the image using color quantization applies it with optional dithering.
-     * @ingroup group_ip_color
+     * @brief Generates and applies an optimal palette from the image with a maximum number of unique colors using color 
+     * quantization and optional dithering.
+     * @ingroup group_color_filters
      * @param input The image input data buffer.
      * @param output The image output data buffer.
      * @param width The width of the image in pixels.

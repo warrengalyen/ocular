@@ -32,6 +32,10 @@
  @ref page_examples_frosted_glass "Frosted Glass"
 
  @ref page_examples_motion_blur "Motion Blur"
+
+ @ref page_examples_palettize_file "Palettize From File"
+
+ @ref page_examples_palettize_image "Palettize From Image"
     
  @ref page_examples_retinex "Retinex"
 

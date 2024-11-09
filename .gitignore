@@ -22,10 +22,13 @@ Makefile
 /docs/*.pdi
 /test_images/
 /demo_gui/
-demo/*_filters.h
 lib/*.txt
 !lib/build_update.sh
 dll/generate_def.bat
-lib/ftt*
+demo/*_filters.h
+lib/fft*
 lib/neuquant*
+demo/similarity*
+demo/seam_carve*
 /demo_ui/
+
