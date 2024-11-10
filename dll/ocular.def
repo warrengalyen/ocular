@@ -103,3 +103,4 @@ EXPORTS
     ocularPalettetizeFromFile @101
     ocularPalettetizeFromImage @102
     ocularColorBalance @103
+    ocularFilmGrainEffect @104

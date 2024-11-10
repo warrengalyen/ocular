@@ -6078,6 +6078,67 @@ extern "C" {
         }
     }
 
+    OC_STATUS ocularFilmGrainEffect(unsigned char* input, unsigned char* output, int width, int height, int channels, 
+                            float strength, float softness) {
+
+        if (input == NULL || output == NULL) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (width <= 0 || height <= 0 || channels <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
+        // Clamp filter specific parameters to valid ranges
+        strength = clamp(strength, 0.0f, 100.0f) * 0.5f; // Reduced strength impact
+        softness = clamp(softness, 0.0f, 25.0f);
+
+        // Pre-calculate noise values for better performance
+        float* noiseValues = (float*)malloc(width * height * sizeof(float));
+        for (int i = 0; i < width * height; i++) {
+            noiseValues[i] = (float)(rand() % 256) / 255.0f;
+        }
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float noise = noiseValues[y * width + x];
+
+                // Apply softness by averaging with neighboring noise (only if needed)
+                if (softness > 0) {
+                    float blur = 0;
+                    int samples = 0;
+                    int radius = (int)(softness / 4); // Reduced radius for better performance
+
+                    for (int dy = -radius; dy <= radius; dy += 2) { // Skip pixels for speed
+                        for (int dx = -radius; dx <= radius; dx += 2) {
+                            int nx = x + dx;
+                            int ny = y + dy;
+
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                blur += noiseValues[ny * width + nx];
+                                samples++;
+                            }
+                        }
+                    }
+                    noise = (noise + (blur / samples)) / 2.0f;
+                }
+
+                // Center the noise around 0 for neutral brightness
+                float grainOffset = (noise - 0.5f) * (strength / 100.0f);
+
+                // Apply to all channels
+                int baseIdx = (y * width + x) * channels;
+                for (int c = 0; c < channels; c++) {
+                    float pixel = input[baseIdx + c];
+                    // Add noise while preserving original brightness
+                    pixel += grainOffset * 255.0f;
+                    output[baseIdx + c] = (unsigned char)fmax(0, fmin(255, pixel));
+                }
+            }
+        }
+
+        free(noiseValues);
+    }
+
     OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                         const char* filename, OcDitherMethod method, int amount) {
 

@@ -228,6 +228,8 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
 
+    DLIB_EXPORT OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float Strength, float Softness);
+
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     const char* filename, OcDitherMethod method, int amount);
 

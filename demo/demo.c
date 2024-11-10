@@ -23,6 +23,9 @@
 #if __has_include("test_filters.h")
     // #include "test_filters.h"
 #endif
+#if __has_include("todo_filters.h")
+    #include "todo_filters.h"
+#endif
 
 #define AUTO_OPEN_OUTPUT_IMAGE // comment out to disable
 
@@ -125,6 +128,8 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
                            (int)config.params[3].value.float_val, config.params[4].value.bool_val);
     } else if (strcmp(config.function, "ocularBilateralFilter") == 0) {
         ocularBilateralFilter(input, output, width, height, stride, config.params[0].value.float_val, config.params[1].value.float_val);
+    } else if (strcmp(config.function, "ocularFilmGrainEffect") == 0) {
+        ocularFilmGrainEffect(input, output, width, height, *channels, config.params[0].value.float_val, config.params[1].value.float_val);
     } else {
         return -1;
     }

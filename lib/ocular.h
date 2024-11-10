@@ -1183,7 +1183,23 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * making the image more distorted. Range [1 - 20]
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      * */
-    OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, int Range);
+    OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                       int Radius, int Range);
+
+    /**
+     * @brief Applies a film grain effect to an image.
+     * @ingroup group_ip_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Channels The number of color channels in the image.
+     * @param Strength The intensity of the grain. Range [0 - 100].
+     * @param Softness The softness of the grain. Range [0 - 25].
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, 
+                                   float Strength, float Softness);
 
     /**
      * @brief Reduces the numbers of unique colors in an image using a palette file with optional dithering.

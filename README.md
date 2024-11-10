@@ -100,6 +100,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Pixelate (Mosaic)
 - Oil Paint
 - Frosted Glass
+- Film Grain
 
 #### OCR Pre-preprocessing
 
