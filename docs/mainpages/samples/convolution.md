@@ -8,7 +8,30 @@
 #include "stb_image/stb_image.h"  
 #define STB_IMAGE_WRITE_IMPLEMENTATION  
 #include "stb_image/stb_image_write.h"  
-  
+
+// automatically normalize the divisor and bias using the kernel and kernel width  
+void normalizeDivBias(float* kernel, int size, int* divisor, float* bias) {
+
+    float sum = 0;
+
+    // get size of kernel
+    size = size * size;
+    for (int i = 0; i < size; i++) {
+        sum += kernel[i];
+    }
+
+    if (sum == 0) {
+        *divisor = 1;
+        *bias = 127;
+    } else if (sum > 0) {
+        *divisor = sum;
+        *bias = 0;
+    } else {
+        *divisor = fabs(sum);
+        *bias = 255;
+    }
+}
+
 int main(void) {  
     int width, height, channels;  
     unsigned char* inputImage = stbi_load("test.jpg", &width, &height, &channels, 0);  
@@ -20,14 +43,18 @@ int main(void) {
 
             OC_STATUS status;
   
-            int Blurfilter[25] = {  
+            float Blurfilter[25] = {  
                 0, 0, 1, 0, 0, 
                 0, 1, 1, 1, 0,
                 1, 1, 1, 1, 1,
                 0, 1, 1, 1, 0,
                 0, 0, 1, 0, 0,  
-            };  
-            ocularConvolution2DFilter(inputImage, outputImage, width, height, channels, Blurfilter, 5, 13, 0);  
+            };
+            int divisor = 0;
+            float bias = 0;
+                
+            normalizeDivBias(Blurfilter, 5, &divisor, &bias);  
+            ocularConvolution2DFilter(inputImage, outputImage, width, height, channels, Blurfilter, 5, divisor, bias);  
   
             float MotionBlurfilter[81] = { 
                     1, 0, 0, 0, 0, 0, 0, 0, 0,
