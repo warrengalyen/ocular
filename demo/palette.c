@@ -15,51 +15,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include "util.h"
 
 #if defined(_WIN32) || defined(_WIN64)
     #define getcwd _getcwd
 #else 
     #include <unistd.h>
 #endif
-
-void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
-    const char* end;
-    const char* p;
-    const char* s;
-    if (path[0] && path[1] == ':') {
-        if (drv) {
-            *drv++ = *path++;
-            *drv++ = *path++;
-            *drv = '\0';
-        }
-    } else if (drv)
-        *drv = '\0';
-    for (end = path; *end && *end != ':';)
-        end++;
-    for (p = end; p > path && *--p != '\\' && *p != '/';)
-        if (*p == '.') {
-            end = p;
-            break;
-        }
-    if (ext)
-        for (s = end; (*ext = *s++);)
-            ext++;
-    for (p = end; p > path;)
-        if (*--p == '\\' || *p == '/') {
-            p++;
-            break;
-        }
-    if (name) {
-        for (s = p; s < end;)
-            *name++ = *s++;
-        *name = '\0';
-    }
-    if (dir) {
-        for (s = path; s < p;)
-            *dir++ = *s++;
-        *dir = '\0';
-    }
-}
 
 void render_palette_colors(const OcPalette* palette) {
 

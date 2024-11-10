@@ -673,7 +673,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param preserveLuminosity Prevents changing the luminosity values in the image while changing the color.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+    OC_STATUS ocularColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
                            int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
 
     /**

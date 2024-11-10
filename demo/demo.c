@@ -8,6 +8,8 @@
 
 #endif
 
+#include "util.h"
+#include "config.h"
 #include "../lib/ocular.h"
 #include "../lib/dither.h"
 
@@ -31,7 +33,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-// #include <float.h>
+
+#ifdef _WIN32
+    #include <stdlib.h>
+    #define realpath(N, R) _fullpath((R), (N), _MAX_PATH)
+#endif
+
 
 #if defined(AUTO_OPEN_OUTPUT_IMAGE)
     #if defined(_WIN32) || defined(_WIN64)
@@ -41,22 +48,7 @@
     #endif
 #endif
 
-static const char* calculateSize(uint64_t bytes) {
-    char* suffix[] = { "B", "KB", "MB", "GB", "TB" };
-    char length = sizeof(suffix) / sizeof(suffix[0]);
 
-    int i = 0;
-    double dblBytes = bytes;
-
-    if (bytes > 1024) {
-        for (i = 0; (bytes / 1024) > 0 && i < length - 1; i++, bytes /= 1024)
-            dblBytes = bytes / 1024.0;
-    }
-
-    static char output[200];
-    sprintf(output, "%.02lf %s", dblBytes, suffix[i]);
-    return output;
-}
 
 char saveFile[1024];
 
@@ -73,46 +65,72 @@ void saveImage(const char* filename, int32_t Width, int32_t Height, int32_t Chan
     }
 }
 
-void splitpath(const char* path, char* drv, char* dir, char* name, char* ext) {
-    const char* end;
-    const char* p;
-    const char* s;
-    if (path[0] && path[1] == ':') {
-        if (drv) {
-            *drv++ = *path++;
-            *drv++ = *path++;
-            *drv = '\0';
-        }
-    } else if (drv)
-        *drv = '\0';
-    for (end = path; *end && *end != ':';)
-        end++;
-    for (p = end; p > path && *--p != '\\' && *p != '/';)
-        if (*p == '.') {
-            end = p;
-            break;
-        }
-    if (ext)
-        for (s = end; (*ext = *s++);)
-            ext++;
-    for (p = end; p > path;)
-        if (*--p == '\\' || *p == '/') {
-            p++;
-            break;
-        }
-    if (name) {
-        for (s = p; s < end;)
-            *name++ = *s++;
-        *name = '\0';
+void openOutputImage(const char* outputFile) {
+#if defined(AUTO_OPEN_OUTPUT_IMAGE)
+    #if defined(_WIN32) || defined(_WIN64)
+    char currentPath[1024];
+    if (getcwd(currentPath, sizeof(currentPath)) != NULL) {
+        char fullPath[2048];
+        sprintf(fullPath, "%s\\%s", currentPath, outputFile);
+        ShellExecute(0, 0, fullPath, 0, 0, SW_SHOW);
     }
-    if (dir) {
-        for (s = path; s < p;)
-            *dir++ = *s++;
-        *dir = '\0';
-    }
+    #elif defined(__APPLE__)
+    char openCommand[1024];
+    sprintf(openCommand, "open %s", outputFile);
+    system(openCommand);
+    #elif defined(__linux__)
+    char openCommand[1024];
+    sprintf(openCommand, "xdg-open %s", outputFile);
+    system(openCommand);
+    #endif
+#endif
 }
 
+char* getFullPathFromSymlink(const char* filename) {
+    static char fullPath[1024]; // Static to return the address
+    if (realpath(filename, fullPath) == NULL) {
+        fprintf(stderr, "Error resolving symlink for: %s\n", filename);
+        return NULL;
+    }
+    return fullPath;
+}
 
+int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned char *output, int width, int height, 
+                            int *channels, int stride) {
+
+    if (!configFile) {
+        fprintf(stderr, "Config file provided is invalid.\n");
+        return -1;
+    }
+
+    Config config;
+    parseConfigFile(configFile, &config);
+
+    if (strcmp(config.function, "ocularMotionBlurFilter") == 0) {
+        ocularMotionBlurFilter(input, output, width, height, stride, (int)config.params[0].value.float_val, (int)config.params[1].value.float_val);
+    } else if (strcmp(config.function, "ocularZoomBlurFilter") == 0) {
+        ocularZoomBlur(input, output, width, height, stride, (int)config.params[0].value.float_val, config.params[1].value.float_val, width / 2, height / 2);
+    } else if (strcmp(config.function, "ocularSurfaceBlurFilter") == 0) {
+        ocularSurfaceBlurFilter(input, output, width, height, stride, (int)config.params[0].value.float_val, (int)config.params[1].value.float_val);
+    } else if (strcmp(config.function, "ocularBacklightRepair") == 0) {
+        ocularBacklightRepair(input, output, width, height, stride);
+    } else if (strcmp(config.function, "ocularCannyEdgeDetect") == 0) {
+        ocularGrayscaleFilter(input, input, width, height, stride);
+        *channels = 1;
+        ocularCannyEdgeDetect(input, output, width, height, *channels, (int)config.params[0].value.float_val,
+                              (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularColorBalance") == 0) {
+        ocularColorBalance(input, output, width, height, stride, (int)config.params[0].value.float_val, 
+                           (int)config.params[1].value.float_val, (int)config.params[2].value.float_val,
+                           (int)config.params[3].value.float_val, config.params[4].value.bool_val);
+    } else if (strcmp(config.function, "ocularBilateralFilter") == 0) {
+        ocularBilateralFilter(input, output, width, height, stride, config.params[0].value.float_val, config.params[1].value.float_val);
+    } else {
+        return -1;
+    }
+
+    return 0;
+}
 
 int main(int argc, char** argv) {
 
@@ -126,6 +144,7 @@ int main(int argc, char** argv) {
         getchar();
         return 0;
     }
+
     char* in_file = argv[1];
     if (access(in_file, 0) == -1) {
         printf("load file: %s fail!\n", in_file);
@@ -150,59 +169,43 @@ int main(int argc, char** argv) {
         // Make sure we allocate enough memory for the output
         unsigned char* output = (unsigned char*)malloc(width * height * channels);
         if (output) {
-            double startTime = now();
-            printf("Processing image...\n");
 
+            if (argc == 2) {
+                double startTime = now();
+                printf("Processing image...\n");
 
-            // Load the palette
-            char palettePath[1024];
-            char workingDir[1024];
-            
-            // Add error checking for getcwd
-            if (getcwd(workingDir, sizeof(workingDir)) == NULL) {
-                fprintf(stderr, "Error getting current working directory\n");
-                return -1;
+                // call filter here..
+
+                double elapsed = calcElapsed(startTime, now());
+                printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+
+                saveImage(out_file, width, height, channels, output);
+
+                // Open the output image in the associated application if enabled
+                openOutputImage(out_file);
+            } else if (argc > 2) {
+                char* configFile = NULL;
+                configFile = getFullPathFromSymlink(argv[2]);
+                if (access(configFile, F_OK) == 0) {
+                    double startTime = now();
+                    printf("Processing image...\n");
+
+                    if (applyFilterFromConfig(configFile, input, output, width, height, &channels, stride) != -1) {
+                        double elapsed = calcElapsed(startTime, now());
+                        printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+
+                        saveImage(out_file, width, height, channels, output);
+
+                        // Open the output image in the associated application if enabled
+                        openOutputImage(out_file);
+                    } else {
+                        printf("error applying filter from config file: %s\n", configFile);
+                    }
+                } else {
+                    printf("config file not found: %s\n", configFile);
+                }
             }
 
-            // Check if the directory exists before trying to load
-            sprintf(palettePath, "%s\\bin\\palettes\\gimp\\crayola-1958.gpl", workingDir);
-            if (access(palettePath, F_OK) == -1) {
-                fprintf(stderr, "Palette file not found at: %s\n", palettePath);
-                return -1;
-            }
-
-            // OC_STATUS status = ocularPalettetizeFromFile(input, output, width, height, channels, palettePath, OC_DITHER_FLOYD_STEINBERG, 50);
-            OC_STATUS status =
-                    ocularPalettetizeFromImage(input, output, width, height, channels, OC_QUANTIZE_OCTREE, 25, OC_DITHER_FLOYD_STEINBERG, 50);
-            if (status != OC_STATUS_OK) {
-                fprintf(stderr, "Error palettetizing image: %s\n", ocularGetStatusString(status));
-                return -1;
-            }
-
-            double elapsed = calcElapsed(startTime, now());
-            printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
-            
-            saveImage(out_file, width, height, channels, output);
-
-// Open the output image in the associated application
-#if defined(AUTO_OPEN_OUTPUT_IMAGE)
-    #if defined(_WIN32) || defined(_WIN64)
-        char currentPath[1024];
-        if (getcwd(currentPath, sizeof(currentPath)) != NULL) {
-            char fullPath[2048];
-            sprintf(fullPath, "%s\\%s", currentPath, out_file);
-            ShellExecute(0, 0, fullPath, 0, 0, SW_SHOW);
-        }
-    #elif defined(__APPLE__)
-        char openCommand[1024];
-        sprintf(openCommand, "open %s", out_file);
-        system(openCommand);
-    #elif defined(__linux__)
-        char openCommand[1024];
-        sprintf(openCommand, "xdg-open %s", out_file);
-        system(openCommand);
-    #endif
-#endif
             free(output);
         }
         free(input);
@@ -212,4 +215,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
