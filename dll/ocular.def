@@ -102,3 +102,4 @@ EXPORTS
     ocularGetVersion @100
     ocularPalettetizeFromFile @101
     ocularPalettetizeFromImage @102
+    ocularColorBalance @103

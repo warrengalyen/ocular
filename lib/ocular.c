@@ -4067,8 +4067,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
-                           int greenBalance, int blueBalance, OcToneBalanceMode mode, bool preserveLuminosity) {
+    OC_STATUS ocularColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
+                                 int greenBalance, int blueBalance, OcToneBalanceMode mode, bool preserveLuminosity) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;

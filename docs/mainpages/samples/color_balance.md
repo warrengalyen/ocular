@@ -24,9 +24,9 @@ int main(void) {
             OcToneBalanceMode mode = SHADOWS; // [SHADOWS, MIDTONES, HIGHLIGHTS]
             bool preserveLuminosity = true;
             
-            OC_STATUS status = applyColorBalance(input, output, width, height, stride,
-                                                redBalance, greenBalance, blueBalance,
-                                                mode, preserveLuminosity);
+            OC_STATUS status = ocularColorBalance(input, output, width, height, stride,
+                                                  redBalance, greenBalance, blueBalance,
+                                                  mode, preserveLuminosity);
             if (status == OC_STATUS_OK) {
                 stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
             }

@@ -146,7 +146,7 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth,
                                            int mHeight, int mStride, OcBlendMode blendMode, int alpha);
 
-    DLIB_EXPORT OC_STATUS applyColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+    DLIB_EXPORT OC_STATUS ocularColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                             int redBalance, int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
 
     DLIB_EXPORT OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
