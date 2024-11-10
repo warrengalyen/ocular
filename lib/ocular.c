@@ -4969,8 +4969,8 @@ extern "C" {
         return has_image_size;
     }
 
-    OC_STATUS ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, 
-                                        float* kernel, unsigned char filterW, unsigned char cfactor, unsigned char bias) {
+    OC_STATUS ocularConvolution2DFilter(unsigned char* input, unsigned char* output, int width, int height, int channels, float* kernel,
+                                        unsigned char filterW, unsigned char cfactor, unsigned char bias) {
 
         if (input == NULL || output == NULL || kernel == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -4979,59 +4979,131 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 
+        // Ensure kernel size is odd
+        if (filterW % 2 == 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
         // Ensure filter specific parameters are within valid ranges
-        filterW = min(filterW, 3); // we should be using at least 3x3
+        filterW = max(filterW, 3); // we should be using at least 3x3
         cfactor = clamp(cfactor, 1, 255);
         bias = clamp(bias, 0, 255);
 
-        int factor = 256 / cfactor;
-        int halfW = (filterW - 1) / 2;
+        const int factor = 256 / cfactor;
+        const int halfW = (filterW - 1) / 2;
+        const int CHUNK_SIZE = 32; // Process image in chunks for better cache utilization
+
+        // Pre-calculate kernel lookup table
+        float* kernelLUT = (float*)malloc(filterW * filterW * sizeof(float));
+        if (!kernelLUT)
+            return OC_STATUS_ERR_OUTOFMEMORY;
+
+        // Flatten and pre-multiply kernel values
+        for (int i = 0; i < filterW * filterW; i++) {
+            kernelLUT[i] = kernel[i] * factor;
+        }
+
         if (channels == 3 || channels == 4) {
-            for (int y = 0; y < height; y++) {
-                int y1 = y - halfW + height;
-                for (int x = 0; x < width; x++) {
-                    int x1 = x - halfW + width;
-                    int r = 0;
-                    int g = 0;
-                    int b = 0;
-                    unsigned int p = (y * width + x) * channels;
-                    for (unsigned int fx = 0; fx < filterW; fx++) {
-                        int dx = (x1 + fx) % width;
-                        int fidx = fx * (filterW);
-                        for (unsigned int fy = 0; fy < filterW; fy++) {
-                            int pos = (((y1 + fy) % height) * width + dx) * channels;
-                            float* pKernel = &kernel[fidx + (fy)];
-                            r += input[pos] * (*pKernel);
-                            g += input[pos + 1] * (*pKernel);
-                            b += input[pos + 2] * (*pKernel);
+            // Process image in chunks
+            for (int blockY = 0; blockY < height; blockY += CHUNK_SIZE) {
+                for (int blockX = 0; blockX < width; blockX += CHUNK_SIZE) {
+                    int endY = min(blockY + CHUNK_SIZE, height);
+                    int endX = min(blockX + CHUNK_SIZE, width);
+
+                    for (int y = blockY; y < endY; y++) {
+                        unsigned char* outRow = output + (y * width + blockX) * channels;
+
+                        for (int x = blockX; x < endX; x++) {
+                            float sumR = 0, sumG = 0, sumB = 0;
+
+                            // Unroll the kernel loops for common 3x3 case
+                            if (filterW == 3) {
+                                for (int ky = -1; ky <= 1; ky++) {
+                                    int sy = (y + ky + height) % height;
+                                    const unsigned char* inRow = input + (sy * width) * channels;
+
+                                    for (int kx = -1; kx <= 1; kx++) {
+                                        int sx = (x + kx + width) % width;
+                                        const unsigned char* pixel = inRow + sx * channels;
+                                        float k = kernelLUT[(ky + 1) * 3 + (kx + 1)];
+
+                                        sumR += pixel[0] * k;
+                                        sumG += pixel[1] * k;
+                                        sumB += pixel[2] * k;
+                                    }
+                                }
+                            } else {
+                                // other kernel sizes
+                                for (int ky = -halfW; ky <= halfW; ky++) {
+                                    int sy = (y + ky + height) % height;
+                                    const unsigned char* inRow = input + (sy * width) * channels;
+
+                                    for (int kx = -halfW; kx <= halfW; kx++) {
+                                        int sx = (x + kx + width) % width;
+                                        const unsigned char* pixel = inRow + sx * channels;
+                                        float k = kernelLUT[(ky + halfW) * filterW + (kx + halfW)];
+
+                                        sumR += pixel[0] * k;
+                                        sumG += pixel[1] * k;
+                                        sumB += pixel[2] * k;
+                                    }
+                                }
+                            }
+
+                            // Write results with bias
+                            outRow[0] = ClampToByte((int)(sumR / 256) + bias);
+                            outRow[1] = ClampToByte((int)(sumG / 256) + bias);
+                            outRow[2] = ClampToByte((int)(sumB / 256) + bias);
+                            if (channels == 4) {
+                                outRow[3] = input[(y * width + x) * channels + 3]; // Preserve alpha
+                            }
+                            outRow += channels;
                         }
                     }
-                    output[p] = ClampToByte(((factor * r) >> 8) + bias);
-                    output[p + 1] = ClampToByte(((factor * g) >> 8) + bias);
-                    output[p + 2] = ClampToByte(((factor * b) >> 8) + bias);
                 }
             }
         } else if (channels == 1) {
-            for (int y = 0; y < height; y++) {
-                int y1 = y - halfW + height;
-                for (int x = 0; x < width; x++) {
-                    int r = 0;
-                    unsigned int p = (y * width + x);
-                    int x1 = x - halfW + width;
-                    for (unsigned int fx = 0; fx < filterW; fx++) {
-                        int dx = (x1 + fx) % width;
-                        int fidx = fx * (filterW);
-                        for (unsigned int fy = 0; fy < filterW; fy++) {
-                            int pos = (((y1 + fy) % height) * width + dx);
-                            float szKernel = kernel[fidx + (fy)];
-                            r += input[pos] * szKernel;
+            for (int blockY = 0; blockY < height; blockY += CHUNK_SIZE) {
+                for (int blockX = 0; blockX < width; blockX += CHUNK_SIZE) {
+                    int endY = min(blockY + CHUNK_SIZE, height);
+                    int endX = min(blockX + CHUNK_SIZE, width);
+
+                    for (int y = blockY; y < endY; y++) {
+                        unsigned char* outRow = output + y * width + blockX;
+
+                        for (int x = blockX; x < endX; x++) {
+                            float sum = 0;
+
+                            if (filterW == 3) {
+                                for (int ky = -1; ky <= 1; ky++) {
+                                    int sy = (y + ky + height) % height;
+                                    const unsigned char* inRow = input + sy * width;
+
+                                    for (int kx = -1; kx <= 1; kx++) {
+                                        int sx = (x + kx + width) % width;
+                                        sum += inRow[sx] * kernelLUT[(ky + 1) * 3 + (kx + 1)];
+                                    }
+                                }
+                            } else {
+                                for (int ky = -halfW; ky <= halfW; ky++) {
+                                    int sy = (y + ky + height) % height;
+                                    const unsigned char* inRow = input + sy * width;
+
+                                    for (int kx = -halfW; kx <= halfW; kx++) {
+                                        int sx = (x + kx + width) % width;
+                                        sum += inRow[sx] * kernelLUT[(ky + halfW) * filterW + (kx + halfW)];
+                                    }
+                                }
+                            }
+
+                            *outRow++ = ClampToByte((int)(sum / 256) + bias);
                         }
                     }
-                    output[p] = ClampToByte(((factor * r) >> 8) + bias);
                 }
             }
         }
 
+        free(kernelLUT);
         return OC_STATUS_OK;
     }
 

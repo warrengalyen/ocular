@@ -1194,8 +1194,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Width The width of the image in pixels.
      * @param Height The height of the image in pixels.
      * @param Channels The number of color channels in the image.
-     * @param Strength The intensity of the grain. Range [0 - 100].
-     * @param Softness The softness of the grain. Range [0 - 25].
+     * @param Strength The intensity of the grain. Range [0.0 - 100.0].
+     * @param Softness The softness of the grain. Range [0.0 - 25.0].
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, 
