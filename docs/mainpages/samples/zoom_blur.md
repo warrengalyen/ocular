@@ -37,11 +37,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="zoom_blur.jpg"/>
+        <img src="images/zoom_blur.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="zoom_blur_out.jpg" alt=""/>
+        <img src="images/zoom_blur_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

@@ -43,11 +43,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="awb.jpg"/>
+        <img src="images/awb.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="awb_out.jpg" alt=""/>
+        <img src="images/awb_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

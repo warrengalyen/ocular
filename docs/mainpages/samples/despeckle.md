@@ -35,11 +35,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="despeckle.jpg"/>
+        <img src="images/despeckle.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="despeckle_out.jpg" alt=""/>
+        <img src="images/despeckle_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

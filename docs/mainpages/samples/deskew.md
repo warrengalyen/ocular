@@ -37,11 +37,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="deskew.jpg"/>
+        <img src="images/deskew.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="deskew_out.jpg" alt=""/>
+        <img src="images/deskew_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

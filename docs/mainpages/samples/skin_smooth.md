@@ -35,11 +35,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="skin_smooth.jpg"/>
+        <img src="images/skin_smooth.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="skin_smooth_out.jpg" alt=""/>
+        <img src="images/skin_smooth_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

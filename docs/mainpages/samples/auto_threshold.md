@@ -41,11 +41,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="auto_threshold.jpg"/>
+        <img src="images/auto_threshold.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="auto_threshold_out.jpg" alt=""/>
+        <img src="images/auto_threshold_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

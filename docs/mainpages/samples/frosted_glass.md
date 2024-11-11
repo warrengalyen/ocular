@@ -36,11 +36,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="frosted_glass.jpg"/>
+        <img src="images/frosted_glass.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="frosted_glass_out.jpg" alt=""/>
+        <img src="images/frosted_glass_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>

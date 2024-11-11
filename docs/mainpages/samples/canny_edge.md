@@ -44,11 +44,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="canny_edge.jpg"/>
+        <img src="images/canny_edge.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="canny_edge_out.jpg" alt=""/>
+        <img src="images/canny_edge_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>
