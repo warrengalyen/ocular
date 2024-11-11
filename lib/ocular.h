@@ -1072,16 +1072,15 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Height The height of the image in pixels.
      * @param Stride The number of bytes in one row of pixels.
      * @param Output The image output data buffer.
-     * @param outWidth The width of the output image in pixels.
-     * @param outHeight The height of the output image in pixels.
      * @param angle The angle to rotate in degrees. Range [0 - 359].
+     * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
      * @param fillColorR The blue channel value to use for filling non-image area.
      * @param fillColorG The blue channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area. This is used if the numbers of channels is 1.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int outWidth,
-                                int outHeight, float angle, bool keepSize, int fillColorR, int fillColorG, int fillColorB);
+    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
+                                    float angle, bool useTransparency, int fillColorR, int fillColorG, int fillColorB);
 
     /** @brief Outputs only a selected portion of an image.
      *  @ingroup group_ip_general
