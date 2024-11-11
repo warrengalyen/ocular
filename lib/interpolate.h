@@ -13,6 +13,17 @@
 
 #include "util.h"
 
+
+static inline int mirrorCoord(int coord, int size) {
+    if (coord < 0) {
+        return -coord;
+    }
+    if (coord >= size) {
+        return 2 * size - coord - 2;
+    }
+    return coord;
+}
+
 // Nearest-neighbor interpolation function
 static void nearestNeighborResize(unsigned char* Src, unsigned char* Dest, int srcWidth, int srcHeight, int dstWidth, int dstHeight, int Channels) {
     float xRatio = (float)srcWidth / dstWidth;

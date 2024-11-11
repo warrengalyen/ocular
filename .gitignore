@@ -30,5 +30,7 @@ lib/fft*
 lib/neuquant*
 demo/similarity*
 demo/seam_carve*
+demo/*.txt
 /demo_ui/
+
 

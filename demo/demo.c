@@ -3,9 +3,7 @@
     #include <windows.h>
     #define access _access
 #else
-
     #include <unistd.h>
-
 #endif
 
 #include "util.h"
@@ -52,19 +50,32 @@
 #endif
 
 
-
 char saveFile[1024];
 
 uint8_t* loadImage(const char* filename, int32_t* Width, int32_t* Height, int32_t* Channels) {
     return stbi_load(filename, Width, Height, Channels, 0);
 }
 
-void saveImage(const char* filename, int32_t Width, int32_t Height, int32_t Channels, uint8_t* Output) {
-    if (!stbi_write_jpg(filename, Width, Height, Channels, Output, 100)) {
-        fprintf(stderr, "save file fail.\n");
+void saveImage(const char* filename, int32_t Width, int32_t Height, int32_t Channels, uint8_t* Output, bool usePNG) {
+    
+    if (!usePNG) {
+        // ignore alpha channel if it exists (not supported by JPEG)
+        if (Channels > 3) {
+            Channels = 3;
+        }
+        if (!stbi_write_jpg(filename, Width, Height, Channels, Output, 100)) {
+            fprintf(stderr, "save file fail.\n");
         return;
+        } else {
+            printf("file saved to: %s\n", filename);
+        }
     } else {
-        printf("file saved to: %s\n", filename);
+        if (!stbi_write_png(filename, Width, Height, Channels, Output, Width * Channels)) {
+            fprintf(stderr, "save file fail.\n");
+            return;
+        } else {
+            printf("file saved to: %s\n", filename);
+        }
     }
 }
 
@@ -171,24 +182,64 @@ int main(int argc, char** argv) {
     int stride = width * channels;
 
     if (input) {
-        // Make sure we allocate enough memory for the output
-        unsigned char* output = (unsigned char*)malloc(width * height * channels);
-        if (output) {
+        if (argc == 2) {
+            double startTime = now();
+            printf("Processing image...\n");
 
-            if (argc == 2) {
-                double startTime = now();
-                printf("Processing image...\n");
+            // call filter here..
+            unsigned char fillColorR = 237;
+            unsigned char fillColorG = 29;
+            unsigned char fillColorB = 36;
+            float angle = 45.0f;
 
-                // call filter here..
+            // Calculate new dimensions if needed
+            int newWidth, newHeight;
+            bool keepSize = false; // set to true to keep the original dimensions while cropping corners
+            bool useTransparency = false;
+            if (!keepSize) {
+                float angleRad = fabs(angle * M_PI / 180.0f);
+                newWidth = (int)(width * fabs(cos(angleRad)) + height * fabs(sin(angleRad)));
+                newHeight = (int)(width * fabs(sin(angleRad)) + height * fabs(cos(angleRad)));
+            } else {
+                newWidth = width;
+                newHeight = height;
+            }
 
-                double elapsed = calcElapsed(startTime, now());
-                printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+            // allocate output buffer
+            unsigned char* output = NULL;
+            if (useTransparency) {
+                output = (unsigned char*)malloc(newWidth * newHeight * 4);
+                channels = 4;
+            } else {
+                output = (unsigned char*)malloc(newWidth * newHeight * channels);
+            }
+            if (output == NULL) {
+                printf("memory allocation failed.\n");
+                return -1;
+            }
 
-                saveImage(out_file, width, height, channels, output);
+            ocularRotateBilinear(input, width, height, stride, output, newWidth, newHeight, angle,
+                                 useTransparency, fillColorR, fillColorG, fillColorB);
 
-                // Open the output image in the associated application if enabled
-                openOutputImage(out_file);
-            } else if (argc > 2) {
+            double elapsed = calcElapsed(startTime, now());
+            printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+
+            if (useTransparency) {  
+                sprintf(out_file, "%s%s%s_out.png", drive, dir, fname);
+            } else {
+                sprintf(out_file, "%s%s%s_out.jpg", drive, dir, fname);
+            }
+            saveImage(out_file, newWidth, newHeight, channels, output, useTransparency);
+
+            free(output);
+
+            // Open the output image in the associated application if enabled
+            openOutputImage(out_file);
+        } else if (argc > 2) {
+
+            // Make sure we allocate enough memory for the output
+            unsigned char* output = (unsigned char*)malloc(width * height * channels);
+            if (output) {
                 char* configFile = NULL;
                 configFile = getFullPathFromSymlink(argv[2]);
                 if (access(configFile, F_OK) == 0) {
@@ -199,7 +250,7 @@ int main(int argc, char** argv) {
                         double elapsed = calcElapsed(startTime, now());
                         printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
 
-                        saveImage(out_file, width, height, channels, output);
+                        saveImage(out_file, width, height, channels, output, false);
 
                         // Open the output image in the associated application if enabled
                         openOutputImage(out_file);

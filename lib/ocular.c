@@ -3351,9 +3351,9 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                    int newWidth, int newHeight, float angle, bool useTransparency, int fillColorR, 
-                                    int fillColorG, int fillColorB) {
+
+    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int newWidth, int newHeight,
+                                   float angle, bool useTransparency, unsigned char fillColorR, unsigned char fillColorG, unsigned char fillColorB) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3366,9 +3366,9 @@ extern "C" {
 
         // Ensure filter specific parameters are within valid ranges
         angle = clamp(angle, -360.0f, 360.0f);
-        fillColorR = clamp(fillColorR, 0, 255);
-        fillColorG = clamp(fillColorG, 0, 255);
-        fillColorB = clamp(fillColorB, 0, 255);
+        fillColorR = ClampToByte(fillColorR);
+        fillColorG = ClampToByte(fillColorG);
+        fillColorB = ClampToByte(fillColorB);
 
         float oldXradius = (float)(Width - 1) / 2;
         float oldYradius = (float)(Height - 1) / 2;
@@ -3384,12 +3384,15 @@ extern "C" {
         int dstOffset = newWidth * Channels - newWidth * Channels;
 
         // Set up fill colors based on number of channels and transparency setting
-        unsigned char fillColors[4] = {
-            fillColorR,                              // R or Gray
-            Channels >= 3 ? fillColorG : fillColorR, // G or Gray
-            Channels >= 3 ? fillColorB : fillColorR, // B or Gray
-            useTransparency ? 0 : 255                // A (transparent if useTransparency is true)
-        };
+        unsigned char fillColors[4];
+        if (Channels == 1) {
+            fillColors[0] = fillColorR; // Use R value for grayscale
+        } else {
+            fillColors[0] = fillColorR;
+            fillColors[1] = fillColorG;
+            fillColors[2] = fillColorB;
+        }
+        fillColors[3] = useTransparency ? 0 : 255; // Alpha channel
 
         float cy = -newYradius;
         for (int y = 0; y < newHeight; y++) {
@@ -3410,20 +3413,33 @@ extern "C" {
                     for (int c = 0; c < Channels; c++) {
                         Output[(y * newWidth + x) * Channels + c] = fillColors[c];
                     }
+
                     // If we have an alpha channel and useTransparency is true, set it to 0
                     if (useTransparency) {
                         Output[(y * newWidth + x) * Channels + 3] = fillColors[3];
                     }
                 } else {
+                    // Calculate source pixel position
+                    const float ox = tx + angleCos * cx;
+                    const float oy = ty - angleSin * cx;
+                    const int ox1 = (int)ox;
+                    const int oy1 = (int)oy;
+
+                    // Get mirrored coordinates for interpolation
+                    int x1 = mirrorCoord(ox1, Width);
+                    int x2 = mirrorCoord(ox1 + 1, Width);
+                    int y1 = mirrorCoord(oy1, Height);
+                    int y2 = mirrorCoord(oy1 + 1, Height);
+
                     float xFraction = ox - ox1;
                     float yFraction = oy - oy1;
 
                     // Interpolate each channel
                     for (int c = 0; c < Channels; c++) {
-                        unsigned char topLeft = Input[(oy1 * Width + ox1) * Channels + c];
-                        unsigned char topRight = Input[(oy1 * Width + ox1 + 1) * Channels + c];
-                        unsigned char bottomLeft = Input[((oy1 + 1) * Width + ox1) * Channels + c];
-                        unsigned char bottomRight = Input[((oy1 + 1) * Width + ox1 + 1) * Channels + c];
+                        unsigned char topLeft = Input[(y1 * Width + x1) * Channels + c];
+                        unsigned char topRight = Input[(y1 * Width + x2) * Channels + c];
+                        unsigned char bottomLeft = Input[(y2 * Width + x1) * Channels + c];
+                        unsigned char bottomRight = Input[(y2 * Width + x2) * Channels + c];
 
                         Output[(y * newWidth + x) * Channels + c] =
                                 (unsigned char)bilinearInterpolate(topLeft, topRight, bottomLeft, bottomRight, xFraction, yFraction);
