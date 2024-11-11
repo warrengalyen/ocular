@@ -3618,7 +3618,7 @@ extern "C" {
             Skewed = false;
             return OC_STATUS_OK;
         } else {
-            ocularRotateBilinear(Input, Width, Height, Stride, Output, Width, Height, -skewAngle, true, 255, 255, 255);
+            ocularRotateBilinear(Input, Width, Height, Stride, Output, Width, Height, -skewAngle, false, 255, 255, 255);
             *Skewed = true;
         }
         return OC_STATUS_OK;

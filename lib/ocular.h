@@ -1074,6 +1074,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Output The image output data buffer.
      * @param angle The angle to rotate in degrees. Range [0 - 359].
      * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
+     * Must allocate Output buffer with 4 channels if true.
      * @param fillColorR The red channel value to use for filling non-image area. Used if channels = 1.
      * @param fillColorG The green channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area.
