@@ -79,9 +79,16 @@ static void bicubicResize(unsigned char* Src, unsigned char* Dest, int srcWidth,
     }
 }
 
+static float bilinearInterpolate(unsigned char topLeft, unsigned char topRight, 
+                                unsigned char bottomLeft, unsigned char bottomRight,
+                                float xFraction, float yFraction) {
+    return topLeft * (1 - xFraction) * (1 - yFraction) + 
+           topRight * xFraction * (1 - yFraction) +
+           bottomLeft * yFraction * (1 - xFraction) + 
+           bottomRight * xFraction * yFraction;
+}
 
 static void bilinearResize(unsigned char* Src, unsigned char* Dest, int srcWidth, int srcHeight, int dstWidth, int dstHeight, int Channels) {
-
     float xRatio = (float)(srcWidth - 1) / dstWidth;
     float yRatio = (float)(srcHeight - 1) / dstHeight;
     for (int dstY = 0; dstY < dstHeight; dstY++) {
@@ -99,8 +106,8 @@ static void bilinearResize(unsigned char* Src, unsigned char* Dest, int srcWidth
                 unsigned char bottomLeft = Src[((srcYInt + 1) * srcWidth + srcXInt) * Channels + channel];
                 unsigned char bottomRight = Src[((srcYInt + 1) * srcWidth + srcXInt + 1) * Channels + channel];
 
-                float interpolatedValue = topLeft * (1 - xFraction) * (1 - yFraction) + topRight * xFraction * (1 - yFraction) +
-                        bottomLeft * yFraction * (1 - xFraction) + bottomRight * xFraction * yFraction;
+                float interpolatedValue = bilinearInterpolate(topLeft, topRight, bottomLeft, bottomRight,
+                                                            xFraction, yFraction);
 
                 Dest[(dstY * dstWidth + dstX) * Channels + channel] = (unsigned char)interpolatedValue;
             }

@@ -3352,7 +3352,8 @@ extern "C" {
     }
 
     OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                    float angle, bool useTransparency, int fillColorR, int fillColorG, int fillColorB) {
+                                    int newWidth, int newHeight, float angle, bool useTransparency, int fillColorR, 
+                                    int fillColorG, int fillColorB) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -3362,11 +3363,6 @@ extern "C" {
         int Channels = Stride / Width;
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
             return OC_STATUS_ERR_NOTSUPPORTED;
-
-        // We can't use transparency if we don't have an alpha channel
-        // if (useTransparency) {
-        //     return OC_STATUS_ERR_NOTSUPPORTED; 
-        // }
 
         // Ensure filter specific parameters are within valid ranges
         angle = clamp(angle, -360.0f, 360.0f);
@@ -3419,29 +3415,18 @@ extern "C" {
                         Output[(y * newWidth + x) * Channels + 3] = fillColors[3];
                     }
                 } else {
-                    // Calculate interpolation coefficients
-                    const int ox2 = (ox1 == lastWidth) ? ox1 : ox1 + 1;
-                    const int oy2 = (oy1 == lastHeight) ? oy1 : oy1 + 1;
-
-                    float dx1 = ox - (float)ox1;
-                    if (dx1 < 0)
-                        dx1 = 0;
-                    const float dx2 = 1.0f - dx1;
-
-                    float dy1 = oy - (float)oy1;
-                    if (dy1 < 0)
-                        dy1 = 0;
-                    const float dy2 = 1.0f - dy1;
+                    float xFraction = ox - ox1;
+                    float yFraction = oy - oy1;
 
                     // Interpolate each channel
                     for (int c = 0; c < Channels; c++) {
-                        unsigned char* p1 = Input + oy1 * Stride + ox1 * Channels + c;
-                        unsigned char* p2 = Input + oy1 * Stride + ox2 * Channels + c;
-                        unsigned char* p3 = Input + oy2 * Stride + ox1 * Channels + c;
-                        unsigned char* p4 = Input + oy2 * Stride + ox2 * Channels + c;
+                        unsigned char topLeft = Input[(oy1 * Width + ox1) * Channels + c];
+                        unsigned char topRight = Input[(oy1 * Width + ox1 + 1) * Channels + c];
+                        unsigned char bottomLeft = Input[((oy1 + 1) * Width + ox1) * Channels + c];
+                        unsigned char bottomRight = Input[((oy1 + 1) * Width + ox1 + 1) * Channels + c];
 
                         Output[(y * newWidth + x) * Channels + c] =
-                                (unsigned char)(dy2 * (dx2 * p1[0] + dx1 * p2[0]) + dy1 * (dx2 * p3[0] + dx1 * p4[0]));
+                                (unsigned char)bilinearInterpolate(topLeft, topRight, bottomLeft, bottomRight, xFraction, yFraction);
                     }
                 }
                 cx++;

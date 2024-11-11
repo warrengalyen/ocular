@@ -1080,7 +1080,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                    float angle, bool useTransparency, int fillColorR, int fillColorG, int fillColorB);
+                                    int newWidth, int newHeight, float angle, bool useTransparency, int fillColorR, 
+                                    int fillColorG, int fillColorB);
 
     /** @brief Outputs only a selected portion of an image.
      *  @ingroup group_ip_general
