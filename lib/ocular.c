@@ -3383,16 +3383,16 @@ extern "C" {
         int lastWidth = Width - 1;
         int dstOffset = newWidth * Channels - newWidth * Channels;
 
+        int outputChannels = (Channels == 1 && useTransparency) ? 2 : (useTransparency ? 4 : Channels);
+
         // Set up fill colors based on number of channels and transparency setting
-        unsigned char fillColors[4];
+        unsigned char fillColors[4] = { fillColorR, fillColorG, fillColorB, 255 };
         if (Channels == 1) {
             fillColors[0] = fillColorR; // Use R value for grayscale
-        } else {
-            fillColors[0] = fillColorR;
-            fillColors[1] = fillColorG;
-            fillColors[2] = fillColorB;
         }
-        fillColors[3] = useTransparency ? 0 : 255; // Alpha channel
+        if (useTransparency) {
+            fillColors[3] = 0; // Alpha channel for out-of-bounds
+        }
 
         float cy = -newYradius;
         for (int y = 0; y < newHeight; y++) {
@@ -3409,16 +3409,17 @@ extern "C" {
 
                 // Check if position is valid
                 if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
-                    // Fill with background color or transparency
-                    for (int c = 0; c < Channels; c++) {
-                        Output[(y * newWidth + x) * Channels + c] = fillColors[c];
-                    }
-
                     // If we have an alpha channel and useTransparency is true, set it to 0
                     if (useTransparency) {
-                        Output[(y * newWidth + x) * Channels + 3] = fillColors[3];
+                        Output[(y * newWidth + x) * outputChannels + (outputChannels - 1)] = fillColors[3];
+                    } else {
+                        // Fill with background color
+                        for (int c = 0; c < outputChannels; c++) {
+                            Output[(y * newWidth + x) * outputChannels + c] = fillColors[c];
+                        }
                     }
                 } else {
+      
                     // Calculate source pixel position
                     const float ox = tx + angleCos * cx;
                     const float oy = ty - angleSin * cx;
@@ -3441,8 +3442,13 @@ extern "C" {
                         unsigned char bottomLeft = Input[(y2 * Width + x1) * Channels + c];
                         unsigned char bottomRight = Input[(y2 * Width + x2) * Channels + c];
 
-                        Output[(y * newWidth + x) * Channels + c] =
+                        Output[(y * newWidth + x) * outputChannels + c] =
                                 (unsigned char)bilinearInterpolate(topLeft, topRight, bottomLeft, bottomRight, xFraction, yFraction);
+                    }
+
+                    // Set the alpha channel if transparency is used
+                    if (Channels <= 3 && useTransparency) {
+                        Output[(y * newWidth + x) * outputChannels + (outputChannels - 1)] = 255; // Fully opaque
                     }
                 }
                 cx++;

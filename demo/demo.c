@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
             // Calculate new dimensions if needed
             int newWidth, newHeight;
             bool keepSize = false; // set to true to keep the original dimensions while cropping corners
-            bool useTransparency = false;
+            bool useTransparency = true;
             if (!keepSize) {
                 float angleRad = fabs(angle * M_PI / 180.0f);
                 newWidth = (int)(width * fabs(cos(angleRad)) + height * fabs(sin(angleRad)));

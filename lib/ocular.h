@@ -1074,7 +1074,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Output The image output data buffer.
      * @param angle The angle to rotate in degrees. Range [0 - 359].
      * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
-     * Must allocate Output buffer with 4 channels if true.
+     * Must allocate Output buffer with one extra channel to hold the alpha channel. 2 channels if grayscale, 4 channels if color.
      * @param fillColorR The red channel value to use for filling non-image area. Used if channels = 1.
      * @param fillColorG The green channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area.
@@ -1203,7 +1203,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                    float Strength, float Softness);
 
     /**
-     * @brief Reduces the numbers of unique colors in an image using a palette file with optional dithering.
+     * @brief Remaps the colors in an image using a palette file with optional dithering.
      * @ingroup group_color_filters
      * @param input The image input data buffer.
      * @param output The image output data buffer.
