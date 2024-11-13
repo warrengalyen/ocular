@@ -3379,6 +3379,10 @@ extern "C" {
                 bilinearRotate(Input, Width, Height, Stride, Output, newWidth, newHeight, angle, useTransparency, 
                                 fillColorR, fillColorG, fillColorB);
                 break;
+            case OC_INTERPOLATE_BICUBIC:
+                bicubicRotate(Input, Width, Height, Stride, Output, newWidth, newHeight, angle, useTransparency, 
+                                fillColorR, fillColorG, fillColorB);
+                break;
             default: return OC_STATUS_ERR_INVALIDPARAMETER;
         }
 

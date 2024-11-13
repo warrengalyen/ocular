@@ -1076,7 +1076,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param angle The angle to rotate in degrees. Range [0 - 359].
      * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
      * Must allocate Output buffer with one extra channel to hold the alpha channel. 2 channels if grayscale, 4 channels if color.
-     * @param InterpolationMode The interpolation method to use. [OC_INTERPOLATE_BILINEAR]
+     * @param InterpolationMode The interpolation method to use. [OC_INTERPOLATE_BILINEAR, OC_INTERPOLATE_BICUBIC]
      * @param fillColorR The red channel value to use for filling non-image area. Used if channels = 1.
      * @param fillColorG The green channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area.
