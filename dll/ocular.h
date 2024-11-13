@@ -206,6 +206,11 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularResamplingFilter(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output,
                                             int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
 
+    DLIB_EXPORT OC_STATUS ocularRotateImage(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
+                                unsigned char newWidth, unsigned char newHeight, float angle, bool useTransparency,
+                                OcInterpolationMode InterpolationMode, unsigned char fillColorR, unsigned char fillColorG, 
+                                unsigned char fillColorB)                                     
+
     DLIB_EXPORT OC_STATUS ocularCropImage(const unsigned char* Input, int Width, int Height, int srcStride, unsigned char* Output, int cropX,
                                      int cropY, int dstWidth, int dstHeight, int dstStride);
 

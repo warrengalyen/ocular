@@ -1062,10 +1062,11 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularResamplingFilter(unsigned char* Input, int Width, int Height, unsigned int Stride,
-                                    unsigned char* Output, int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);
+                                    unsigned char* Output, int newWidth, int newHeight, int dstStride, 
+                                    OcInterpolationMode InterpolationMode);
 
     /**
-     * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color.
+     * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color or transparency.
      * @ingroup group_ip_general
      * @param Input The image input data buffer.
      * @param Width The width of the image in pixels.
@@ -1075,14 +1076,16 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param angle The angle to rotate in degrees. Range [0 - 359].
      * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
      * Must allocate Output buffer with one extra channel to hold the alpha channel. 2 channels if grayscale, 4 channels if color.
+     * @param InterpolationMode The interpolation method to use. [OC_INTERPOLATE_BILINEAR]
      * @param fillColorR The red channel value to use for filling non-image area. Used if channels = 1.
      * @param fillColorG The green channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularRotateBilinear(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                    int newWidth, int newHeight, float angle, bool useTransparency, unsigned char fillColorR, 
-                                    unsigned char fillColorG, unsigned char fillColorB);
+    OC_STATUS ocularRotateImage(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
+                                 int newWidth, int newHeight, float angle, bool useTransparency, 
+                                 OcInterpolationMode InterpolationMode, unsigned char fillColorR, unsigned char fillColorG, 
+                                 unsigned char fillColorB);
 
     /** @brief Outputs only a selected portion of an image.
      *  @ingroup group_ip_general

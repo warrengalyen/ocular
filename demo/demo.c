@@ -208,8 +208,8 @@ int main(int argc, char** argv) {
             // allocate output buffer
             unsigned char* output = NULL;
             if (useTransparency) {
-                output = (unsigned char*)malloc(newWidth * newHeight * 4);
-                channels = 4;
+                output = (unsigned char*)malloc(newWidth * newHeight * (channels + 1));
+                channels = channels == 1 ? 2 : 4;
             } else {
                 output = (unsigned char*)malloc(newWidth * newHeight * channels);
             }
@@ -218,8 +218,8 @@ int main(int argc, char** argv) {
                 return -1;
             }
 
-            ocularRotateBilinear(input, width, height, stride, output, newWidth, newHeight, angle,
-                                 useTransparency, fillColorR, fillColorG, fillColorB);
+            ocularRotateImage(input, width, height, stride, output, newWidth, newHeight, angle,
+                              useTransparency, OC_INTERPOLATE_BILINEAR, fillColorR, fillColorG, fillColorB);
 
             double elapsed = calcElapsed(startTime, now());
             printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
