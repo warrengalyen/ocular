@@ -119,7 +119,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Retrieve image size
 - Crop
 - Flip (Vertical/Horizontal)
-- Bilinear image rotation
+- Rotate image (bilinear and bicubic)
 - Hough transform line detection
 
 ### Color Quantization
