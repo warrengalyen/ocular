@@ -37,6 +37,8 @@
     
  @ref page_examples_retinex "Retinex"
 
+ @ref page_examples_rotate "Rotate an Image"
+
  @ref page_examples_surface_blur "Surface Blur"
 
  @ref page_examples_skin_smooth "Skin Smoothing"

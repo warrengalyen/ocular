@@ -5897,8 +5897,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                   int radius, int intensity) {
+    OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5913,84 +5912,101 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        radius = min(radius, 0);
-        intensity = clamp(intensity, 0, 100);
+        radius = clamp(radius, 1, 200);
+        intensity = clamp(intensity, 1, 100);
 
-        int intensityCount[256];
-        int sumR[256];
-        int sumG[256];
-        int sumB[256];
+        // Allocate arrays on heap to prevent stack overflow
+        int* intensityCount = (int*)calloc(intensity, sizeof(int));
+        int* sumR = (int*)calloc(intensity, sizeof(int));
+        int* sumG = (int*)calloc(intensity, sizeof(int));
+        int* sumB = (int*)calloc(intensity, sizeof(int));
 
-        int currentIntensity = 0;
-        unsigned char red, green, blue;
-        int currentMax = 0;
-        int maxIndex = 0;
-        int byteOffset = 0;
+        if (!intensityCount || !sumR || !sumG || !sumB) {
+            free(intensityCount);
+            free(sumR);
+            free(sumG);
+            free(sumB);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
 
-        // radius pixels are avoided from left, right top, and bottom edges
+        // Process each pixel
         for (int y = 0; y < Height; y++) {
             for (int x = 0; x < Width; x++) {
+                // Reset arrays for new pixel
+                memset(intensityCount, 0, intensity * sizeof(int));
+                memset(sumR, 0, intensity * sizeof(int));
+                memset(sumG, 0, intensity * sizeof(int));
+                memset(sumB, 0, intensity * sizeof(int));
 
-                // Reset calculations of last pixel
-                memset(intensityCount, 0, sizeof(intensityCount));
-                memset(sumR, 0, sizeof(sumR));
-                memset(sumG, 0, sizeof(sumG));
-                memset(sumB, 0, sizeof(sumB));
+                // Sample the neighborhood
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dx = -radius; dx <= radius; dx++) {
+                        int sampleX = x + dx;
+                        int sampleY = y + dy;
 
-                // calculate the highest intensity of neighboring pixels
-                for (int dy = 0; dy < radius; dy++) {
-                    for (int dx = 0; dx < radius; dx++) {
-                        int xOffset = x + dx;
-                        int yOffset = y + dy;
-
-                        // Mirror at edges
-                        if (xOffset < 0) {
-                            xOffset = -xOffset;
-                        } else if (xOffset >= Height) {
-                            xOffset = 2 * Height - xOffset - 1;
+                        // Mirror pixels at boundaries
+                        if (sampleX < 0) {
+                            sampleX = -sampleX;
+                        } else if (sampleX >= Width) {
+                            sampleX = 2 * Width - sampleX - 2;
                         }
 
-                        if (yOffset < 0) {
-                            yOffset = -yOffset;
-                        } else if (yOffset >= Width) {
-                            yOffset = 2 * Width - yOffset - 1;
+                        if (sampleY < 0) {
+                            sampleY = -sampleY;
+                        } else if (sampleY >= Height) {
+                            sampleY = 2 * Height - sampleY - 2;
                         }
 
-                        byteOffset = xOffset * Channels + yOffset * Stride;
-                        red = Input[byteOffset];
-                        green = Input[byteOffset + 1];
-                        blue = Input[byteOffset + 2];
+                        // Get pixel color
+                        int idx = (sampleY * Width + sampleX) * Channels;
+                        int r = Input[idx];
+                        int g = Input[idx + 1];
+                        int b = Input[idx + 2];
 
-                        // find intensity and apply
-                        currentIntensity = (((red + green + blue) / 3.0) * intensity) / 255;
+                        // Calculate intensity level
+                        int intensityLevel = ((r + g + b) / 3 * intensity) / 255;
+                        intensityLevel = clamp(intensityLevel, 0, intensity - 1);
 
-                        intensityCount[currentIntensity]++;
-
-                        sumR[currentIntensity] = sumR[currentIntensity] + red;
-                        sumG[currentIntensity] = sumG[currentIntensity] + green;
-                        sumB[currentIntensity] = sumB[currentIntensity] + blue;
+                        // Accumulate values
+                        intensityCount[intensityLevel]++;
+                        sumR[intensityLevel] += r;
+                        sumG[intensityLevel] += g;
+                        sumB[intensityLevel] += b;
                     }
                 }
 
-                byteOffset = x * Channels + y * Stride;
-
-                // the highest intensity neighboring pixels are averaged out to get our exact color
-                maxIndex = 0;
-                currentMax = intensityCount[maxIndex];
-                for (int i = 0; i < intensity; i++) {
-                    if (intensityCount[i] > currentMax) {
-                        currentMax = intensityCount[i];
+                // Find dominant intensity level
+                int maxCount = intensityCount[0];
+                int maxIndex = 0;
+                for (int i = 1; i < intensity; i++) {
+                    if (intensityCount[i] > maxCount) {
+                        maxCount = intensityCount[i];
                         maxIndex = i;
                     }
                 }
 
-                if (currentMax > 0) {
-                    Output[byteOffset] = ClampToByte(sumR[maxIndex] / currentMax);
-                    Output[byteOffset + 1] = ClampToByte(sumG[maxIndex] / currentMax);
-                    Output[byteOffset + 2] = ClampToByte(sumB[maxIndex] / currentMax);
+                // Write output pixel
+                int outIdx = (y * Width + x) * Channels;
+                if (maxCount > 0) {
+                    Output[outIdx] = ClampToByte(sumR[maxIndex] / maxCount);
+                    Output[outIdx + 1] = ClampToByte(sumG[maxIndex] / maxCount);
+                    Output[outIdx + 2] = ClampToByte(sumB[maxIndex] / maxCount);
+                } else {
+                    // If no samples found, copy input pixel
+                    Output[outIdx] = Input[outIdx];
+                    Output[outIdx + 1] = Input[outIdx + 1];
+                    Output[outIdx + 2] = Input[outIdx + 2];
                 }
             }
         }
+
+        // Clean up
+        free(intensityCount);
+        free(sumR);
+        free(sumG);
+        free(sumB);
+
+        return OC_STATUS_OK;
     }
 
     OC_STATUS ocularFrostedGlassEffect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 

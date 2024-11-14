@@ -32,5 +32,6 @@ demo/similarity*
 demo/seam_carve*
 demo/*.txt
 /demo_ui/
-
+/test_files/
+/releases/
 
