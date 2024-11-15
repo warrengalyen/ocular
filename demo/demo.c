@@ -34,6 +34,9 @@
 #include <time.h>
 #include <string.h>
 
+#include <lcms2.h>
+
+
 #ifdef _WIN32
     #include <stdlib.h>
     #define realpath(N, R) _fullpath((R), (N), _MAX_PATH)
@@ -108,6 +111,105 @@ char* getFullPathFromSymlink(const char* filename) {
     return fullPath;
 }
 
+
+int test_lcms2() {
+    // Define an RGB color (Red)
+    cmsUInt8Number rgbColor[3] = { 255, 0, 0 }; // RGB values range from 0 to 255
+
+    // Output buffer for CMYK values
+    cmsUInt8Number cmykColor[4];
+
+    // Load the sRGB profile
+    cmsHPROFILE rgbProfile = cmsCreate_sRGBProfile();
+    if (!rgbProfile) {
+        fprintf(stderr, "Error: Unable to create sRGB profile.\n");
+        return 1;
+    }
+
+    char* profilePath = NULL;
+    profilePath = getFullPathFromSymlink("./test_files/color_profiles/cmyk.icm");
+    if (access(profilePath, F_OK) == -1) {
+        fprintf(stderr, "Error: CMYK profile file not found.\n");
+        cmsCloseProfile(rgbProfile);
+        return 1;
+    }
+    cmsHPROFILE cmykProfile = cmsOpenProfileFromFile(profilePath, "r");
+    if (!cmykProfile) {
+        fprintf(stderr, "Error: Unable to load CMYK profile.\n");
+        cmsCloseProfile(rgbProfile);
+        return 1;
+    }
+
+    // Create a transform from RGB to CMYK
+    cmsHTRANSFORM transform = cmsCreateTransform(rgbProfile, TYPE_RGB_8, cmykProfile, TYPE_CMYK_8, INTENT_PERCEPTUAL, 0);
+    if (!transform) {   
+        fprintf(stderr, "Error: Unable to create color transform.\n");
+        cmsCloseProfile(rgbProfile);
+        cmsCloseProfile(cmykProfile);
+        return 1;
+    }
+
+    // Perform the color transformation
+    cmsDoTransform(transform, rgbColor, cmykColor, 1);
+
+    // Output the converted CMYK color values
+    printf("RGB(255, 0, 0) -> CMYK(%d, %d, %d, %d)\n", cmykColor[0], cmykColor[1], cmykColor[2], cmykColor[3]);
+
+    // Clean up
+    cmsDeleteTransform(transform);
+    cmsCloseProfile(rgbProfile);
+    cmsCloseProfile(cmykProfile);
+
+    return 0;
+}
+
+void cmykToRgb(uint8_t* cmyk, uint8_t* profile_rgb, uint8_t* profile_cmyk, uint8_t* rgb) {
+    
+    cmsHPROFILE rgbProfile = NULL;
+    if (profile_rgb) {
+        rgbProfile = cmsOpenProfileFromFile(profile_rgb, "r");
+        if (!rgbProfile) {
+            fprintf(stderr, "Error: Unable to load RGB profile.\n");
+            return;
+        }
+    }
+    else {
+        rgbProfile = cmsCreate_sRGBProfile();
+    }
+
+    cmsHPROFILE cmykProfile = cmsOpenProfileFromFile(profile_cmyk, "r");
+    if (!cmykProfile) {
+        fprintf(stderr, "Error: Unable to load CMYK profile.\n");
+        cmsCloseProfile(rgbProfile);
+        return;
+    }
+    cmsHTRANSFORM transform = cmsCreateTransform(cmykProfile, TYPE_CMYK_8, rgbProfile, TYPE_RGB_8, INTENT_RELATIVE_COLORIMETRIC,
+                                                 cmsFLAGS_NOCACHE | cmsFLAGS_NOOPTIMIZE | cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC);
+    if (!transform) {
+        fprintf(stderr, "Error: Unable to create color transform.\n");
+        cmsCloseProfile(rgbProfile);
+        cmsCloseProfile(cmykProfile);
+        return;
+    }
+
+    cmsUInt8Number rgbColor[3] = {0};
+    cmsUInt8Number cmykColor[4] = {0};
+    cmykColor[0] = cmyk[0];
+    cmykColor[1] = cmyk[1];
+    cmykColor[2] = cmyk[2];
+    cmykColor[3] = cmyk[3];
+    cmsDoTransform(transform, cmykColor, rgbColor, 1);
+
+    // return the rgb values
+    rgb[0] = rgbColor[0];
+    rgb[1] = rgbColor[1];
+    rgb[2] = rgbColor[2];
+
+    cmsDeleteTransform(transform);
+    cmsCloseProfile(rgbProfile);
+    cmsCloseProfile(cmykProfile);
+}
+
 int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned char *output, int width, int height, 
                             int *channels, int stride) {
 
@@ -140,6 +242,10 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
         ocularBilateralFilter(input, output, width, height, stride, config.params[0].value.float_val, config.params[1].value.float_val);
     } else if (strcmp(config.function, "ocularFilmGrainEffect") == 0) {
         ocularFilmGrainEffect(input, output, width, height, *channels, config.params[0].value.float_val, config.params[1].value.float_val);
+    } else if (strcmp(config.function, "ocularSharpenFilter") == 0) {
+        ocularSharpenFilter(input, output, width, height, stride, config.params[0].value.float_val);
+    } else if (strcmp(config.function, "ocularUnsharpMaskFilter") == 0) {
+        ocularUnsharpMaskFilter(input, output, width, height, stride, config.params[0].value.float_val, config.params[1].value.float_val, config.params[2].value.float_val);
     } else {
         return -1;
     }
@@ -147,10 +253,23 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
     return 0;
 }
 
+
+
 int main(int argc, char** argv) {
 
     printf("Ocular Image Processing library v%s\n", ocularGetVersion());
     printf("https://github.com/warrengalyen/ocular/ \n");
+
+
+    // char* profilePath = NULL;
+    // profilePath = getFullPathFromSymlink("./test_files/color_profiles/cmyk.icm");
+
+    // uint8_t cmyk[4] = {0, 35, 15, 1};
+    // uint8_t rgb[3];
+    // cmykToRgb(cmyk, NULL, profilePath, rgb);
+    // printf("CMYK(%d, %d, %d, %d) -> RGB(%d, %d, %d)\n", cmyk[0], cmyk[1], cmyk[2], cmyk[3], rgb[0], rgb[1], rgb[2]);
+
+    // return 0;
 
     if (argc < 2) {
         printf("usage: \n ");
@@ -182,58 +301,31 @@ int main(int argc, char** argv) {
 
     if (input) {
         if (argc == 2) {
-            double startTime = now();
-            printf("Processing image...\n");
 
-            // call filter here..
-            unsigned char fillColorR = 237;
-            unsigned char fillColorG = 29;
-            unsigned char fillColorB = 36;
-            float angle = 45.0f;
+            // Make sure we allocate enough memory for the output
+            unsigned char* output = (unsigned char*)malloc(width * height * channels);
+            if (output) {
 
-            // Calculate new dimensions if needed
-            int newWidth, newHeight;
-            bool keepSize = false; // set to true to keep the original dimensions while cropping corners
-            bool useTransparency = true;
-            if (!keepSize) {
-                float angleRad = fabs(angle * M_PI / 180.0f);
-                newWidth = (int)(width * fabs(cos(angleRad)) + height * fabs(sin(angleRad)));
-                newHeight = (int)(width * fabs(sin(angleRad)) + height * fabs(cos(angleRad)));
-            } else {
-                newWidth = width;
-                newHeight = height;
-            }
+                double startTime = now();
+                printf("Processing image...\n");
 
-            // allocate output buffer
-            unsigned char* output = NULL;
-            if (useTransparency) {
-                output = (unsigned char*)malloc(newWidth * newHeight * (channels + 1));
-                channels = channels == 1 ? 2 : 4;
-            } else {
-                output = (unsigned char*)malloc(newWidth * newHeight * channels);
-            }
-            if (output == NULL) {
-                printf("memory allocation failed.\n");
-                return -1;
-            }
+                //ocularUnsharpMaskFilterEx(input, output, width, height, stride, 60.0, 2.0, 10);
+                //ocularSharpenExFilter(input, output, width, height, stride, 5, 1.2, 20);
+                ocularSharpenFilter(input, output, width, height, stride, 1.2);
 
-            ocularRotateImage(input, width, height, stride, output, newWidth, newHeight, angle,
-                              useTransparency, OC_INTERPOLATE_BILINEAR, fillColorR, fillColorG, fillColorB);
+                //ocularMezzotintFilter(input, output, width, height, stride, OC_MEZZOTINT_DOT, 50, 10, OC_STIPPLE_NONE);
 
-            double elapsed = calcElapsed(startTime, now());
-            printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
+                double elapsed = calcElapsed(startTime, now());
+                printf("elapsed time: %d ms.\n ", (int)(elapsed * 1000));
 
-            if (useTransparency) {  
-                sprintf(out_file, "%s%s%s_out.png", drive, dir, fname);
-            } else {
                 sprintf(out_file, "%s%s%s_out.jpg", drive, dir, fname);
+                saveImage(out_file, width, height, channels, output, false);
+
+                free(output);
+
+                // Open the output image in the associated application if enabled
+                openOutputImage(out_file);
             }
-            saveImage(out_file, newWidth, newHeight, channels, output, useTransparency);
-
-            free(output);
-
-            // Open the output image in the associated application if enabled
-            openOutputImage(out_file);
         } else if (argc > 2) {
 
             // Make sure we allocate enough memory for the output
@@ -270,3 +362,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

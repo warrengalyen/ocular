@@ -12,6 +12,8 @@ endif ()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+# set(ENABLE_LCMS2 ON)
+
 add_subdirectory(lib)
 add_subdirectory(dll)
 add_subdirectory(demo)
