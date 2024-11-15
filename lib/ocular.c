@@ -3150,119 +3150,55 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                    float Radius, float sharpness, int intensity) {
+    OC_STATUS ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Strength) {
 
-        if (Input == NULL || Output == NULL)
+        if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
-        if (Width <= 0 || Height <= 0 || Stride <= 0)
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
             return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
+        // Clamp filter specific parameters to valid range
+        Strength = clamp(Strength, 0.0f, 10.0f);
+
+        // Calculate center weight based on strength
+        float center = 1.0f + (4.0f * Strength);
+        float adjacent = -Strength;
 
         int Channels = Stride / Width;
-        if ((Channels != 1) && (Channels != 3) && (Channels != 4))
-            return OC_STATUS_ERR_NOTSUPPORTED;
 
-        // Ensure filter specific parameters are within valid ranges
-        Radius = max(Radius, 1.0f);
-        sharpness = clamp(sharpness, 0.0f, 1.0f);
-        intensity = clamp(intensity, 0, 100);
+        // Process each pixel except borders
+        for (int y = 1; y < Height - 1; y++) {
+            for (int x = 1; x < Width - 1; x++) {
+                for (int c = 0; c < Channels; c++) {
+                    float sum = 0.0f;
+                    int idx = (y * Width + x) * Channels + c;
 
-        int c1 = 256 * (100 - intensity) / 100;
-        int c2 = 256 * (100 - (100 - intensity)) / 100;
-        // Sharpen: High Contrast Overlay
-        unsigned char sharpnessMap[256 * 256] = { 0 };
-        for (unsigned int PS = 0; PS < 256; PS++) {
-            unsigned char* pSharpnessMap = sharpnessMap + (PS << 8);
-            for (unsigned int PD = 0; PD < 256; PD++) {
-                unsigned char retPD = ClampToByte((sharpness * (PS - PD)) + 128);
-                retPD = (unsigned char)((PS <= 128) ? (retPD * PS / 128) : (255 - (255 - retPD) * (255 - PS) / 128));
-                // enhanced edge method
-                pSharpnessMap[0] = ClampToByte((PS * c1 + retPD * c2) >> 8);
-                pSharpnessMap++;
+                    // Apply kernel weights
+                    sum += Input[idx] * center;              // Center pixel
+                    sum += Input[idx - Channels] * adjacent; // Top
+                    sum += Input[idx + Channels] * adjacent; // Bottom
+                    sum += Input[idx - Stride] * adjacent;   // Left
+                    sum += Input[idx + Stride] * adjacent;   // Right
+
+                    Output[idx] = ClampToByte(sum);
+                }
             }
         }
-        switch (Channels) {
-        case 4:
-        case 3: {
-            unsigned char* temp = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            unsigned char* blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            if (blur == NULL || temp == NULL) {
-                if (temp) {
-                    free(temp);
-                }
-                if (blur) {
-                    free(blur);
-                }
-                return OC_STATUS_ERR_OUTOFMEMORY;
-            }
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Stride);
-                unsigned char* pTemp = temp + (Y * Width);
-                unsigned char* pBlur = blur + (Y * Width);
-                for (int X = 0; X < Width; X++) {
-                    pTemp[0] = (unsigned char)((19595 * pInput[0] + 38470 * pInput[1] + 7471 * pInput[2]) >> 16);
-                    pBlur[0] = pTemp[0];
-                    pInput += Channels;
-                    pTemp++;
-                    pBlur++;
-                }
-            }
-            ocularBoxBlurFilter(temp, blur, Width, Height, Width, (int)Radius);
-            unsigned char cb, cr;
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Stride);
-                unsigned char* pOutput = Output + (Y * Stride);
-                unsigned char* pTemp = temp + (Y * Width);
-                unsigned char* pBlur = blur + (Y * Width);
-                for (int x = 0; x < Width; x++) {
-                    cb = (unsigned char)((36962 * (pInput[2] - (int)(pTemp[0])) >> 16) + 128);
-                    cr = (unsigned char)((46727 * (pInput[0] - (int)(pTemp[0])) >> 16) + 128);
-                    // Sharpen: High Contrast Overlay
-                    unsigned char* pSharpnessMap = sharpnessMap + (pTemp[0] << 8);
 
-                    ycbcr2rgb(pSharpnessMap[pBlur[0]], cb, cr, &pOutput[0], &pOutput[1], &pOutput[2]);
-
-                    pTemp++;
-                    pBlur++;
-                    pOutput += Channels;
-                    pInput += Channels;
+        // Copy unchanged border pixels
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                if (y == 0 || y == Height - 1 || x == 0 || x == Width - 1) {
+                    for (int c = 0; c < Channels; c++) {
+                        int idx = (y * Width + x) * Channels + c;
+                        Output[idx] = Input[idx];
+                    }
                 }
             }
-            free(temp);
-            free(blur);
-            break;
         }
 
-        case 1: {
-
-            unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            if (Blur == NULL) {
-                return OC_STATUS_ERR_OUTOFMEMORY;
-            }
-
-            ocularBoxBlurFilter(Input, Blur, Width, Height, Width, (int)Radius);
-
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Width);
-                unsigned char* pBlur = Blur + (Y * Width);
-                unsigned char* pOutput = Output + (Y * Width);
-                for (int x = 0; x < Width; x++) {
-                    unsigned char* pSharpnessMap = sharpnessMap + (pInput[0] << 8);
-                    pOutput[0] = pSharpnessMap[pOutput[0]];
-
-                    pBlur++;
-                    pOutput++;
-                    pInput++;
-                }
-            }
-            free(Blur);
-        }
-
-        break;
-
-        default: break;
-        }
-        
         return OC_STATUS_OK;
     }
 

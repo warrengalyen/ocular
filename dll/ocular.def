@@ -63,7 +63,7 @@ EXPORTS
     ocularRGBFilter @61
     ocularSaturationFilter @62
     ocularSepiaFilter @63
-    ocularSharpenExFilter @64
+    ocularSharpenFilter @64
     ocularSkinSmoothingFilter @65
     ocularSkinToneFilter @66
     ocularSobelEdgeFilter @67

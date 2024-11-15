@@ -200,8 +200,7 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                                int smoothingLevel, bool applySkinFilter);
 
-    DLIB_EXPORT OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
-                                           float sharpness, int intensity);
+    DLIB_EXPORT OC_STATUS ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Strength);
 
     DLIB_EXPORT OC_STATUS ocularResamplingFilter(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output,
                                             int newWidth, int newHeight, int dstStride, OcInterpolationMode InterpolationMode);

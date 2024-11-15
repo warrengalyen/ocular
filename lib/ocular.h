@@ -981,7 +981,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float sigmaSpatial, float sigmaRange);
 
-    /** @brief Applies an unsharp mask
+    /** @brief A better sharpening effect using a gaussian blur as a mask for enhancing edges.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
@@ -996,21 +996,17 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, float intensity, float threshold);
 
-    /** @brief Applies a Gaussian sharpening filter to an image.
+    /** @brief Enhances the contrast between pixels to make details and edges more pronounced.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param Radius The radius of the sharpening kernel. The default is 4.0.
-     *  @param sharpness The sigma of the gaussian, the smaller sigma is the more
-     *  the kernel in concentrated on the center pixel.
-     *  @param intensity The strength of the sharpening kernel. Range [0-100]
+     *  @param Strength The strength of the sharpening kernel. Range [0.0 - 10.0].
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularSharpenExFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Radius,
-                                float sharpness, int intensity);
+    OC_STATUS ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Strength);
 
     /**
      * @brief Applies denoising smoothing filter on detected skin region while retaining other details.
