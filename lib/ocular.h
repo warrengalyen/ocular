@@ -988,13 +988,13 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param GaussianSigma The blur radius of the underlying Gaussian blur. The
-     *  default is 4.0.
-     *  @param intensity The strength of the sharpening, >= 0.0, with a default
-     *  of 1.0.
+     *  @param GaussianSigma The blur radius of the underlying Gaussian blur.
+     *  @param intensity The strength of the sharpening kernel. Range [0.0-4.0].
+     *  @param threshold Pixels with a difference greater than this value will be sharpened. 
+     *  Represented as a percentage of the difference. Range [0-100%].
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, int intensity);
+    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma, float intensity, float threshold);
 
     /** @brief Applies a Gaussian sharpening filter to an image.
      *  @ingroup group_ip_filters

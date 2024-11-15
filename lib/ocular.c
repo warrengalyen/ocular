@@ -2373,9 +2373,8 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                     float GaussianSigma, int intensity) {
-
+    OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma,
+                                      float intensity, float threshold) {
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
         if (Width <= 0 || Height <= 0 || Stride <= 0)
@@ -2385,111 +2384,78 @@ extern "C" {
         if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        // Ensure filter specific parameters are within valid ranges
-        GaussianSigma = max(GaussianSigma, 0.0f);
-        intensity = clamp(intensity, 0, 100);
+        // Ensure filter parameters are within valid ranges
+        GaussianSigma = clamp(GaussianSigma, 0.1f, 200.0f);
+        intensity = clamp(intensity, 0.0f, 4.0f);
+        threshold = clamp(threshold, 0.0f, 100.0f);
 
-        int c1 = 256 * (100 - intensity) / 100;
-        int c2 = 256 * (100 - (100 - intensity)) / 100;
+        // Convert threshold percentage to pixel difference value (0-255)
+        float boostedIntensity = intensity;
+        float thresholdValue = (threshold / 100.0f) * 255.0f;
 
-        unsigned char unsharpMaskMap[256 * 256] = { 0 };
-        for (unsigned int PS = 0; PS < 256; PS++) {
-            unsigned char* pUnsharpMaskMap = unsharpMaskMap + (PS << 8);
-            for (unsigned int PD = 0; PD < 256; PD++) {
-                unsigned char retPD = ClampToByte((PS - PD) + 128);
-                retPD = (unsigned char)((PS <= 128) ? (retPD * PS / 128) : (255 - (255 - retPD) * (255 - PS) / 128));
-                // enhanced edge method
-                pUnsharpMaskMap[0] = ClampToByte((PS * c1 + retPD * c2) >> 8);
-                pUnsharpMaskMap++;
+        // Allocate blur buffer for the entire image
+        unsigned char* Blur = (unsigned char*)malloc(Width * Height * Channels);
+        if (Blur == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+
+        // Copy input to blur buffer
+        memcpy(Blur, Input, Width * Height * Channels);
+
+        // Apply Gaussian blur
+        ocularGaussianBlurFilter(Blur, Blur, Width, Height, Stride, GaussianSigma);
+
+        // Apply unsharp mask with threshold and smooth blending
+        for (int Y = 0; Y < Height; Y++) {
+            for (int X = 0; X < Width; X++) {
+                // Calculate luminance delta for edge detection
+                float lumDelta = 0.0f;
+                if (Channels >= 3) {
+                    // Calculate luminance for original and blurred using BT.709 coefficients
+                    int idx = Y * Stride + X * Channels;
+                    float lumOrig = 0.2126f * Input[idx] + 0.7152f * Input[idx + 1] + 0.0722f * Input[idx + 2];
+                    float lumBlur = 0.2126f * Blur[idx] + 0.7152f * Blur[idx + 1] + 0.0722f * Blur[idx + 2];
+                    lumDelta = fabsf(lumOrig - lumBlur);
+                }
+
+                for (int c = 0; c < Channels; c++) {
+                    int idx = Y * Stride + X * Channels + c;
+
+                    // Skip alpha channel if present
+                    if (Channels == 4 && c == 3) {
+                        Output[idx] = Input[idx];
+                        continue;
+                    }
+
+                    // Calculate difference between original and blurred
+                    float diff = (float)(Input[idx] - Blur[idx]);
+
+                    // For grayscale images, use direct difference as luminance delta
+                    if (Channels == 1) {
+                        lumDelta = fabsf(diff);
+                    }
+
+                    // Apply threshold with smooth transition based on luminance delta
+                    if (lumDelta < thresholdValue) {
+                        float thresholdFactor = lumDelta / thresholdValue;
+                        diff *= thresholdFactor * thresholdFactor; // Smooth quadratic falloff
+                    }
+
+                    // Calculate sharpened value
+                    int sharpened = Input[idx] + (int)(diff * boostedIntensity);
+                    sharpened = clamp(sharpened, 0, 255);
+
+                    // Calculate blend factor based on luminance delta
+                    float blendFactor = lumDelta / 255.0f; // Normalize difference to 0-1 range
+                    blendFactor = clamp(blendFactor * (intensity), 0.0f, 1.0f);
+
+                    // Smooth blend between original and sharpened
+                    Output[idx] = (unsigned char)(Input[idx] * (1.0f - blendFactor) + sharpened * blendFactor);
+                }
             }
         }
 
-        switch (Channels) {
-        case 4:
-        case 3: {
-            unsigned char* Temp = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            if (Blur == NULL || Temp == NULL) {
-                if (Blur) {
-                    free(Blur);
-                }
-                if (Temp) {
-                    free(Temp);
-                }
-                return OC_STATUS_ERR_OUTOFMEMORY;
-            }
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Stride);
-                unsigned char* pTemp = Temp + (Y * Width);
-                unsigned char* pBlur = Blur + (Y * Width);
-                for (int X = 0; X < Width; X++) {
-                    pTemp[0] = (unsigned char)((19595 * pInput[0] + 38470 * pInput[1] + 7471 * pInput[2]) >> 16);
-
-                    pBlur[0] = pTemp[0];
-
-                    pInput += Channels;
-                    pTemp++;
-                    pBlur++;
-                }
-            }
-            ocularGaussianBlurFilter(Temp, Blur, Width, Height, Width, GaussianSigma);
-            unsigned char cb, cr;
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Stride);
-                unsigned char* pOutput = Output + (Y * Stride);
-                unsigned char* pTemp = Temp + (Y * Width);
-                unsigned char* pBlur = Blur + (Y * Width);
-                for (int x = 0; x < Width; x++) {
-                    cb = (unsigned char)((36962 * (pInput[2] - (int)(pTemp[0])) >> 16) + 128);
-                    cr = (unsigned char)((46727 * (pInput[0] - (int)(pTemp[0])) >> 16) + 128);
-                    // Sharpen: High Contrast Overlay
-
-                    unsigned char* pUnsharpMaskMap = unsharpMaskMap + (pTemp[0] << 8);
-
-                    ycbcr2rgb(pUnsharpMaskMap[pBlur[0]], cb, cr, &pOutput[0], &pOutput[1], &pOutput[2]);
-
-                    pTemp++;
-                    pBlur++;
-                    pOutput += Channels;
-                    pInput += Channels;
-                }
-            }
-            free(Temp);
-            free(Blur);
-            break;
-        }
-
-        case 1: {
-            unsigned char* Blur = (unsigned char*)malloc(Width * Height * (sizeof(unsigned char)));
-            if (Blur == NULL) {
-                return OC_STATUS_ERR_OUTOFMEMORY;
-            }
-
-            ocularGaussianBlurFilter(Input, Blur, Width, Height, Width, GaussianSigma);
-
-            for (int Y = 0; Y < Height; Y++) {
-                unsigned char* pInput = Input + (Y * Width);
-                unsigned char* pBlur = Blur + (Y * Width);
-                unsigned char* pOutput = Output + (Y * Width);
-                for (int x = 0; x < Width; x++) {
-                    // Sharpen: High Contrast Overlay
-                    pOutput[0] = (unsigned char)(pInput[0] - pOutput[0] + 128);
-                    unsigned char* pUnsharpMaskMap = unsharpMaskMap + (pInput[0] << 8);
-                    pOutput[0] = pUnsharpMaskMap[pOutput[0]];
-
-                    pBlur++;
-                    pOutput++;
-                    pInput++;
-                }
-            }
-            free(Blur);
-        }
-
-        break;
-
-        default: break;
-        }
-
+        free(Blur);
         return OC_STATUS_OK;
     }
 

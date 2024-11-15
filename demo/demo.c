@@ -9,7 +9,6 @@
 #include "util.h"
 #include "config.h"
 #include "../lib/ocular.h"
-#include "../lib/dither.h"
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION

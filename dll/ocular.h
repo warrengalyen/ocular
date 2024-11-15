@@ -188,7 +188,7 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
 
     DLIB_EXPORT OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                                             float GaussianSigma, int intensity);
+                                             float GaussianSigma, float intensity, float threshold);
 
     DLIB_EXPORT OC_STATUS ocularBoxBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
