@@ -784,7 +784,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param edgeMode Edge handling mode when out of bounds. OC_EDGE_WRAP or OC_EDGE_MIRROR.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     /** @brief Applies a median blur to an image, which is good for removing salt and pepper noise.
      *  @ingroup group_ip_filters

@@ -5186,8 +5186,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
-
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
         }
@@ -5196,63 +5195,81 @@ extern "C" {
         }
 
         int channels = Stride / Width;
-
         if (channels != 3) {
             return OC_STATUS_ERR_NOTSUPPORTED;
         }
 
         // Ensure filter specific parameters are within valid ranges
         Radius = max(Radius, 1);
-        if (edgeMode != OC_EDGE_WRAP && edgeMode != OC_EDGE_MIRROR) {
-            edgeMode = OC_EDGE_WRAP;
+
+        // Allocate integral image buffers for each channel
+        int* integralR = (int*)malloc((Width + 1) * (Height + 1) * sizeof(int));
+        int* integralG = (int*)malloc((Width + 1) * (Height + 1) * sizeof(int));
+        int* integralB = (int*)malloc((Width + 1) * (Height + 1) * sizeof(int));
+
+        if (!integralR || !integralG || !integralB) {
+            free(integralR);
+            free(integralG);
+            free(integralB);
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
 
-        int kernelSize = 2 * Radius + 1;
-        int count = kernelSize * kernelSize;
+        // Initialize first row and column of integral images
+        for (int i = 0; i <= Width; i++) {
+            integralR[i] = integralG[i] = integralB[i] = 0;
+        }
+        for (int i = 0; i <= Height; i++) {
+            integralR[i * (Width + 1)] = integralG[i * (Width + 1)] = integralB[i * (Width + 1)] = 0;
+        }
 
+        // Build integral images
         for (int y = 0; y < Height; y++) {
             for (int x = 0; x < Width; x++) {
-                int sumR = 0, sumG = 0, sumB = 0;
+                int pos = (y * Width + x) * channels;
+                int ipos = (y + 1) * (Width + 1) + (x + 1);
 
-                // Center the kernel around current pixel
-                for (int dy = -Radius; dy <= Radius; dy++) {
-                    for (int dx = -Radius; dx <= Radius; dx++) {
-                        int xOffset = x + dx;
-                        int yOffset = y + dy;
+                integralR[ipos] = Input[pos] + integralR[ipos - 1] + integralR[ipos - (Width + 1)] - integralR[ipos - (Width + 2)];
 
-                        // Apply edge handling mode
-                        if (edgeMode == OC_EDGE_WRAP) {
-                            // Wrap around edges
-                            xOffset = (xOffset + Width) % Width;
-                            yOffset = (yOffset + Height) % Height;
-                        } else if (edgeMode == OC_EDGE_MIRROR) {
-                            // Mirror at edges
-                            if (xOffset < 0) {
-                                xOffset = -xOffset;
-                            } else if (xOffset >= Width) {
-                                xOffset = 2 * Width - xOffset - 2;
-                            }
+                integralG[ipos] = Input[pos + 1] + integralG[ipos - 1] + integralG[ipos - (Width + 1)] - integralG[ipos - (Width + 2)];
 
-                            if (yOffset < 0) {
-                                yOffset = -yOffset;
-                            } else if (yOffset >= Height) {
-                                yOffset = 2 * Height - yOffset - 2;
-                            }
-                        }
-
-                        int pPos = (yOffset * Width + xOffset) * channels;
-                        sumR += Input[pPos + 0];
-                        sumG += Input[pPos + 1];
-                        sumB += Input[pPos + 2];
-                    }
-                }
-
-                int outPos = (y * Width + x) * channels;
-                Output[outPos + 0] = ClampToByte(sumR / count);
-                Output[outPos + 1] = ClampToByte(sumG / count);
-                Output[outPos + 2] = ClampToByte(sumB / count);
+                integralB[ipos] = Input[pos + 2] + integralB[ipos - 1] + integralB[ipos - (Width + 1)] - integralB[ipos - (Width + 2)];
             }
         }
+
+        // Process each pixel using integral images
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                // Calculate box boundaries with edge handling
+                int x1 = max(0, x - Radius);
+                int y1 = max(0, y - Radius);
+                int x2 = min(Width - 1, x + Radius);
+                int y2 = min(Height - 1, y + Radius);
+
+                // Calculate area for normalization
+                int area = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+                // Calculate sum using integral image
+                int pos1 = (y1 * (Width + 1) + x1);
+                int pos2 = (y1 * (Width + 1) + x2 + 1);
+                int pos3 = ((y2 + 1) * (Width + 1) + x1);
+                int pos4 = ((y2 + 1) * (Width + 1) + x2 + 1);
+
+                int sumR = integralR[pos4] - integralR[pos2] - integralR[pos3] + integralR[pos1];
+                int sumG = integralG[pos4] - integralG[pos2] - integralG[pos3] + integralG[pos1];
+                int sumB = integralB[pos4] - integralB[pos2] - integralB[pos3] + integralB[pos1];
+
+                // Write output
+                int outPos = (y * Width + x) * channels;
+                Output[outPos] = ClampToByte(sumR / area);
+                Output[outPos + 1] = ClampToByte(sumG / area);
+                Output[outPos + 2] = ClampToByte(sumB / area);
+            }
+        }
+
+        // Clean up
+        free(integralR);
+        free(integralG);
+        free(integralB);
 
         return OC_STATUS_OK;
     }

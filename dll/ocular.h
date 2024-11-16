@@ -168,7 +168,7 @@ extern "C" {
                                          int centerX, int centerY);
 
     DLIB_EXPORT OC_STATUS
-    ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode);
+    ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
     DLIB_EXPORT OC_STATUS ocularMedianBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
