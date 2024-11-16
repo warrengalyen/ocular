@@ -5272,7 +5272,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         const int Level = 256;
 
