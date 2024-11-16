@@ -5186,8 +5186,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
-    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                int Radius, OcEdgeMode edgeMode) {
+    OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius, OcEdgeMode edgeMode) {
 
         if (Input == NULL || Output == NULL) {
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -5203,59 +5202,55 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
         if (edgeMode != OC_EDGE_WRAP && edgeMode != OC_EDGE_MIRROR) {
             edgeMode = OC_EDGE_WRAP;
         }
 
-        Radius = Radius != 0 ? Radius : 3;
+        int kernelSize = 2 * Radius + 1;
+        int count = kernelSize * kernelSize;
 
-        int count = pow(Radius, 2);
-        int sumR, sumG, sumB;
-        int avgR, avgG, avgB;
-        int pPos;
         for (int y = 0; y < Height; y++) {
             for (int x = 0; x < Width; x++) {
-                sumR = 0, sumG = 0, sumB = 0;
-                for (int dx = 0; dx < Radius; dx++) {
-                    for (int dy = 0; dy < Radius; dy++) {
+                int sumR = 0, sumG = 0, sumB = 0;
+
+                // Center the kernel around current pixel
+                for (int dy = -Radius; dy <= Radius; dy++) {
+                    for (int dx = -Radius; dx <= Radius; dx++) {
                         int xOffset = x + dx;
                         int yOffset = y + dy;
 
                         // Apply edge handling mode
                         if (edgeMode == OC_EDGE_WRAP) {
-                            // wrap around edges
-                            xOffset = (xOffset + Height) % Height;
-                            yOffset = (yOffset + Width) % Width;
+                            // Wrap around edges
+                            xOffset = (xOffset + Width) % Width;
+                            yOffset = (yOffset + Height) % Height;
                         } else if (edgeMode == OC_EDGE_MIRROR) {
                             // Mirror at edges
                             if (xOffset < 0) {
                                 xOffset = -xOffset;
-                            } else if (xOffset >= Height) {
-                                xOffset = 2 * Height - xOffset - 1;
+                            } else if (xOffset >= Width) {
+                                xOffset = 2 * Width - xOffset - 2;
                             }
 
                             if (yOffset < 0) {
                                 yOffset = -yOffset;
-                            } else if (yOffset >= Width) {
-                                yOffset = 2 * Width - yOffset - 1;
+                            } else if (yOffset >= Height) {
+                                yOffset = 2 * Height - yOffset - 2;
                             }
                         }
 
-                        pPos = xOffset * channels + yOffset * Stride;
+                        int pPos = (yOffset * Width + xOffset) * channels;
                         sumR += Input[pPos + 0];
                         sumG += Input[pPos + 1];
                         sumB += Input[pPos + 2];
                     }
                 }
 
-                pPos = x * channels + y * Stride;
-                avgR = sumR / count;
-                avgG = sumG / count;
-                avgB = sumB / count;
-                Output[pPos + 0] = ClampToByte(avgR);
-                Output[pPos + 1] = ClampToByte(avgG);
-                Output[pPos + 2] = ClampToByte(avgB);
+                int outPos = (y * Width + x) * channels;
+                Output[outPos + 0] = ClampToByte(sumR / count);
+                Output[outPos + 1] = ClampToByte(sumG / count);
+                Output[outPos + 2] = ClampToByte(sumB / count);
             }
         }
 
