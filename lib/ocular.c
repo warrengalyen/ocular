@@ -5934,14 +5934,14 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
         Range = clamp(Range, 1, 20);
 
         int Channels = Stride / Width;
 
         // First the image is blurred by Gaussian filtering, then the blurred image is randomly sampled in the neighborhood,
         // giving the image a certain degree of random disturbance and blur.
-        ocularGaussianBlurFilter(Input, Input, Width, Height, Stride, Radius);
+        ocularGaussianBlurFilter(Input, Output, Width, Height, Stride, Radius);
 
         for (int y = 0; y < Height; y++) {
             for (int x = 0; x < Width; x++) {
