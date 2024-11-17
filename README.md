@@ -53,6 +53,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Auto Level
 - Auto White Balance
 - Equalize (like Photoshop)
+- Histogram Stretch (contrast stretching)
 - Auto Threshold (with 13 methods)
 - Backlight Repair (corrects extremely low or non-uniform lighting)
 - Image Blending (supports 27 Photoshop modes)

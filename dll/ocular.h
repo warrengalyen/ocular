@@ -139,6 +139,8 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
+    DLIB_EXPORT OC_STATUS ocularHistogramStretch(uint8_t* input, uint8_t* output, int width, int height, int channels);
+
     DLIB_EXPORT OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
     DLIB_EXPORT OC_STATUS ocularBacklightRepair(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);

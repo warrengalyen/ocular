@@ -612,6 +612,19 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularEqualizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 
+
+    /**
+     * @brief Performs a histogram stretch (contrast stretching) on an image.
+     * @ingroup group_color_filters
+     * @param input The image input data buffer.
+     * @param output The image output data buffer.
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param channels The number of color channels in the image.
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularHistogramStretch(uint8_t* input, uint8_t* output, int width, int height, int channels);
+
     /**
      * @brief Performs global thresholding using various methods.
      * Pixels above calculated threshold value are turned to white, else black.
@@ -1062,7 +1075,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                     OcInterpolationMode InterpolationMode);
 
     /**
-     * @brief Rotates an image using bilinear interpolation. Non-image areas are filled with color or transparency.
+     * @brief Rotates an image using bilinear or bicubic interpolation. Non-image areas are filled with color or transparency.
      * @ingroup group_ip_general
      * @param Input The image input data buffer.
      * @param Width The width of the image in pixels.

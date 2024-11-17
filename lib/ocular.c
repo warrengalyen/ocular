@@ -3664,6 +3664,47 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularHistogramStretch(uint8_t* input, uint8_t* output, int width, int height, int channels) {
+
+        if (input == NULL || output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (width <= 0 || height <= 0 || channels <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Process each channel separately
+        for (int c = 0; c < channels; c++) {
+            // Find min and max values in the channel
+            uint8_t min_val = 255;
+            uint8_t max_val = 0;
+
+            for (int i = 0; i < width * height; i++) {
+                uint8_t pixel = input[i * channels + c];
+                if (pixel < min_val)
+                    min_val = pixel;
+                if (pixel > max_val)
+                    max_val = pixel;
+            }
+
+            // Avoid division by zero
+            if (max_val == min_val) {
+                // If all pixels have the same value, just copy the input
+                for (int i = 0; i < width * height; i++) {
+                    output[i * channels + c] = input[i * channels + c];
+                }
+                continue;
+            }
+
+            // Apply contrast stretching
+            float scale = 255.0f / (max_val - min_val);
+            for (int i = 0; i < width * height; i++) {
+                int pixel = input[i * channels + c];
+                output[i * channels + c] = (uint8_t)((pixel - min_val) * scale);
+            }
+        }
+
+        return OC_STATUS_OK;
+    }
+
     OC_STATUS ocularAutoThreshold(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                     OcAutoThresholdMethod method) {
 
