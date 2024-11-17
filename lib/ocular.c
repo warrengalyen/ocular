@@ -5829,6 +5829,12 @@ extern "C" {
         radius = clamp(radius, 1, 200);
         intensity = clamp(intensity, 1, 100);
 
+        // Pre-calculate squared radius for distance check
+        const int radiusSquared = radius * radius;
+
+        // Process image in chunks for better cache utilization
+        const int CHUNK_SIZE = 32;
+
         // Allocate arrays on heap to prevent stack overflow
         int* intensityCount = (int*)calloc(intensity, sizeof(int));
         int* sumR = (int*)calloc(intensity, sizeof(int));
@@ -5843,73 +5849,86 @@ extern "C" {
             return OC_STATUS_ERR_OUTOFMEMORY;
         }
 
-        // Process each pixel
-        for (int y = 0; y < Height; y++) {
-            for (int x = 0; x < Width; x++) {
-                // Reset arrays for new pixel
-                memset(intensityCount, 0, intensity * sizeof(int));
-                memset(sumR, 0, intensity * sizeof(int));
-                memset(sumG, 0, intensity * sizeof(int));
-                memset(sumB, 0, intensity * sizeof(int));
+        // Process image in chunks
+        for (int blockY = 0; blockY < Height; blockY += CHUNK_SIZE) {
+            for (int blockX = 0; blockX < Width; blockX += CHUNK_SIZE) {
+                int endY = min(blockY + CHUNK_SIZE, Height);
+                int endX = min(blockX + CHUNK_SIZE, Width);
 
-                // Sample the neighborhood
-                for (int dy = -radius; dy <= radius; dy++) {
-                    for (int dx = -radius; dx <= radius; dx++) {
-                        int sampleX = x + dx;
-                        int sampleY = y + dy;
-
-                        // Mirror pixels at boundaries
-                        if (sampleX < 0) {
-                            sampleX = -sampleX;
-                        } else if (sampleX >= Width) {
-                            sampleX = 2 * Width - sampleX - 2;
+                for (int y = blockY; y < endY; y++) {
+                    for (int x = blockX; x < endX; x++) {
+                        // Reset arrays using faster method
+                        if (intensity <= 32) {
+                            // For small intensity values, direct assignment is faster
+                            for (int i = 0; i < intensity; i++) {
+                                intensityCount[i] = 0;
+                                sumR[i] = 0;
+                                sumG[i] = 0;
+                                sumB[i] = 0;
+                            }
+                        } else {
+                            memset(intensityCount, 0, intensity * sizeof(int));
+                            memset(sumR, 0, intensity * sizeof(int));
+                            memset(sumG, 0, intensity * sizeof(int));
+                            memset(sumB, 0, intensity * sizeof(int));
                         }
 
-                        if (sampleY < 0) {
-                            sampleY = -sampleY;
-                        } else if (sampleY >= Height) {
-                            sampleY = 2 * Height - sampleY - 2;
+                        // Sample the neighborhood using circular mask
+                        for (int dy = -radius; dy <= radius; dy++) {
+                            int dy2 = dy * dy;
+                            for (int dx = -radius; dx <= radius; dx++) {
+                                // Early skip pixels outside circular radius
+                                if (dx * dx + dy2 > radiusSquared)
+                                    continue;
+
+                                int sampleX = x + dx;
+                                int sampleY = y + dy;
+
+                                // Mirror pixels at boundaries (optimized)
+                                sampleX = sampleX < 0 ? -sampleX : (sampleX >= Width ? 2 * Width - sampleX - 2 : sampleX);
+                                sampleY = sampleY < 0 ? -sampleY : (sampleY >= Height ? 2 * Height - sampleY - 2 : sampleY);
+
+                                // Get pixel color (using pointer arithmetic)
+                                const unsigned char* pixel = Input + (sampleY * Width + sampleX) * Channels;
+                                int r = pixel[0];
+                                int g = pixel[1];
+                                int b = pixel[2];
+
+                                // Calculate intensity level (optimized)
+                                int intensityLevel = ((r + g + b) * intensity) / (3 * 255);
+                                // No need for clamp since division guarantees range
+
+                                // Accumulate values
+                                intensityCount[intensityLevel]++;
+                                sumR[intensityLevel] += r;
+                                sumG[intensityLevel] += g;
+                                sumB[intensityLevel] += b;
+                            }
                         }
 
-                        // Get pixel color
-                        int idx = (sampleY * Width + sampleX) * Channels;
-                        int r = Input[idx];
-                        int g = Input[idx + 1];
-                        int b = Input[idx + 2];
+                        // Find dominant intensity level (optimized)
+                        int maxCount = intensityCount[0];
+                        int maxIndex = 0;
+                        for (int i = 1; i < intensity; i++) {
+                            if (intensityCount[i] > maxCount) {
+                                maxCount = intensityCount[i];
+                                maxIndex = i;
+                            }
+                        }
 
-                        // Calculate intensity level
-                        int intensityLevel = ((r + g + b) / 3 * intensity) / 255;
-                        intensityLevel = clamp(intensityLevel, 0, intensity - 1);
-
-                        // Accumulate values
-                        intensityCount[intensityLevel]++;
-                        sumR[intensityLevel] += r;
-                        sumG[intensityLevel] += g;
-                        sumB[intensityLevel] += b;
+                        // Write output pixel
+                        unsigned char* outPixel = Output + (y * Width + x) * Channels;
+                        if (maxCount > 0) {
+                            outPixel[0] = ClampToByte(sumR[maxIndex] / maxCount);
+                            outPixel[1] = ClampToByte(sumG[maxIndex] / maxCount);
+                            outPixel[2] = ClampToByte(sumB[maxIndex] / maxCount);
+                        } else {
+                            const unsigned char* inPixel = Input + (y * Width + x) * Channels;
+                            outPixel[0] = inPixel[0];
+                            outPixel[1] = inPixel[1];
+                            outPixel[2] = inPixel[2];
+                        }
                     }
-                }
-
-                // Find dominant intensity level
-                int maxCount = intensityCount[0];
-                int maxIndex = 0;
-                for (int i = 1; i < intensity; i++) {
-                    if (intensityCount[i] > maxCount) {
-                        maxCount = intensityCount[i];
-                        maxIndex = i;
-                    }
-                }
-
-                // Write output pixel
-                int outIdx = (y * Width + x) * Channels;
-                if (maxCount > 0) {
-                    Output[outIdx] = ClampToByte(sumR[maxIndex] / maxCount);
-                    Output[outIdx + 1] = ClampToByte(sumG[maxIndex] / maxCount);
-                    Output[outIdx + 2] = ClampToByte(sumB[maxIndex] / maxCount);
-                } else {
-                    // If no samples found, copy input pixel
-                    Output[outIdx] = Input[outIdx];
-                    Output[outIdx + 1] = Input[outIdx + 1];
-                    Output[outIdx + 2] = Input[outIdx + 2];
                 }
             }
         }
