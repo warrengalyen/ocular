@@ -5802,7 +5802,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        blockSize = min(blockSize, 1);
+        blockSize = max(blockSize, 1);
 
         int pPos;
         for (int y = 0; y < Height; y += blockSize) {
