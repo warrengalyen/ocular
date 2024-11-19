@@ -106,3 +106,4 @@ EXPORTS
     ocularFilmGrainEffect @104
     ocularRotateImage @105
     ocularHistogramStretch @106
+    ocularTransposeImage @107

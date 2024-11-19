@@ -83,21 +83,20 @@ OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output) {
 }
 
 OC_STATUS ocularTransposeImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
-
     int Channels = Stride / Width;
 
     if (Input == NULL || Output == NULL)
         return OC_STATUS_ERR_NULLREFERENCE;
-    if (Channels != 1)
+    if (Channels != 1 && Channels != 3 && Channels != 4)
         return OC_STATUS_ERR_NOTSUPPORTED;
 
+    int OutStride = Height * Channels;
 
-    for (int y = 0; y < Height; y++) {
-        unsigned char* LinePS = Input + y;
-        unsigned char* LinePD = Output + y * Stride;
-        for (int x = 0; x < Width; x++) {
-            LinePD[x] = LinePS[0];
-            LinePS += Stride;
+    for (int i = 0; i < Height; i++) {
+        for (int j = 0; j < Width; j++) {
+            for (int c = 0; c < Channels; c++) {
+                Output[j * OutStride + i * Channels + c] = Input[i * Stride + j * Channels + c];
+            }
         }
     }
 

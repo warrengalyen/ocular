@@ -4505,7 +4505,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        threshold = min(threshold, 1); // max number of lines to return
+        threshold = max(threshold, 1); // max number of lines to return
 
         float diagonalLength = sqrt((float)(Height * Height + Width * Width));
         float minAngle = 0;
