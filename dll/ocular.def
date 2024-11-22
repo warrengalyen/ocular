@@ -109,3 +109,6 @@ EXPORTS
     ocularTransposeImage @107
     ocularExponentialBlur @108
     ocularPosterizeFilter @109
+    ocularLaplacianEdgeDetect @110
+    ocularRobertsEdgeDetect @111
+    ocularPrewittEdgeDetect @112

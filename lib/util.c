@@ -6,6 +6,16 @@ float vec2_distance(float vecX, float vecY, float otherX, float otherY) {
     return sqrtf(dx * dx + dy * dy);
 }
 
+unsigned char getMirroredPixel(const unsigned char* input, int x, int y, int width, int height) {
+    // Mirror coordinates if they're outside image bounds
+    if (x < 0) x = -x;
+    if (y < 0) y = -y;
+    if (x >= width) x = 2 * (width - 1) - x;
+    if (y >= height) y = 2 * (height - 1) - y;
+    
+    return input[y * width + x];
+}
+
 void normalizeKernel(float* kernel, int kernelWidth) {
     int sum = 0;
     int total = kernelWidth * kernelWidth;

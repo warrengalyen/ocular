@@ -28,6 +28,7 @@ set(MODULE_FILES
     dither.c
     quanitize.c
     retinex.c
+    edge_filters.c
     ocular.c
 )
 

@@ -26,6 +26,7 @@ set(MODULE_FILES
     ../lib/dither.c
     ../lib/quanitize.c
     ../lib/retinex.c
+    ../lib/edge_filters.c
     ../lib/ocular.c
     dlib_export.h
 )
@@ -46,11 +47,16 @@ set_target_properties(ocular_dll PROPERTIES PREFIX "")
 set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
 
 # Copy compiled dll to demo_ui for testing
-if (EXISTS "${PROJECT_SOURCE_DIR}/demo_ui")
-   add_custom_command(
-           TARGET ocular_dll POST_BUILD
-           COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_BINARY_DIR}/demo_ui/bin/debug"
-           COMMAND_EXPAND_LISTS)
+# check if demo_ui exists
+# move up one level
+
+if(EXISTS "${CMAKE_SOURCE_DIR}/demo_ui")
+    message(STATUS "Copying compiled dll to demo_ui for testing")
+    add_custom_command(
+        TARGET ocular_dll POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_SOURCE_DIR}/demo_ui/bin/debug"
+        COMMENT "Copying compiled dll to demo_ui for testing"
+    )
 endif ()
 
 # Make sure the compiler can find include files for our library

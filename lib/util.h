@@ -77,6 +77,9 @@ static inline unsigned short byteswap_ushort(unsigned short i) {
     return j;
 }
 
+// Get a pixel value from an image, mirrored if outside the image bounds
+unsigned char getMirroredPixel(const unsigned char* input, int x, int y, int width, int height);
+
 static inline float mixColor(float a, float b, float t) { return a * (1.0f - t) + b * t; }
 
 static inline unsigned char step(unsigned char edge, unsigned char x) { return (unsigned char)(x < edge ? 0 : 255); }

@@ -96,6 +96,9 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Canny Edge
 - Gradient Edge
 - Sobel Edge
+- Laplacian Edge (Laplacian of Gaussian)
+- Roberts Edge
+- Prewitt Edge
 
 #### Artistic
 
