@@ -107,3 +107,4 @@ EXPORTS
     ocularRotateImage @105
     ocularHistogramStretch @106
     ocularTransposeImage @107
+    ocularExponentialBlur @108

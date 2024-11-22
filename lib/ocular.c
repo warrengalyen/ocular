@@ -2373,6 +2373,99 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularExponentialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float Radius) {
+   
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Channels <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        
+        Radius = max(Radius, 1);
+
+        // Create temporary buffer
+        unsigned char* temp = (unsigned char*)malloc(Width * Height * Channels);
+        if (!temp)
+            return OC_STATUS_ERR_OUTOFMEMORY;
+
+        // Pre-calculate weights for the kernel
+        int kernel_size = (int)ceil(Radius) * 2 + 1;
+        float* weights = (float*)malloc(kernel_size * sizeof(float));
+        if (!weights) {
+            free(temp);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+
+        // Calculate exponential kernel weights once
+        float sigma = Radius * 0.5f;
+        float alpha = 1.0f / (2.0f * sigma * sigma);
+        float total_weight = 0.0f;
+        for (int i = 0; i < kernel_size; i++) {
+            int offset = i - (kernel_size / 2);
+            weights[i] = expf(-alpha * offset * offset);
+            total_weight += weights[i];
+        }
+        
+        // Normalize weights
+        for (int i = 0; i < kernel_size; i++) {
+            weights[i] /= total_weight;
+        }
+
+        // Horizontal pass
+        for (int y = 0; y < Height; y++) {
+            for (int c = 0; c < Channels; c++) {
+                for (int x = 0; x < Width; x++) {
+                    float sum = 0.0f;
+                    int center_idx = (y * Width + x) * Channels + c;
+                    
+                    for (int i = 0; i < kernel_size; i++) {
+                        int offset = i - (kernel_size / 2);
+                        int sx = x + offset;
+                        
+                        if (sx >= 0 && sx < Width) {
+                            sum += Input[(y * Width + sx) * Channels + c] * weights[i];
+                        } else {
+                            // Mirror boundary conditions
+                            sx = sx < 0 ? -sx : (2 * Width - sx - 2);
+                            sum += Input[(y * Width + sx) * Channels + c] * weights[i];
+                        }
+                    }
+                    
+                    temp[center_idx] = (unsigned char)(sum + 0.5f);
+                }
+            }
+        }
+
+        // Vertical pass
+        for (int x = 0; x < Width; x++) {
+            for (int c = 0; c < Channels; c++) {
+                for (int y = 0; y < Height; y++) {
+                    float sum = 0.0f;
+                    int center_idx = (y * Width + x) * Channels + c;
+                    
+                    for (int i = 0; i < kernel_size; i++) {
+                        int offset = i - (kernel_size / 2);
+                        int sy = y + offset;
+                        
+                        if (sy >= 0 && sy < Height) {
+                            sum += temp[(sy * Width + x) * Channels + c] * weights[i];
+                        } else {
+                            // Mirror boundary conditions
+                            sy = sy < 0 ? -sy : (2 * Height - sy - 2);
+                            sum += temp[(sy * Width + x) * Channels + c] * weights[i];
+                        }
+                    }
+                    
+                    Output[center_idx] = (unsigned char)(sum + 0.5f);
+                }
+            }
+        }
+
+        free(weights);
+        free(temp);
+
+        return OC_STATUS_OK;
+    }
+
     OC_STATUS ocularUnsharpMaskFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma,
                                       float intensity, float threshold) {
         if (Input == NULL || Output == NULL)
@@ -3212,7 +3305,7 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
 
         // Ensure filter specific parameters are within valid ranges
-        smoothingLevel = clamp(smoothingLevel, 0, 100);
+        smoothingLevel = clamp(smoothingLevel, 1, 100);
 
         // 1. Detect skin color, adapt radius according to skin color ratio
         unsigned int skinSum = skinDetection(Input, Width, Height, Channels);
@@ -5434,7 +5527,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         int Channels = Stride / Width;
 
@@ -5499,7 +5592,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         int Channels = Stride / Width;
 
@@ -5569,7 +5662,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -5656,7 +5749,7 @@ extern "C" {
         };
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         // Pre-calculate circle mask
         const int maskSize = (Radius * 2 + 1);
@@ -5745,7 +5838,7 @@ extern "C" {
         }
 
         // Ensure filter specific parameters are within valid ranges
-        Radius = min(Radius, 0);
+        Radius = max(Radius, 1);
 
         // Create temporary buffer for blur result
         unsigned char* blurBuffer = (unsigned char*)malloc(Width * Height * Stride);

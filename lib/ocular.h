@@ -740,6 +740,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularGaussianBlurFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float GaussianSigma);
 
+    /**
+     * @brief Performs an expontential blur on an where the intensity of hte blur gradually decreases
+     * as the distance from the center of the center pixel increases, following an exponential decay pattern.
+     * Essentially creating a more pronounced blur near the center and a softer fade towards the edges, often 
+     * used to simulate realistic light falloff or glow effects
+     * @ingroup group_ip_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Channels The number of color channels in the image.
+     * @param Radius The radius of the blur. Range [1.0 - 100.0]
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularExponentialBlur(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float Radius);
+
     /** @brief Performs a convolution blurring that simulates the effect of shooting a moving object on film.
      *  @ingroup group_ip_filters
      *  @param Input The image input data buffer.
@@ -863,7 +879,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
     /**
      * @brief Perform a high pass filter that emphasizes high-frequency components (edges and details) while reducing
      * low-frequency components (smooth areas)
-     * @ingroup group_filters
+     * @ingroup group_ip_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.

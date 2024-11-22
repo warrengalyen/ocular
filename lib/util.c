@@ -174,36 +174,62 @@ void applyCurve(unsigned char* input, unsigned char* output, int width, int heig
     }
 }
 
-void calculate_local_mean_deviation(const unsigned char* image, unsigned char* mean, int* deviation, int width, int height, int radius) {
-    int neighborhood_size = 2 * radius + 1;
-    for (int i = radius; i < height - radius; i++) {
-        for (int j = radius; j < width - radius; j++) {
-            if (i * width + j >= width * height) // Ensure index doesn't exceed array size
-                continue;
+void getLuminance(const unsigned char* input, unsigned char* output, int width, int height, int stride) {
+    int channels = stride / width;
+    for (int y = 0; y < height; y++) {
+        const unsigned char* scanline = input + y * stride;
+        unsigned char* outLine = output + y * width;
 
+        for (int x = 0; x < width; x++) {
+            outLine[x] = (unsigned char)(0.2126f * scanline[0] + 0.7152f * scanline[1] + 0.0722f * scanline[2] + 0.5f);
+            scanline += channels;
+        }
+    }
+}
+
+void calculate_local_mean_deviation(const unsigned char* image, unsigned char* mean, int* deviation, int width, int height, int radius) {
+
+    // Process only valid pixels (with complete neighborhood)
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
             int sum = 0;
+            int count = 0;
+
+            // Calculate mean
             for (int k = -radius; k <= radius; k++) {
                 for (int l = -radius; l <= radius; l++) {
                     int row = i + k;
                     int col = j + l;
+
                     if (row >= 0 && row < height && col >= 0 && col < width) {
                         sum += image[row * width + col];
+                        count++;
                     }
                 }
             }
-            mean[i * width + j] = sum / (neighborhood_size * neighborhood_size);
 
+            int pixel_mean = (count > 0) ? (sum / count) : 0;
+            if (mean != NULL) {
+                mean[i * width + j] = (unsigned char)pixel_mean;
+            }
+
+            // Calculate deviation
             double variance = 0;
+            count = 0;
             for (int k = -radius; k <= radius; k++) {
                 for (int l = -radius; l <= radius; l++) {
                     int row = i + k;
                     int col = j + l;
+
                     if (row >= 0 && row < height && col >= 0 && col < width) {
-                        variance += (image[row * width + col] - mean[i * width + j]) * (image[row * width + col] - mean[i * width + j]);
+                        int diff = image[row * width + col] - pixel_mean;
+                        variance += diff * diff;
+                        count++;
                     }
                 }
             }
-            deviation[i * width + j] = sqrt(variance / (neighborhood_size * neighborhood_size));
+
+            deviation[i * width + j] = (count > 0) ? (int)sqrt(variance / count) : 0;
         }
     }
 }

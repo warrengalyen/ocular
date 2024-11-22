@@ -123,6 +123,8 @@ void applyCurve(unsigned char* input, unsigned char* output, int width, int heig
 
 void calculate_local_mean_deviation(const unsigned char* image, unsigned char* mean, int* deviation, int width, int height, int radius);
 
+void getLuminance(const unsigned char* input, unsigned char* output, int width, int height, int stride);
+
 void calcMeanVariance(unsigned char* Input, float* mean, float* variance, int Width, int Height, int Stride);
 
 // find the maximum color value in an RGB image
