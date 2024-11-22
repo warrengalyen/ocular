@@ -1265,6 +1265,19 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                          OcQuantizeMethod quantizeMethod, int maxColors, OcDitherMethod ditherMethod, 
                                          int ditherAmount);
 
+    /**
+     * @brief Reduces the number of unique colors in an image by preforming segmentation using k-means clustering.
+     * @ingroup group_color_filters
+     * @param input The image input data buffer.
+     * @param output The image output data buffer.
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param channels The number of color channels in the image.
+     * @param levels The number of unique colors to reduce the image to. Range [2 - 255].
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularPosterizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int Levels);
+
     //------------------------Distort-------------------------
 
     //--------------------------Misc--------------------------

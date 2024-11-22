@@ -103,6 +103,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Oil Paint
 - Frosted Glass
 - Film Grain
+- Posterize
 
 #### OCR Pre-preprocessing
 

@@ -1,4 +1,5 @@
 #include <math.h>
+#include <float.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -6259,6 +6260,111 @@ extern "C" {
 
         ocularFreePalette(&palette);
 
+        return OC_STATUS_OK;
+    }
+
+    OC_STATUS ocularPosterizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int Levels) {
+
+        if (!Input || !Output) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Channels <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+        Levels = clamp(Levels, 2, 255);
+        
+        // Allocate memory for centroids and pixel assignments
+        float* centroids = (float*)malloc(Levels * sizeof(float));
+        int* assignments = (int*)malloc(Width * Height * Channels * sizeof(int));
+        int* centroidCounts = (int*)malloc(Levels * sizeof(int));
+        
+        if (!centroids || !assignments || !centroidCounts) {
+            free(centroids);
+            free(assignments);
+            free(centroidCounts);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        
+        // Initialize centroids evenly across the range
+        for (int i = 0; i < Levels; i++) {
+            centroids[i] = (i * 255.0f) / (Levels - 1);
+        }
+        
+        // K-means iteration
+        const int MAX_ITERATIONS = 10;
+        for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
+            // Reset centroid accumulators
+            float* newCentroids = (float*)calloc(Levels, sizeof(float));
+            memset(centroidCounts, 0, Levels * sizeof(int));
+            
+            // Assignment step
+            for (int y = 0; y < Height; y++) {
+                for (int x = 0; x < Width; x++) {
+                    for (int c = 0; c < Channels; c++) {
+                        // Skip alpha channel if it exists
+                        if (Channels == 4 && c == 3) continue;
+                        
+                        int idx = (y * Width + x) * Channels + c;
+                        float pixelValue = Input[idx];
+                        
+                        // Find nearest centroid
+                        float minDist = FLT_MAX;
+                        int bestCentroid = 0;
+                        
+                        for (int k = 0; k < Levels; k++) {
+                            float dist = fabsf(pixelValue - centroids[k]);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                bestCentroid = k;
+                            }
+                        }
+                        
+                        assignments[idx] = bestCentroid;
+                        newCentroids[bestCentroid] += pixelValue;
+                        centroidCounts[bestCentroid]++;
+                    }
+                }
+            }
+            
+            // Update step
+            bool changed = false;
+            for (int k = 0; k < Levels; k++) {
+                if (centroidCounts[k] > 0) {
+                    float newValue = newCentroids[k] / centroidCounts[k];
+                    if (fabsf(newValue - centroids[k]) > 0.5f) {
+                        changed = true;
+                    }
+                    centroids[k] = newValue;
+                }
+            }
+            
+            free(newCentroids);
+            
+            // If centroids haven't changed significantly, stop iterating
+            if (!changed) break;
+        }
+        
+        // Apply final assignments
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < Channels; c++) {
+                    int idx = (y * Width + x) * Channels + c;
+                    
+                    // Preserve alpha channel if it exists
+                    if (Channels == 4 && c == 3) {
+                        Output[idx] = Input[idx];
+                        continue;
+                    }
+                    
+                    Output[idx] = (unsigned char)roundf(centroids[assignments[idx]]);
+                }
+            }
+        }
+        
+        free(centroids);
+        free(assignments);
+        free(centroidCounts);
+        
         return OC_STATUS_OK;
     }
 

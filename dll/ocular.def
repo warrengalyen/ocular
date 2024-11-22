@@ -108,3 +108,4 @@ EXPORTS
     ocularHistogramStretch @106
     ocularTransposeImage @107
     ocularExponentialBlur @108
+    ocularPosterizeFilter @109
