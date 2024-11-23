@@ -29,6 +29,7 @@ set(MODULE_FILES
     quanitize.c
     retinex.c
     edge_filters.c
+    blur_filters.c
     ocular.c
 )
 

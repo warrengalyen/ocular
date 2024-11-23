@@ -27,6 +27,7 @@ set(MODULE_FILES
     ../lib/quanitize.c
     ../lib/retinex.c
     ../lib/edge_filters.c
+    ../lib/blur_filters.c
     ../lib/ocular.c
     dlib_export.h
 )
