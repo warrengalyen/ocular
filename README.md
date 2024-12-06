@@ -107,6 +107,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Frosted Glass
 - Film Grain
 - Posterize
+- Relief (Emboss)
 
 #### OCR Pre-preprocessing
 

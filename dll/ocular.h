@@ -242,6 +242,8 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularPosterizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int Levels);
 
+    DLIB_EXPORT OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset);
+
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     const char* filename, OcDitherMethod method, int amount);
 

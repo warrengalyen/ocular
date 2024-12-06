@@ -1041,6 +1041,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                    float Strength, float Softness);
 
     /**
+     * @brief Applies a relief (emboss) effect to the image.
+     * @ingroup group_ip_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param Angle Controls the direction of the relief effect.
+     * @param Offset Controls the base brightness of the relief effect. Range [0 - 255]. ~127 will produce a balanced effect.
+     * Lower values will darken the image (emphasizing raised edges), higher values will lighten the image
+     * (emphasizing sunken edges).
+     * @return OC_STATUS
+     */
+    OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset);
+
+    /**
      * @brief Remaps the colors in an image using a palette file with optional dithering.
      * @ingroup group_color_filters
      * @param input The image input data buffer.

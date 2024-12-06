@@ -112,3 +112,4 @@ EXPORTS
     ocularLaplacianEdgeDetect @110
     ocularRobertsEdgeDetect @111
     ocularPrewittEdgeDetect @112
+    ocularReliefFilter @113

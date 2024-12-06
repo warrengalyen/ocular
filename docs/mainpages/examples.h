@@ -34,6 +34,8 @@
  @ref page_examples_palettize_file "Palettize From File"
 
  @ref page_examples_palettize_image "Palettize From Image"
+
+ @ref page_examples_relief "Relief (Emboss)"
     
  @ref page_examples_retinex "Retinex"
 

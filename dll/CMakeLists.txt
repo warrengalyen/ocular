@@ -50,7 +50,6 @@ set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
 # Copy compiled dll to demo_ui for testing
 # check if demo_ui exists
 # move up one level
-
 if(EXISTS "${CMAKE_SOURCE_DIR}/demo_ui")
     message(STATUS "Copying compiled dll to demo_ui for testing")
     add_custom_command(
@@ -58,7 +57,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/demo_ui")
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/bin/ocular.dll" "${CMAKE_SOURCE_DIR}/demo_ui/bin/debug"
         COMMENT "Copying compiled dll to demo_ui for testing"
     )
-endif ()
+endif()
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to

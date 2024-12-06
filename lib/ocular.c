@@ -4369,6 +4369,8 @@ extern "C" {
                 }
             }
         }
+
+        return OC_STATUS_OK;
     }
 
     OC_STATUS ocularFilmGrainEffect(unsigned char* input, unsigned char* output, int width, int height, int channels, 
@@ -4430,6 +4432,63 @@ extern "C" {
         }
 
         free(noiseValues);
+
+        return OC_STATUS_OK;
+    }
+
+    OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset) {
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        if (Offset < 0 || Offset > 255)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int channels = Stride / Width;
+
+        // Convert angle to radians
+        double radian = Angle * M_PI / 180.0;
+
+        // Calculate kernel based on angle
+        float kernel[3][3] = { { cos(radian + M_PI), cos(radian + 3.0 * M_PI / 4.0), cos(radian + M_PI / 2.0) },
+                               { cos(radian - M_PI / 2.0), 0, cos(radian + M_PI / 2.0) },
+                               { cos(radian - M_PI / 2.0), cos(radian - M_PI / 4.0), cos(radian) } };
+
+        // Process each pixel, including borders
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                for (int c = 0; c < channels; c++) {
+                    float sum = 0;
+
+                    // Apply convolution with mirrored borders
+                    for (int ky = -1; ky <= 1; ky++) {
+                        for (int kx = -1; kx <= 1; kx++) {
+                            // Mirror coordinates if they're outside the image bounds
+                            int px = x + kx;
+                            int py = y + ky;
+
+                            // Mirror boundary handling
+                            if (px < 0)
+                                px = -px;
+                            if (py < 0)
+                                py = -py;
+                            if (px >= Width)
+                                px = 2 * (Width - 1) - px;
+                            if (py >= Height)
+                                py = 2 * (Height - 1) - py;
+
+                            sum += kernel[ky + 1][kx + 1] * Input[(py * Width + px) * channels + c];
+                        }
+                    }
+
+                    // Add offset and clamp result
+                    int result = (int)(sum + Offset);
+                    Output[(y * Width + x) * channels + c] = (unsigned char)fmin(fmax(result, 0), 255);
+                }
+            }
+        }
+
+        return OC_STATUS_OK;
     }
 
     OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
