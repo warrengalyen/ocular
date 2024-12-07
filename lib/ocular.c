@@ -3142,6 +3142,99 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    // Converts color temperature in Kelvin to RGB values
+    // Based on approximation from Mitchell Charity's work
+    // http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
+    // Valid range is roughly 1000K to 40000K
+    static void temperatureToRGB(float kelvin, float* r, float* g, float* b) {
+        // Clamp temperature to valid range
+        kelvin = clamp(kelvin, 1000.0f, 40000.0f);
+
+        float temp = kelvin / 100.0f;
+
+        // Red calculation
+        if (temp <= 66.0f) {
+            *r = 255.0f;
+        } else {
+            float red = temp - 60.0f;
+            *r = 329.698727446f * powf(red, -0.1332047592f);
+            *r = clamp(*r, 0.0f, 255.0f);
+        }
+
+        // Green calculation
+        if (temp <= 66.0f) {
+            *g = 99.4708025861f * logf(temp) - 161.1195681661f;
+        } else {
+            float green = temp - 60.0f;
+            *g = 288.1221695283f * powf(green, -0.0755148492f);
+        }
+        *g = clamp(*g, 0.0f, 255.0f);
+
+        // Blue calculation
+        if (temp >= 66.0f) {
+            *b = 255.0f;
+        } else if (temp <= 19.0f) {
+            *b = 0.0f;
+        } else {
+            float blue = temp - 10.0f;
+            *b = 138.5177312231f * logf(blue) - 305.0447927307f;
+            *b = clamp(*b, 0.0f, 255.0f);
+        }
+    }
+
+    OC_STATUS ocularColorTemperature(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                           float Temperature, float Strength) {
+
+        if (!Input || !Output) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (Width <= 0 || Height <= 0 || Stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
+        // Validate temperature and strength ranges
+        Temperature = clamp(Temperature, 1000.0f, 40000.0f);
+        Strength = clamp(Strength, 1.0f, 100.0f);
+
+        // Normalize strength to 0-1 range
+        Strength = Strength / 100.0f;
+
+        // Get RGB values for target temperature
+        float targetR, targetG, targetB;
+        temperatureToRGB(Temperature, &targetR, &targetG, &targetB);
+
+        // Get RGB values for reference temperature (6500K - daylight)
+        float refR, refG, refB;
+        temperatureToRGB(6500.0f, &refR, &refG, &refB);
+
+        // Calculate multipliers by comparing target to reference
+        float rMult = (targetR / refR);
+        float gMult = (targetG / refG);
+        float bMult = (targetB / refB);
+
+        // Blend multipliers with 1.0 based on strength
+        rMult = 1.0f + (rMult - 1.0f) * Strength;
+        gMult = 1.0f + (gMult - 1.0f) * Strength;
+        bMult = 1.0f + (bMult - 1.0f) * Strength;
+
+        for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+                int idx = y * Stride + x * 3;
+
+                float r = Input[idx] * rMult;
+                float g = Input[idx + 1] * gMult;
+                float b = Input[idx + 2] * bMult;
+
+                // Clamp values to valid range
+                Output[idx] = ClampToByte(r);
+                Output[idx + 1] = ClampToByte(g);
+                Output[idx + 2] = ClampToByte(b);
+            }
+        }
+
+        return OC_STATUS_OK;
+    }
+
     OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels, 
                                  OcRetinexMode mode, int scale, float numScales, float dynamic) {
 

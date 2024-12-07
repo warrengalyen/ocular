@@ -58,6 +58,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Backlight Repair (corrects extremely low or non-uniform lighting)
 - Image Blending (supports 27 Photoshop modes)
 - Color Balance
+- Color Temperature
 - Retinex (Multi-Scale with Color Restoration)
 - Palettize
   - from file (remaps colors to closest color in palette file with optional dithering)

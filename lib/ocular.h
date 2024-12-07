@@ -672,7 +672,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
     OC_STATUS ocularLayerBlend(unsigned char* baseInput, int bWidth, int bHeight, int bStride, unsigned char* mixInput, int mWidth, int mHeight,
                           int mStride, OcBlendMode blendMode, int alpha);
 
-
     /**
      * @brief Allows changing the overall mixture of colors in an image to correct color casts.
      * @ingroup group_color_filters
@@ -690,6 +689,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularColorBalance(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int redBalance,
                            int greenBalance, int blueBalance, OcToneBalanceMode Mode, bool preserveLuminosity);
+
+    /**
+     * @brief Adjusts color temperature of an image
+     * @ingroup group_color_filters
+     * @param Input The image input data buffer.
+     * @param Output The image output data buffer.
+     * @param Width The width of the image in pixels.
+     * @param Height The height of the image in pixels.
+     * @param Stride The number of bytes in one row of pixels.
+     * @param Temperature Target color temperature in Kelvin. Range 1000K to 40000K. Lower values are warmer tones, 
+     * higher values are cooler tones.
+     * @param Strength Intensity of the effect. Range 1.0-100.0
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularColorTemperature(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                     float Temperature, float Strength);
 
     /**
      * @brief Performs multiscale retinex with color restoration. This combines color constancy with local contrast
