@@ -80,6 +80,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Skin Smoothing
 - BEEPS (Bi-exponential Edge-preserving Smoothing)
 - Exponential Blur
+- Guided Filter
 
 #### Morphology
 
