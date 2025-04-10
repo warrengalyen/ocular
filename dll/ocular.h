@@ -204,6 +204,9 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularBEEPSFilter(const unsigned char* Input, unsigned char* Output, int width, int height, int Stride,
                                       float PhotometricStandardDeviation, float SpatialDecay, int RangeFilter);
 
+    DLIB_EXPORT OC_STATUS ocularGuidedFilter(unsigned char* Input, unsigned char* Guide, unsigned char* Output, int Width, int Height, 
+                                             int Stride, int Radius, float Epsilon);
+
     DLIB_EXPORT OC_STATUS ocularSkinSmoothingFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                                int smoothingLevel, bool applySkinFilter);
 

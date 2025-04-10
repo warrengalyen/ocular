@@ -114,3 +114,4 @@ EXPORTS
     ocularPrewittEdgeDetect @112
     ocularReliefFilter @113
     ocularColorTemperature @114
+    ocularGuidedFilter @115

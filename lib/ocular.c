@@ -2318,6 +2318,140 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularGuidedFilter(unsigned char* Input, unsigned char* Guide, unsigned char* Output, int Width, int Height, int Stride,
+                                 int Radius, float Epsilon) {
+        if (!Input || !Output || Width <= 0 || Height <= 0 || Radius < 1)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // If no guide is provided, use input as guide
+        if (!Guide)
+            Guide = Input;
+
+        int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Allocate memory for intermediate calculations
+        float* meanI = (float*)malloc(Width * Height * Channels * sizeof(float));  // Stores the mean values of the input/guidance image
+        float* meanP = (float*)malloc(Width * Height * Channels * sizeof(float));  // Stores the mean values of the input image
+        float* meanIP = (float*)malloc(Width * Height * Channels * sizeof(float)); // Stores the mean of the product of I and P (correlation)
+        float* meanII = (float*)malloc(Width * Height * Channels * sizeof(float)); // Stores the mean of I squared (used for variance calculation)
+        float* a = (float*)malloc(Width * Height * Channels * sizeof(float)); // Stores the 'a' coefficients of the linear model (slope)
+        float* b = (float*)malloc(Width * Height * Channels * sizeof(float)); // Stores the 'b' coefficients of the linear model (intercept)
+
+        unsigned char* tempBuffer1 = (unsigned char*)malloc(Width * Height * Channels);
+        unsigned char* tempBuffer2 = (unsigned char*)malloc(Width * Height * Channels);
+
+        if (!meanI || !meanP || !meanIP || !meanII || !a || !b || !tempBuffer1 || !tempBuffer2) {
+            OC_STATUS status = OC_STATUS_ERR_OUTOFMEMORY;
+            goto cleanup;
+        }
+
+        // Convert input and guide to float and prepare mean calculations
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            float valI = Guide[i] / 255.0f; // Guide image values
+            float valP = Input[i] / 255.0f; // Input image values
+            meanI[i] = valI;
+            meanP[i] = valP;
+            meanII[i] = valI * valI;
+            meanIP[i] = valI * valP;
+
+            tempBuffer1[i] = Guide[i]; // Copy guide for box blur
+        }
+
+        // Apply box blur to get means of I
+        OC_STATUS status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+
+        // Convert blurred results back to means
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            meanI[i] = tempBuffer2[i] / 255.0f;
+        }
+
+        // Blur P values
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            tempBuffer1[i] = Input[i];
+        }
+        status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            meanP[i] = tempBuffer2[i] / 255.0f;
+        }
+
+        // Prepare II for blur
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            tempBuffer1[i] = (unsigned char)(meanII[i] * 255.0f);
+        }
+        status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            meanII[i] = tempBuffer2[i] / 255.0f;
+        }
+
+        // Prepare IP for blur
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            tempBuffer1[i] = (unsigned char)(meanIP[i] * 255.0f);
+        }
+        status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            meanIP[i] = tempBuffer2[i] / 255.0f;
+        }
+
+        // Calculate a and b
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            float varI = meanII[i] - meanI[i] * meanI[i];
+            a[i] = (meanIP[i] - meanI[i] * meanP[i]) / (varI + Epsilon);
+            b[i] = meanP[i] - a[i] * meanI[i];
+
+            // Prepare a for blur
+            tempBuffer1[i] = (unsigned char)(a[i] * 255.0f);
+        }
+
+        // Blur a
+        status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            a[i] = tempBuffer2[i] / 255.0f;
+        }
+
+        // Prepare b for blur
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            tempBuffer1[i] = (unsigned char)(b[i] * 255.0f);
+        }
+
+        // Blur b
+        status = ocularBoxBlurFilter(tempBuffer1, tempBuffer2, Width, Height, Stride, Radius);
+        if (status != OC_STATUS_OK)
+            goto cleanup;
+
+        // Final output calculation
+        for (int i = 0; i < Width * Height * Channels; i++) {
+            float meanB = tempBuffer2[i] / 255.0f;
+            float result = a[i] * meanI[i] + meanB;
+            Output[i] = ClampToByte((int)(result * 255.0f + 0.5f));
+        }
+
+        status = OC_STATUS_OK;
+
+    cleanup:
+        free(meanI);
+        free(meanP);
+        free(meanIP);
+        free(meanII);
+        free(a);
+        free(b);
+        free(tempBuffer1);
+        free(tempBuffer2);
+
+        return status;
+    }
+
     OC_STATUS ocularSharpenFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Strength) {
 
         if (Input == NULL || Output == NULL) {
