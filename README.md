@@ -60,6 +60,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Color Balance
 - Color Temperature
 - Retinex (Multi-Scale with Color Restoration)
+- Haze Removal (Dark Channel Prior)
 - Palettize
   - from file (remaps colors to closest color in palette file with optional dithering)
   - from image (reduces unique colors using color quantization with optional dithering)
