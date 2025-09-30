@@ -25,6 +25,8 @@
 
  @ref page_examples_despeckle "Despeckle"
 
+ @ref page_examples_haze_removal "Haze Removal"
+
  @ref page_examples_flip "Flip/Mirror"
 
  @ref page_examples_frosted_glass "Frosted Glass"
