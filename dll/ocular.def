@@ -115,3 +115,4 @@ EXPORTS
     ocularReliefFilter @113
     ocularColorTemperature @114
     ocularGuidedFilter @115
+    ocularDarkChannelPriorHazeRemoval @116

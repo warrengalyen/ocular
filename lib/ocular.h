@@ -29,6 +29,7 @@ extern "C" {
 #include "quanitize.h"
 #include "edge_filters.h"
 #include "blur_filters.h"
+#include "hazeremoval.h"
 #include "version.h"
 // #include "fft.h"
 #include <math.h>
@@ -726,6 +727,27 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                   OcRetinexMode mode, int scale, float numScales, float dynamic);
+
+    /**
+     * @brief Performs image haze removal using dark channel prior algorithm
+     * @ingroup group_color_filters
+     * @param Input The image input data buffer (RGB format)
+     * @param Output The image output data buffer
+     * @param Width The width of the image in pixels
+     * @param Height The height of the image in pixels
+     * @param Stride The number of bytes in one row of pixels
+     * @param radius Radius for dark channel calculation (Range >= 1)
+     * @param guideRadius Radius for guided filter smoothing (Range >= 1)
+     * @param maxAtm Maximum atmospheric light value (Range: 0.1-1.0)
+     * @param omega Haze retention factor (Range: 0.1-1.0)
+     * @param epsilon Regularization parameter for guided filter (Range: 0.0001-1.0)
+     * @param t0 Minimum transmission value to preserve (Range 0.01-1.0)
+     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularDarkChannelPriorHazeRemoval(unsigned char* Input, unsigned char* Output, 
+                                               int Width, int Height, int Stride,
+                                               int radius, int guideRadius, float maxAtm, 
+                                               float omega, float epsilon, float t0);
 
     //--------------------------Color adjustments--------------------------
 

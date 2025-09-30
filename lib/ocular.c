@@ -3543,6 +3543,78 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularDarkChannelPriorHazeRemoval(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius,
+                                                int guideRadius, float maxAtm, float omega, float epsilon, float t0) {
+        // Parameter validation
+        if (!Input || !Output)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int channels = Stride / Width;
+        if (channels < 1 || channels > 4)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        // Clamp parameters to valid ranges
+        radius = (radius < 1) ? 15 : radius;
+        guideRadius = (guideRadius < 1) ? 60 : guideRadius;
+        maxAtm = fmaxf(0.1f, fminf(1.0f, maxAtm));
+        omega = fmaxf(0.1f, fminf(1.0f, omega));
+        epsilon = fmaxf(0.0001f, fminf(1.0f, epsilon));
+        t0 = fmaxf(0.01f, fminf(1.0f, t0));
+
+        int size = Width * Height;
+
+        // Allocate working buffers
+        float* darkChannel = (float*)malloc(size * sizeof(float));
+        float* transmission = (float*)malloc(size * sizeof(float));
+        float* refinedTransmission = (float*)malloc(size * sizeof(float));
+        float* guideImage = (float*)malloc(size * sizeof(float));
+
+        if (!darkChannel || !transmission || !refinedTransmission || !guideImage) {
+            free(darkChannel);
+            free(transmission);
+            free(refinedTransmission);
+            free(guideImage);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+
+        // Step 1: Calculate dark channel
+        calculateDarkChannelFast(Input, darkChannel, Width, Height, Stride, radius);
+
+        // Step 2: Estimate atmospheric light
+        float atmLight = estimateAtmosphericLight(Input, darkChannel, Width, Height, Stride, maxAtm);
+
+        // Step 3: Estimate transmission map
+        estimateTransmissionFast(Input, transmission, Width, Height, Stride, atmLight, radius, omega);
+
+        // Step 4: Create guide image (grayscale version of input)
+        for (int i = 0; i < size; i++) {
+            int imgIdx = (i / Width) * Stride + (i % Width) * channels;
+            if (channels >= 3) {
+                // RGB to grayscale
+                guideImage[i] = (0.299f * Input[imgIdx] + 0.587f * Input[imgIdx + 1] + 0.114f * Input[imgIdx + 2]) / 255.0f;
+            } else {
+                // Already grayscale
+                guideImage[i] = (float)Input[imgIdx] / 255.0f;
+            }
+        }
+
+        // Step 5: Refine transmission map using guided filter
+        guidedFilterFast(transmission, guideImage, refinedTransmission, Width, Height, guideRadius, epsilon);
+
+        // Step 6: Recover scene radiance
+        recoverScene(Input, Output, Width, Height, Stride, refinedTransmission, atmLight, t0);
+
+        // Cleanup
+        free(darkChannel);
+        free(transmission);
+        free(refinedTransmission);
+        free(guideImage);
+
+        return OC_STATUS_OK;
+    }
+
     OC_STATUS ocularHoughLineDetection(unsigned char* Input, int* LineNumber, struct LineParameter* DetectedLine, 
                                        int Height, int Width, int threshold) {
 

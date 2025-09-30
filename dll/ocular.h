@@ -155,7 +155,11 @@ extern "C" {
                                            float Temperature, float Strength);
 
     DLIB_EXPORT OC_STATUS ocularMultiscaleRetinex(unsigned char* input, unsigned char* output, int width, int height, int channels,
-                                                  OcRetinexMode mode, int scale, int numScales, float dynamic);   
+                                                  OcRetinexMode mode, int scale, int numScales, float dynamic);  
+                                                  
+    DLIB_EXPORT OC_STATUS ocularDarkChannelPriorHazeRemoval(unsigned char* Input, unsigned char* Output, 
+                                                            int Width, int Height, int Stride,
+                                                            int radius, int guideRadius, float maxAtm, float omega, float epsilon, float t0);
 
     //--------------------------Color adjustments--------------------------
 

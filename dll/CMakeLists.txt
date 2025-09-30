@@ -28,6 +28,7 @@ set(MODULE_FILES
     ../lib/retinex.c
     ../lib/edge_filters.c
     ../lib/blur_filters.c
+    ../lib/hazeremoval.c
     ../lib/ocular.c
     dlib_export.h
 )

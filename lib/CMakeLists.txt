@@ -30,6 +30,7 @@ set(MODULE_FILES
     retinex.c
     edge_filters.c
     blur_filters.c
+    hazeremoval.c
     ocular.c
 )
 
