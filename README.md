@@ -121,6 +121,8 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 - 2D Convolution
 - Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
+- FFT (Fast Fourier Transform) [Low-pass, high-pass, band-pass, band-stop, custom]
+- FFT Visualization (outputs frequency domain)
 
 ### General
 
