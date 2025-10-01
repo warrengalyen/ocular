@@ -396,14 +396,29 @@ OC_STATUS ocularFFTVisualize(unsigned char* Input, unsigned char* Output, int Wi
     }
     
     // Create visualization with DC component at center (fftshift)
-    int centerX = fftWidth / 2;
-    int centerY = fftHeight / 2;
+    // We need to map from output coordinates to FFT coordinates
+    // The goal is to put DC (0,0) at the center of the output image
     
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
-            // Map to FFT coordinates with shift
-            int fftX = (x + centerX) % fftWidth;
-            int fftY = (y + centerY) % fftHeight;
+            // Calculate the position relative to the center of the output image
+            int centerX = Width / 2;
+            int centerY = Height / 2;
+            
+            // Calculate offset from center
+            int offsetX = x - centerX;
+            int offsetY = y - centerY;
+            
+            // Map to FFT coordinates
+            // Positive offsets map to positive FFT coordinates
+            // Negative offsets map to the end of the FFT array (due to periodicity)
+            int fftX = offsetX >= 0 ? offsetX : fftWidth + offsetX;
+            int fftY = offsetY >= 0 ? offsetY : fftHeight + offsetY;
+            
+            // Clamp to valid bounds
+            fftX = fftX < 0 ? 0 : (fftX >= fftWidth ? fftWidth - 1 : fftX);
+            fftY = fftY < 0 ? 0 : (fftY >= fftHeight ? fftHeight - 1 : fftY);
+            
             int fftIdx = fftY * fftWidth + fftX;
             
             // Calculate magnitude
