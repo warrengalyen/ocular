@@ -26,7 +26,6 @@ lib/*.txt
 !lib/build_update.sh
 dll/generate_def.bat
 demo/*_filters.h
-lib/fft*
 lib/neuquant*
 demo/similarity*
 demo/seam_carve*

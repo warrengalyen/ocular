@@ -31,7 +31,7 @@ extern "C" {
 #include "blur_filters.h"
 #include "hazeremoval.h"
 #include "version.h"
-// #include "fft.h"
+#include "fft.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -1147,7 +1147,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                          int ditherAmount);
 
     /**
-     * @brief Reduces the number of unique colors in an image by preforming segmentation using k-means clustering.
+     * @brief Reduces the number of unique colors in an image by performing segmentation using k-means clustering.
      * @ingroup group_color_filters
      * @param input The image input data buffer.
      * @param output The image output data buffer.
@@ -1162,6 +1162,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
     //------------------------Distort-------------------------
 
     //--------------------------Misc--------------------------
+
+    OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcFFTFilterParams* params);
 
     /**
     *  @brief Performs a Hough transform to detect lines in an image.
@@ -1241,3 +1243,4 @@ static char timestamp[] = __DATE__ " " __TIME__;
 }
 #endif
 #endif  /* OCULAR_H */
+
