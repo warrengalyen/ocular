@@ -31,6 +31,7 @@ set(MODULE_FILES
     edge_filters.c
     blur_filters.c
     hazeremoval.c
+    fft.c
     ocular.c
 )
 

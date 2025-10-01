@@ -336,3 +336,99 @@ OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width
     
     return status;
 }
+
+// Visualize frequency domain (magnitude spectrum)
+OC_STATUS ocularFFTVisualize(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool logScale) {
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    int Channels = Stride / Width;
+    if (Channels != 1 && Channels != 3 && Channels != 4) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+    
+    // Find next power of 2 for FFT dimensions
+    int fftWidth = nextPowerOfTwo(Width);
+    int fftHeight = nextPowerOfTwo(Height);
+    
+    // Allocate FFT buffer
+    OcComplex* imageFFT = (OcComplex*)calloc(fftWidth * fftHeight, sizeof(OcComplex));
+    if (imageFFT == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    
+    // Process first channel (or convert to grayscale if multi-channel)
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            int srcIdx = y * Stride + x * Channels;
+            int dstIdx = y * fftWidth + x;
+            
+            if (Channels == 1) {
+                imageFFT[dstIdx].real = (float)Input[srcIdx] / 255.0f;
+            } else {
+                // Convert to grayscale using luminance formula
+                float gray = (0.299f * Input[srcIdx] + 0.587f * Input[srcIdx + 1] + 0.114f * Input[srcIdx + 2]) / 255.0f;
+                imageFFT[dstIdx].real = gray;
+            }
+            imageFFT[dstIdx].imag = 0.0f;
+        }
+    }
+    
+    // Forward FFT
+    OC_STATUS status = ocularFFT2D(imageFFT, fftWidth, fftHeight, false);
+    if (status != OC_STATUS_OK) {
+        free(imageFFT);
+        return status;
+    }
+    
+    // Calculate magnitude spectrum and find max for normalization
+    float maxMagnitude = 0.0f;
+    for (int i = 0; i < fftWidth * fftHeight; i++) {
+        float magnitude = sqrt(imageFFT[i].real * imageFFT[i].real + imageFFT[i].imag * imageFFT[i].imag);
+        if (magnitude > maxMagnitude) {
+            maxMagnitude = magnitude;
+        }
+    }
+    
+    // Create visualization with DC component at center (fftshift)
+    int centerX = fftWidth / 2;
+    int centerY = fftHeight / 2;
+    
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            // Map to FFT coordinates with shift
+            int fftX = (x + centerX) % fftWidth;
+            int fftY = (y + centerY) % fftHeight;
+            int fftIdx = fftY * fftWidth + fftX;
+            
+            // Calculate magnitude
+            float magnitude = sqrt(imageFFT[fftIdx].real * imageFFT[fftIdx].real + 
+                                 imageFFT[fftIdx].imag * imageFFT[fftIdx].imag);
+            
+            // Normalize and apply scaling
+            float normalized = magnitude / (maxMagnitude + 1e-10f);
+            
+            if (logScale) {
+                // Logarithmic scaling for better visualization
+                normalized = log(1.0f + normalized * 255.0f) / log(256.0f);
+            }
+            
+            unsigned char pixelValue = (unsigned char)(normalized * 255.0f);
+            
+            // Set output pixel(s)
+            int outIdx = y * Stride + x * Channels;
+            for (int c = 0; c < Channels; c++) {
+                Output[outIdx + c] = pixelValue;
+            }
+        }
+    }
+    
+    free(imageFFT);
+    return OC_STATUS_OK;
+}
+

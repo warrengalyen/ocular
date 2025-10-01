@@ -12,7 +12,6 @@
 #define OCULAR_FFT_H
 
 #include "core.h"
-#include <complex.h>
 #include <math.h>
 
 /**
@@ -66,5 +65,19 @@ OC_STATUS ocularApplyFFTKernel(OcComplex* imageFFT, OcComplex* kernel, int width
  * @return OC_STATUS_OK if successful, otherwise an error code
  */
 OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcFFTFilterParams* params);
+
+/**
+ * @brief Visualizes the frequency domain (magnitude spectrum) of an image
+ * @ingroup group_ip_filters
+ * @param Input The image input data buffer
+ * @param Output The frequency domain visualization output buffer
+ * @param Width The width of the image in pixels
+ * @param Height The height of the image in pixels
+ * @param Stride The number of bytes in one row of pixels
+ * @param logScale If true, applies logarithmic scaling for better visualization
+ * @return OC_STATUS_OK if successful, otherwise an error code
+ */
+OC_STATUS ocularFFTVisualize(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool logScale);
+
 
 #endif /* OCULAR_FFT_H */

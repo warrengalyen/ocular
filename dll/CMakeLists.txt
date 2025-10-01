@@ -29,6 +29,7 @@ set(MODULE_FILES
     ../lib/edge_filters.c
     ../lib/blur_filters.c
     ../lib/hazeremoval.c
+    ../lib/fft.c
     ../lib/ocular.c
     dlib_export.h
 )

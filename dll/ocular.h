@@ -260,6 +260,10 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromImage(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     OcQuantizeMethod method, int maxColors, int amount);
 
+    DLIB_EXPORT OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcFFTFilterParams* params);
+
+    DLIB_EXPORT OC_STATUS ocularFFTVisualize(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool logScale);
+
     DLIB_EXPORT int ocularHoughLineDetection(unsigned char* Input, int Width, int Height, int lineIntensity, int Threshold, float resTheta,
                                              int numLine, float* Radius, float* Theta);
 

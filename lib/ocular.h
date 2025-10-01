@@ -1163,8 +1163,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     //--------------------------Misc--------------------------
 
-    OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcFFTFilterParams* params);
 
+    
     /**
     *  @brief Performs a Hough transform to detect lines in an image.
     *  @ingroup group_ip_general
