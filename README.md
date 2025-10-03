@@ -111,6 +111,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Film Grain
 - Posterize
 - Relief (Emboss)
+- Pointillize
 
 #### Distortion
 

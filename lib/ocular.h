@@ -31,6 +31,7 @@ extern "C" {
 #include "blur_filters.h"
 #include "hazeremoval.h"
 #include "distort_filters.h"
+#include "pixelate_filters.h"
 #include "version.h"
 #include "fft.h"
 #include <math.h>
