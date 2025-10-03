@@ -280,3 +280,126 @@ OC_STATUS ocularTwirlDistortionFilter(unsigned char* input, unsigned char* outpu
     
     return OC_STATUS_OK;
 }
+
+OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* output,
+                                       int width, int height, int stride,
+                                       int amount, OcRippleSize size) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    // If amount is zero, just copy input to output
+    if (amount == 0) {
+        if (input != output) {
+            memcpy(output, input, height * stride);
+        }
+        return OC_STATUS_OK;
+    }
+    
+    // Clamp amount to valid range
+    amount = clamp((float)amount, -999.0f, 999.0f);
+    
+    // Map size enum to wavelength (distance between wave peaks)
+    float wavelength;
+    switch (size) {
+        case OC_RIPPLE_SMALL:
+            wavelength = 10.0f;   // Many small ripples
+            break;
+        case OC_RIPPLE_LARGE:
+            wavelength = 50.0f;   // Few large ripples
+            break;
+        case OC_RIPPLE_MEDIUM:
+        default:
+            wavelength = 25.0f;   // Medium ripples
+            break;
+    }
+    
+    // Convert amount (percent) to amplitude (pixels)
+    // Scale based on image size for consistent visual appearance
+    int channels = stride / width;
+    
+    // Calculate center point
+    float centerX = (width - 1) / 2.0f;
+    float centerY = (height - 1) / 2.0f;
+    
+    // Calculate maximum radius: distance from center to nearest edge
+    float maxRadius = (width < height) ? centerX : centerY;
+    
+    // Convert amount to amplitude based on image size
+    float amplitude = (amount / 100.0f) * (maxRadius / 10.0f);
+    
+    // Create temporary buffer if doing in-place operation
+    uint8_t* source = input;
+    uint8_t* tempBuffer = NULL;
+    
+    if (input == output) {
+        tempBuffer = (uint8_t*)malloc(height * stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, input, height * stride);
+        source = tempBuffer;
+    }
+    
+    // Apply ripple distortion
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int dstIdx = (y * width + x) * channels;
+            
+            // Calculate distance from center
+            float dx = x - centerX;
+            float dy = y - centerY;
+            float distance = sqrtf(dx * dx + dy * dy);
+            
+            // Pixels outside the radius remain untouched
+            if (distance > maxRadius) {
+                for (int c = 0; c < channels; c++) {
+                    output[dstIdx + c] = source[dstIdx + c];
+                }
+                continue;
+            }
+            
+            // Source coordinates (where to sample from)
+            float srcX, srcY;
+            
+            if (distance < 0.0001f) {
+                // At the center, no distortion needed
+                srcX = x;
+                srcY = y;
+            } else {
+                // Calculate ripple displacement using sine wave
+                // The wave propagates radially outward from the center
+                float wavePhase = (distance / wavelength) * 2.0f * M_PI;
+                float displacement = sinf(wavePhase) * amplitude;
+                
+                // Apply displacement in radial direction (toward/away from center)
+                // Normalize the direction vector
+                float nx = dx / distance;  // Normal x (radial direction)
+                float ny = dy / distance;  // Normal y (radial direction)
+                
+                // Apply radial displacement
+                // Positive displacement moves away from center, negative moves toward center
+                srcX = x + nx * displacement;
+                srcY = y + ny * displacement;
+            }
+            
+            // Sample from source image using bilinear interpolation
+            for (int c = 0; c < channels; c++) {
+                float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+            }
+        }
+    }
+    
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
+    
+    return OC_STATUS_OK;
+}
