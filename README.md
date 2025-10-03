@@ -115,9 +115,10 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 #### Distortion
 
 - Pinch
-- Twirl
+- Polar Coordinates
 - Ripple
 - Spherize
+- Twirl
 
 #### OCR Pre-preprocessing
 

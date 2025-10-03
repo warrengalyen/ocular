@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-2-2025
  * Last Updated: 10-3-2025
- * Last update: added spherize distortion filter
+ * Last update: added polar coordinates filter
  *
  * @brief Implementation of distortion filters
  */
@@ -625,6 +625,129 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
             for (int c = 0; c < channels; c++) {
                 float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
                 output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+            }
+        }
+    }
+    
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
+    
+    return OC_STATUS_OK;
+}
+
+OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* output,
+                                       int width, int height, int stride,
+                                       OcPolarMode mode) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    int channels = stride / width;
+    
+    // Calculate center point
+    float centerX = (width - 1) / 2.0f;
+    float centerY = (height - 1) / 2.0f;
+    
+    // Maximum radius: use half of image height (Photoshop convention)
+    // This ensures the bottom of the rectangular image maps to the outer circle
+    float maxRadius = height / 2.0f;
+    
+    // Create temporary buffer if doing in-place operation
+    uint8_t* source = input;
+    uint8_t* tempBuffer = NULL;
+    
+    if (input == output) {
+        tempBuffer = (uint8_t*)malloc(height * stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, input, height * stride);
+        source = tempBuffer;
+    }
+    
+    if (mode == OC_RECT_TO_POLAR) {
+        // Rectangular to Polar conversion
+        // Maps rectangular image onto a circle (like wrapping it around)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int dstIdx = (y * width + x) * channels;
+                
+                // Calculate distance from center
+                float dx = x - centerX;
+                float dy = y - centerY;
+                float distance = sqrtf(dx * dx + dy * dy);
+                
+                // Source coordinates
+                float srcX, srcY;
+                
+                // Calculate angle from center
+                // atan2 gives angle where 0 = right, π/2 = down, π = left, -π/2 = up
+                float angle = atan2f(dy, dx);
+                
+                // Rotate by -90 degrees so top of circle (dy < 0) maps to center of source
+                // This makes the left edge of the rectangular image appear at the top of the circle
+                angle += M_PI / 2.0f;
+                
+                // Normalize to [0, 2*PI]
+                if (angle < 0) angle += 2.0f * M_PI;
+                if (angle >= 2.0f * M_PI) angle -= 2.0f * M_PI;
+                
+                // Map angle to horizontal position in source image (reversed for correct orientation)
+                // Angle goes counter-clockwise, but we want to read the source from left to right clockwise
+                srcX = width - (angle / (2.0f * M_PI)) * width;
+                if (srcX >= width) srcX = 0; // wrap around
+                
+                // Handle wrapping at image edges
+                if (srcX >= width) srcX = width - 1;
+                if (srcX < 0) srcX = 0;
+                
+                // Map distance to vertical position in source image
+                // Center (distance=0) maps to top of image (y=0)
+                // Outer edge (distance=maxRadius) maps to bottom (y=height-1)
+                srcY = (distance / maxRadius) * (height - 1);
+                
+                // Sample from source image using bilinear interpolation
+                for (int c = 0; c < channels; c++) {
+                    float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                    output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+                }
+            }
+        }
+    } else {
+        // Polar to Rectangular conversion
+        // Unwraps circular pattern into rectangular coordinates
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int dstIdx = (y * width + x) * channels;
+                
+                // Map horizontal position to angle (inverse of rect-to-polar)
+                // In rect-to-polar we do: srcX = width - (angle / 2π) * width
+                // So to invert: angle = 2π * (1 - x/width)
+                // Then subtract the π/2 rotation we added in rect-to-polar
+                float normalizedX = (float)x / (float)width;
+                float angle = 2.0f * M_PI * (1.0f - normalizedX) - M_PI / 2.0f;
+                
+                // Map vertical position to radius (inverse of rect-to-polar)
+                // In rect-to-polar we do: srcY = (distance / maxRadius) * (height-1)
+                // So to invert: distance = (y / (height-1)) * maxRadius
+                float radius = (y / (float)(height - 1)) * maxRadius;
+                
+                // Calculate source coordinates using polar to Cartesian conversion
+                float srcX = centerX + radius * cosf(angle);
+                float srcY = centerY + radius * sinf(angle);
+                
+                // Sample from source image using bilinear interpolation
+                for (int c = 0; c < channels; c++) {
+                    float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                    output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+                }
             }
         }
     }

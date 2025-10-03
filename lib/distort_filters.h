@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-2-2025
  * Last Updated: 10-3-2025
- * Last update: added spherize distortion filter
+ * Last update: added polar coordinates filter
  *
  * @brief Distortion filter definitions
 
@@ -50,9 +50,6 @@ OC_STATUS ocularPinchDistortionFilter(unsigned char* input, unsigned char* outpu
  * Positive amounts create clockwise rotation, negative amounts create
  * counter-clockwise rotation.
  * 
- * The distortion is applied only within a radius equal to half the smaller
- * dimension (width or height). Pixels outside this radius remain untouched.
- * 
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -84,9 +81,6 @@ typedef enum {
  * This filter creates concentric wave-like distortions radiating from the center
  * point. Pixels are displaced radially (toward/away from center) based on a
  * sinusoidal wave pattern, creating a water ripple effect.
- * 
- * The distortion is applied only within a radius equal to half the smaller
- * dimension (width or height). Pixels outside this radius remain untouched.
  * 
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
@@ -122,9 +116,6 @@ typedef enum {
  * a 3D bulge or pinch effect. Simulates viewing the image wrapped around a
  * sphere or cylinder.
  * 
- * Normal mode applies distortion within a circular region. Horizontal and
- * vertical modes apply cylindrical distortion along that axis only.
- * 
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -141,6 +132,33 @@ typedef enum {
 OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* output,
                                          int width, int height, int stride,
                                          int amount, OcSpherizeMode mode);
+
+/**
+ * @enum OcPolarMode
+ * @brief Mode parameter for polar coordinates filter
+ */
+typedef enum {
+    OC_POLAR_TO_RECT = 0,     // Convert from polar to rectangular coordinates
+    OC_RECT_TO_POLAR = 1     // Convert from rectangular to polar coordinates
+} OcPolarMode;
+
+/**
+ * @brief Converts an image between rectangular and polar coordinate systems
+ * 
+ * This filter transforms images between Cartesian (rectangular) and polar
+ * coordinate systems, similar to Photoshop's Polar Coordinates filter.
+ * 
+ * @param input Input image buffer
+ * @param output Output image buffer (can be same as input for in-place operation)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @param stride Row stride (typically width * channels)
+ * @param mode Conversion mode: OC_POLAR_TO_RECT or OC_RECT_TO_POLAR
+ * @return OC_STATUS_OK on success, error code otherwise
+ */
+OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* output,
+                                       int width, int height, int stride,
+                                       OcPolarMode mode);
 
 
 #endif /* DISTORT_FILTERS_H */

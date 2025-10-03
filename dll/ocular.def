@@ -122,3 +122,4 @@ EXPORTS
     ocularTwirlDistortionFilter @120
     ocularRippleDistortionFilter @121
     ocularSpherizeDistortionFilter @122
+    ocularPolarCoordinatesFilter @123

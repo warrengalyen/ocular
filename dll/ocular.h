@@ -290,6 +290,10 @@ extern "C" {
                                          int width, int height, int stride,
                                          int amount, OcSpherizeMode mode);
 
+    DLIB_EXPORT OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* output,
+                                       int width, int height, int stride,
+                                       OcPolarMode mode);
+
     //--------------------------Distort-----------------------------------
 
     //--------------------------preImage processing------------------------
