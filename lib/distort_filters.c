@@ -2,8 +2,8 @@
  * @file: distort_filters.c
  * @author Warren Galyen
  * Created: 10-2-2025
- * Last Updated: 10-2-2025
- * Last update: added twirl distortion filter
+ * Last Updated: 10-3-2025
+ * Last update: added spherize distortion filter
  *
  * @brief Implementation of distortion filters
  */
