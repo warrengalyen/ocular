@@ -403,3 +403,236 @@ OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* outp
     
     return OC_STATUS_OK;
 }
+
+OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* output,
+                                         int width, int height, int stride,
+                                         int amount, OcSpherizeMode mode) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    // If amount is zero, just copy input to output
+    if (amount == 0) {
+        if (input != output) {
+            memcpy(output, input, height * stride);
+        }
+        return OC_STATUS_OK;
+    }
+    
+    // Clamp amount to valid range and convert to strength [-1, 1]
+    float strength = clamp((float)amount, -100.0f, 100.0f) / 100.0f;
+    
+    int channels = stride / width;
+    
+    // Calculate center point
+    float centerX = (width - 1) / 2.0f;
+    float centerY = (height - 1) / 2.0f;
+    
+    // Create temporary buffer if doing in-place operation
+    uint8_t* source = input;
+    uint8_t* tempBuffer = NULL;
+    
+    if (input == output) {
+        tempBuffer = (uint8_t*)malloc(height * stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, input, height * stride);
+        source = tempBuffer;
+    }
+    
+    // Determine the radius for normalization based on mode
+    float normRadius;
+    switch (mode) {
+        case OC_SPHERIZE_NORMAL:
+            // Use inscribed circle (smaller dimension)
+            normRadius = (width < height) ? centerX : centerY;
+            break;
+        case OC_SPHERIZE_HORIZONTAL:
+            // Use full width for horizontal cylinder
+            normRadius = centerX;
+            break;
+        case OC_SPHERIZE_VERTICAL:
+            // Use full height for vertical cylinder
+            normRadius = centerY;
+            break;
+        default:
+            normRadius = (width < height) ? centerX : centerY;
+            break;
+    }
+    
+    // Apply spherize distortion
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int dstIdx = (y * width + x) * channels;
+            
+            // Calculate normalized coordinates [-1, 1] range
+            float normX = (x - centerX) / normRadius;
+            float normY = (y - centerY) / normRadius;
+            
+            // Source coordinates (where to sample from)
+            float srcX, srcY;
+            
+            // Apply spherize transformation based on mode
+            switch (mode) {
+                case OC_SPHERIZE_NORMAL: {
+                    // Full spherical distortion (both axes)
+                    float r2 = normX * normX + normY * normY;
+                    
+                    if (r2 > 1.0f) {
+                        // Outside the unit circle - copy unchanged
+                        for (int c = 0; c < channels; c++) {
+                            output[dstIdx + c] = source[dstIdx + c];
+                        }
+                        continue;
+                    }
+                    
+                    if (r2 < 0.0001f) {
+                        // At center, no distortion
+                        srcX = x;
+                        srcY = y;
+                    } else {
+                        // Apply spherical projection using proper sphere mapping
+                        float r = sqrtf(r2);  // Current radius [0, 1]
+                        
+                        // Calculate source radius using spherical projection formula
+                        float srcRadius;
+                        if (strength > 0) {
+                            // Convex (bulge out) - map to sphere surface
+                            // Use arcsine projection: compresses edges toward center
+                            float angle = asinf(r);  // r is already [0,1]
+                            srcRadius = angle / (M_PI / 2.0f);
+                            // Blend with original based on strength
+                            srcRadius = r * (1.0f - strength) + srcRadius * strength;
+                        } else {
+                            // Concave (pinch in) - inverse projection
+                            // Use sine projection: expands edges outward
+                            float angle = r * M_PI / 2.0f;  // Map [0,1] to [0, π/2]
+                            srcRadius = sinf(angle);
+                            // Blend with original based on strength
+                            srcRadius = r * (1.0f - fabsf(strength)) + srcRadius * fabsf(strength);
+                        }
+                        
+                        // Calculate scale factor (how much to scale the radius)
+                        float scale = srcRadius / r;
+                        
+                        // Apply scale to normalized coordinates
+                        normX *= scale;
+                        normY *= scale;
+                        
+                        // Convert back to pixel coordinates
+                        srcX = normX * normRadius + centerX;
+                        srcY = normY * normRadius + centerY;
+                    }
+                    break;
+                }
+                    
+                case OC_SPHERIZE_HORIZONTAL: {
+                    // Horizontal cylindrical distortion
+                    float absX = fabsf(normX);
+                    
+                    if (absX > 1.0f) {
+                        // Outside valid range - copy unchanged
+                        for (int c = 0; c < channels; c++) {
+                            output[dstIdx + c] = source[dstIdx + c];
+                        }
+                        continue;
+                    }
+                    
+                    if (absX < 0.0001f) {
+                        srcX = x;
+                        srcY = y;
+                    } else {
+                        // Apply cylindrical projection along X axis
+                        float srcAbsX;
+                        if (strength > 0) {
+                            // Convex (bulge out)
+                            float angle = asinf(absX);
+                            srcAbsX = angle / (M_PI / 2.0f);
+                            srcAbsX = absX * (1.0f - strength) + srcAbsX * strength;
+                        } else {
+                            // Concave (pinch in)
+                            float angle = absX * M_PI / 2.0f;
+                            srcAbsX = sinf(angle);
+                            srcAbsX = absX * (1.0f - fabsf(strength)) + srcAbsX * fabsf(strength);
+                        }
+                        
+                        // Calculate scale and preserve sign
+                        float scale = srcAbsX / absX;
+                        normX *= scale;
+                        
+                        // Convert back to pixel coordinates
+                        srcX = normX * normRadius + centerX;
+                        srcY = y;  // Y coordinate unchanged
+                    }
+                    break;
+                }
+                    
+                case OC_SPHERIZE_VERTICAL: {
+                    // Vertical cylindrical distortion
+                    float absY = fabsf(normY);
+                    
+                    if (absY > 1.0f) {
+                        // Outside valid range - copy unchanged
+                        for (int c = 0; c < channels; c++) {
+                            output[dstIdx + c] = source[dstIdx + c];
+                        }
+                        continue;
+                    }
+                    
+                    if (absY < 0.0001f) {
+                        srcX = x;
+                        srcY = y;
+                    } else {
+                        // Apply cylindrical projection along Y axis
+                        float srcAbsY;
+                        if (strength > 0) {
+                            // Convex (bulge out)
+                            float angle = asinf(absY);
+                            srcAbsY = angle / (M_PI / 2.0f);
+                            srcAbsY = absY * (1.0f - strength) + srcAbsY * strength;
+                        } else {
+                            // Concave (pinch in)
+                            float angle = absY * M_PI / 2.0f;
+                            srcAbsY = sinf(angle);
+                            srcAbsY = absY * (1.0f - fabsf(strength)) + srcAbsY * fabsf(strength);
+                        }
+                        
+                        // Calculate scale and preserve sign
+                        float scale = srcAbsY / absY;
+                        normY *= scale;
+                        
+                        // Convert back to pixel coordinates
+                        srcX = x;  // X coordinate unchanged
+                        srcY = normY * normRadius + centerY;
+                    }
+                    break;
+                }
+                    
+                default:
+                    // No distortion
+                    srcX = x;
+                    srcY = y;
+                    break;
+            }
+            
+            // Sample from source image using bilinear interpolation
+            for (int c = 0; c < channels; c++) {
+                float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+            }
+        }
+    }
+    
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
+    
+    return OC_STATUS_OK;
+}

@@ -117,6 +117,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Pinch
 - Twirl
 - Ripple
+- Spherize
 
 #### OCR Pre-preprocessing
 

@@ -121,3 +121,4 @@ EXPORTS
     ocularPinchDistortionFilter @119
     ocularTwirlDistortionFilter @120
     ocularRippleDistortionFilter @121
+    ocularSpherizeDistortionFilter @122

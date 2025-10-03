@@ -286,6 +286,10 @@ extern "C" {
                                        int width, int height, int stride,
                                        int amount, OcRippleSize size);
 
+    DLIB_EXPORT OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* output,
+                                         int width, int height, int stride,
+                                         int amount, OcSpherizeMode mode);
+
     //--------------------------Distort-----------------------------------
 
     //--------------------------preImage processing------------------------

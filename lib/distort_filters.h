@@ -105,6 +105,43 @@ OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* outp
                                        int width, int height, int stride,
                                        int amount, OcRippleSize size);
 
+/**
+ * @enum OcSpherizeMode
+ * @brief Mode parameter for spherize distortion filter
+ */
+typedef enum {
+    OC_SPHERIZE_NORMAL = 0,      // Full spherical distortion (both axes)
+    OC_SPHERIZE_HORIZONTAL = 1,  // Horizontal only (cylindrical)
+    OC_SPHERIZE_VERTICAL = 2     // Vertical only (cylindrical)
+} OcSpherizeMode;
+
+/**
+ * @brief Applies a spherize distortion effect to an image
+ * 
+ * This filter maps the image onto a spherical or cylindrical surface, creating
+ * a 3D bulge or pinch effect. Simulates viewing the image wrapped around a
+ * sphere or cylinder.
+ * 
+ * Normal mode applies distortion within a circular region. Horizontal and
+ * vertical modes apply cylindrical distortion along that axis only.
+ * 
+ * @param input Input image buffer
+ * @param output Output image buffer (can be same as input for in-place operation)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @param stride Row stride (typically width * channels)
+ * @param amount Spherize amount in range [-100, 100] (percent)
+ *               Negative values = concave (pinch inward)
+ *               Positive values = convex (bulge outward)
+ *               0 = no effect
+ * @param mode Spherize mode: OC_SPHERIZE_NORMAL, OC_SPHERIZE_HORIZONTAL, or OC_SPHERIZE_VERTICAL
+ *             Normal = full sphere, Horizontal/Vertical = cylinder along that axis
+ * @return OC_STATUS_OK on success, error code otherwise
+ */
+OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* output,
+                                         int width, int height, int stride,
+                                         int amount, OcSpherizeMode mode);
+
 
 #endif /* DISTORT_FILTERS_H */
 
