@@ -1,6 +1,11 @@
 /**
  * @file: distort_filters.c
- * @brief Implementation of distortion filters for image manipulation
+ * @author Warren Galyen
+ * Created: 10-2-2025
+ * Last Updated: 10-2-2025
+ * Last update: added twirl distortion filter
+ *
+ * @brief Implementation of distortion filters
  */
 
 #include "distort_filters.h"
@@ -15,7 +20,7 @@
 #endif
 
 
-// Bilinear interpolation with clamp-to-edge sampling (matches Photoshop behavior)
+// Bilinear interpolation with clamp-to-edge sampling
 // Any coordinate outside image bounds is clamped to nearest valid pixel, then interpolated
 static inline float bilinearSample(uint8_t* image, int width, int height, 
                                    int channels, int channel,
@@ -154,6 +159,113 @@ OC_STATUS ocularPinchDistortionFilter(unsigned char* input, unsigned char* outpu
             // Sample from source image using bilinear interpolation
             // Clamp remapped coordinates to valid bounds,
             // then bilinearly interpolate. This keeps the outer border intact with no holes.
+            for (int c = 0; c < channels; c++) {
+                float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+            }
+        }
+    }
+    
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
+    
+    return OC_STATUS_OK;
+}
+
+OC_STATUS ocularTwirlDistortionFilter(unsigned char* input, unsigned char* output,
+                                      int width, int height, int stride,
+                                      float angle) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    // If angle is zero, just copy input to output
+    if (angle == 0.0f) {
+        if (input != output) {
+            memcpy(output, input, height * stride);
+        }
+        return OC_STATUS_OK;
+    }
+    
+    int channels = stride / width;
+    
+    // Calculate center point
+    float centerX = (width - 1) / 2.0f;
+    float centerY = (height - 1) / 2.0f;
+    
+    // Calculate maximum radius: distance from center to nearest edge
+    float maxRadius = (width < height) ? centerX : centerY;
+    
+    // Convert angle from degrees to radians
+    float angleRad = angle * M_PI / 180.0f;
+    
+    // Create temporary buffer if doing in-place operation
+    uint8_t* source = input;
+    uint8_t* tempBuffer = NULL;
+    
+    if (input == output) {
+        tempBuffer = (uint8_t*)malloc(height * stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, input, height * stride);
+        source = tempBuffer;
+    }
+    
+    // Apply twirl distortion
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int dstIdx = (y * width + x) * channels;
+            
+            // Calculate distance from center
+            float dx = x - centerX;
+            float dy = y - centerY;
+            float distance = sqrtf(dx * dx + dy * dy);
+            
+            // Pixels outside the radius remain untouched
+            if (distance > maxRadius) {
+                for (int c = 0; c < channels; c++) {
+                    output[dstIdx + c] = source[dstIdx + c];
+                }
+                continue;
+            }
+            
+            // Source coordinates (where to sample from)
+            float srcX, srcY;
+            
+            if (distance < 0.0001f) {
+                // At the center, no rotation needed (or would be undefined)
+                srcX = x;
+                srcY = y;
+            } else {
+                // Normalize distance (0 at center, 1 at edge)
+                float normalizedDist = distance / maxRadius;
+                
+                // Calculate rotation amount that decreases from center to edge
+                // Using quadratic falloff for smoother result (like Photoshop)
+                float falloff = 1.0f - normalizedDist;
+                falloff = falloff * falloff;  // Square for smoother falloff
+                float rotationAmount = angleRad * falloff;
+                
+                // Get current angle from center
+                float currentAngle = atan2f(dy, dx);
+                
+                // Apply rotation
+                float newAngle = currentAngle - rotationAmount;
+                
+                // Calculate source coordinates using rotated angle
+                srcX = centerX + distance * cosf(newAngle);
+                srcY = centerY + distance * sinf(newAngle);
+            }
+            
+            // Sample from source image using bilinear interpolation
             for (int c = 0; c < channels; c++) {
                 float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
                 output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
