@@ -26,6 +26,7 @@ set(MODULE_FILES
     ../lib/dither.c
     ../lib/quanitize.c
     ../lib/retinex.c
+    ../lib/distort_filters.c
     ../lib/edge_filters.c
     ../lib/blur_filters.c
     ../lib/hazeremoval.c

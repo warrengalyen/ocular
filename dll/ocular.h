@@ -272,6 +272,22 @@ extern "C" {
 
     //--------------------------Image processing--------------------------
 
+    //--------------------------Distort-----------------------------------
+
+    DLIB_EXPORT OC_STATUS ocularPinchDistortionFilter(unsigned char* input, unsigned char* output, 
+                                      int width, int height, int stride, 
+                                      float amount);
+
+    DLIB_EXPORT OC_STATUS ocularTwirlDistortionFilter(unsigned char* input, unsigned char* output,
+                                      int width, int height, int stride,
+                                      float angle);
+
+    DLIB_EXPORT OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* output,
+                                       int width, int height, int stride,
+                                       int amount, OcRippleSize size);
+
+    //--------------------------Distort-----------------------------------
+
     //--------------------------preImage processing------------------------
 
     DLIB_EXPORT bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);

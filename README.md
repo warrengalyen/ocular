@@ -112,6 +112,12 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Posterize
 - Relief (Emboss)
 
+#### Distortion
+
+- Pinch
+- Twirl
+- Ripple
+
 #### OCR Pre-preprocessing
 
 - Despeckle (Salt & Pepper Noise Removal)

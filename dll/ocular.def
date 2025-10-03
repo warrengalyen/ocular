@@ -118,3 +118,6 @@ EXPORTS
     ocularDarkChannelPriorHazeRemoval @116
     ocularFFTFilter @117
     ocularFFTVisualize @118
+    ocularPinchDistortionFilter @119
+    ocularTwirlDistortionFilter @120
+    ocularRippleDistortionFilter @121
