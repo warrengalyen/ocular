@@ -161,5 +161,66 @@ OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* outp
                                        OcPolarMode mode);
 
 
+// TODO: Continue testing and tweaking this filter
+// /**
+//  * @enum OcWaveType
+//  * @brief Wave shape parameter for wave distortion filter
+//  */
+// typedef enum {
+//     OC_WAVE_SINE = 0,      // Smooth sinusoidal waves
+//     OC_WAVE_TRIANGLE = 1,  // Linear triangle waves
+//     OC_WAVE_SQUARE = 2     // Sharp square waves
+// } OcWaveType;
+
+// /**
+//  * @brief Applies a wave distortion effect to an image
+//  * 
+//  * This filter creates wave-like distortions similar to Photoshop's Wave filter.
+//  * Multiple wave generators with random wavelengths and amplitudes are combined
+//  * to create complex wave patterns. Waves can affect horizontal and/or vertical
+//  * displacement of pixels.
+//  * 
+//  * Each generator creates both horizontal and vertical wave components using the
+//  * same wavelength and amplitude:
+//  *   - Horizontal displacement (dx) based on Y coordinate creates horizontal wave lines
+//  *   - Vertical displacement (dy) based on X coordinate creates vertical wave lines
+//  * The filter assigns each generator a random wavelength (between minWavelength and 
+//  * maxWavelength) and random amplitude (between minAmplitude and maxAmplitude).
+//  * 
+//  * @ingroup group_ip_filters
+//  * @param input Input image buffer
+//  * @param output Output image buffer (can be same as input for in-place operation)
+//  * @param width Image width in pixels
+//  * @param height Image height in pixels
+//  * @param stride Row stride (typically width * channels)
+//  * @param numGenerators Number of wave generators to combine (1-999)
+//  *                      More generators create more complex patterns
+//  * @param minWavelength Minimum wavelength in pixels (1-9999)
+//  *                      Shorter wavelengths create tighter waves
+//  * @param maxWavelength Maximum wavelength in pixels (1-9999)
+//  *                      Must be >= minWavelength
+//  * @param minAmplitude Minimum wave amplitude in pixels (1-9999)
+//  *                     Controls minimum displacement distance
+//  * @param maxAmplitude Maximum wave amplitude in pixels (1-9999)
+//  *                     Must be >= minAmplitude
+//  * @param scaleX Horizontal scale percentage (1-100)
+//  *               100 = full horizontal displacement
+//  * @param scaleY Vertical scale percentage (1-100)
+//  *               100 = full vertical displacement
+//  * @param waveType Wave shape: OC_WAVE_SINE, OC_WAVE_TRIANGLE, or OC_WAVE_SQUARE
+//  * @param seed Random seed for reproducible results (0 = use random seed)
+//  * @return OC_STATUS_OK on success, error code otherwise
+//  */
+// OC_STATUS ocularWaveDistortionFilter(unsigned char* input, unsigned char* output,
+//                                      int width, int height, int stride,
+//                                      int numGenerators,
+//                                      int minWavelength, int maxWavelength,
+//                                      int minAmplitude, int maxAmplitude,
+//                                      int scaleX, int scaleY,
+//                                      OcWaveType waveType,
+//                                      unsigned int seed);
+
+
+
 #endif /* DISTORT_FILTERS_H */
 

@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "util.h"
 
 #ifndef M_PI
@@ -759,3 +760,199 @@ OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* outp
     
     return OC_STATUS_OK;
 }
+
+
+// TODO: Continue testing and tweaking this filter
+
+// // Structure to hold parameters for a single wave generator
+// typedef struct {
+//     float wavelength;   // Wavelength for this generator (same for both directions)
+//     float amplitude;    // Amplitude for this generator (same for both directions)
+//     float phaseX;       // Phase offset for horizontal waves
+//     float phaseY;       // Phase offset for vertical waves
+// } WaveGenerator;
+
+// // Simple random number generator (LCG)
+// static unsigned int wave_rand_state = 1;
+
+// static void wave_srand(unsigned int seed) {
+//     wave_rand_state = seed;
+// }
+
+// static int wave_rand(void) {
+//     wave_rand_state = wave_rand_state * 1103515245 + 12345;
+//     return (unsigned int)(wave_rand_state / 65536) % 32768;
+// }
+
+// static float wave_rand_float(float min, float max) {
+//     float r = (float)wave_rand() / 32768.0f;
+//     return min + r * (max - min);
+// }
+
+// // Evaluate sine wave at position t
+// static inline float evaluateSineWave(float t) {
+//     return sinf(t);
+// }
+
+// // Evaluate triangle wave at position t
+// static inline float evaluateTriangleWave(float t) {
+//     // Normalize t to [0, 2π] range
+//     float normalized = fmodf(t, 2.0f * M_PI);
+//     if (normalized < 0) normalized += 2.0f * M_PI;
+    
+//     // Triangle wave: rises from -1 to 1 in first half, falls from 1 to -1 in second half
+//     if (normalized < M_PI) {
+//         return -1.0f + 2.0f * (normalized / M_PI);
+//     } else {
+//         return 3.0f - 2.0f * (normalized / M_PI);
+//     }
+// }
+
+// // Evaluate square wave at position t
+// static inline float evaluateSquareWave(float t) {
+//     // Normalize t to [0, 2π] range
+//     float normalized = fmodf(t, 2.0f * M_PI);
+//     if (normalized < 0) normalized += 2.0f * M_PI;
+    
+//     // Square wave: +1 for first half, -1 for second half
+//     return (normalized < M_PI) ? 1.0f : -1.0f;
+// }
+
+// OC_STATUS ocularWaveDistortionFilter(unsigned char* input, unsigned char* output,
+//                                      int width, int height, int stride,
+//                                      int numGenerators,
+//                                      int minWavelength, int maxWavelength,
+//                                      int minAmplitude, int maxAmplitude,
+//                                      int scaleX, int scaleY,
+//                                      OcWaveType waveType,
+//                                      unsigned int seed) {
+//     // Validate inputs
+//     if (input == NULL || output == NULL) {
+//         return OC_STATUS_ERR_NULLREFERENCE;
+//     }
+    
+//     if (width <= 0 || height <= 0 || stride <= 0) {
+//         return OC_STATUS_ERR_INVALIDPARAMETER;
+//     }
+    
+//     // Validate parameters
+//     if (numGenerators < 1 || numGenerators > 999) {
+//         return OC_STATUS_ERR_INVALIDPARAMETER;
+//     }
+    
+//     if (minWavelength < 1 || maxWavelength < 1 || maxWavelength < minWavelength) {
+//         return OC_STATUS_ERR_INVALIDPARAMETER;
+//     }
+    
+//     if (minAmplitude < 1 || maxAmplitude < 1 || maxAmplitude < minAmplitude) {
+//         return OC_STATUS_ERR_INVALIDPARAMETER;
+//     }
+    
+//     if (scaleX < 1 || scaleX > 100 || scaleY < 1 || scaleY > 100) {
+//         return OC_STATUS_ERR_INVALIDPARAMETER;
+//     }
+    
+//     int channels = stride / width;
+    
+//     // Initialize random number generator
+//     if (seed == 0) {
+//         seed = (unsigned int)time(NULL);
+//     }
+//     wave_srand(seed);
+    
+//     // Allocate wave generators
+//     WaveGenerator* generators = (WaveGenerator*)malloc(sizeof(WaveGenerator) * numGenerators);
+//     if (generators == NULL) {
+//         return OC_STATUS_ERR_OUTOFMEMORY;
+//     }
+    
+//     // Initialize wave generators with random parameters
+//     for (int i = 0; i < numGenerators; i++) {
+//         generators[i].wavelength = wave_rand_float(minWavelength, maxWavelength);
+//         generators[i].amplitude = wave_rand_float(minAmplitude, maxAmplitude);
+//         generators[i].phaseX = wave_rand_float(0, 2.0f * M_PI);
+//         generators[i].phaseY = wave_rand_float(0, 2.0f * M_PI);
+//     }
+    
+//     // Convert scale percentages to multipliers
+//     float scaleXMult = scaleX / 100.0f;
+//     float scaleYMult = scaleY / 100.0f;
+    
+//     // Select wave evaluation function based on type
+//     float (*waveFunc)(float);
+//     switch (waveType) {
+//         case OC_WAVE_TRIANGLE:
+//             waveFunc = evaluateTriangleWave;
+//             break;
+//         case OC_WAVE_SQUARE:
+//             waveFunc = evaluateSquareWave;
+//             break;
+//         case OC_WAVE_SINE:
+//         default:
+//             waveFunc = evaluateSineWave;
+//             break;
+//     }
+    
+//     // Create temporary buffer if doing in-place operation
+//     uint8_t* source = input;
+//     uint8_t* tempBuffer = NULL;
+    
+//     if (input == output) {
+//         tempBuffer = (uint8_t*)malloc(height * stride);
+//         if (tempBuffer == NULL) {
+//             free(generators);
+//             return OC_STATUS_ERR_OUTOFMEMORY;
+//         }
+//         memcpy(tempBuffer, input, height * stride);
+//         source = tempBuffer;
+//     }
+    
+//     // Apply wave distortion
+//     for (int y = 0; y < height; y++) {
+//         for (int x = 0; x < width; x++) {
+//             int dstIdx = (y * width + x) * channels;
+            
+//             // Calculate cumulative displacement from all wave generators
+//             float displacementX = 0.0f;
+//             float displacementY = 0.0f;
+            
+//             for (int i = 0; i < numGenerators; i++) {
+//                 WaveGenerator* gen = &generators[i];
+                
+//                 float freq = (2.0f * M_PI) / gen->wavelength;
+                
+//                 // Horizontal displacement (dx) based on Y coordinate
+//                 // Creates horizontal wave lines (ripples going left-to-right)
+//                 displacementX += gen->amplitude * waveFunc(freq * y + gen->phaseX);
+                
+//                 // Vertical displacement (dy) based on X coordinate
+//                 // Creates vertical wave lines (ripples going up-to-down)
+//                 displacementY += gen->amplitude * waveFunc(freq * x + gen->phaseY);
+//             }
+            
+//             // Average the displacement and apply scale
+//             displacementX = (displacementX / numGenerators) * scaleXMult;
+//             displacementY = (displacementY / numGenerators) * scaleYMult;
+            
+//             // Calculate source coordinates
+//             float srcX = x + displacementX;
+//             float srcY = y + displacementY;
+            
+//             // Sample from source image using bilinear interpolation
+//             for (int c = 0; c < channels; c++) {
+//                 float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+//                 output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+//             }
+//         }
+//     }
+    
+//     // Free temporary buffer if allocated
+//     if (tempBuffer != NULL) {
+//         free(tempBuffer);
+//     }
+    
+//     // Free generators
+//     free(generators);
+    
+//     return OC_STATUS_OK;
+// }
