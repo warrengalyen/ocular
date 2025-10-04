@@ -1041,7 +1041,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Applies a pixelate effect (sometimes called "mosaic") to an image.
-     * @ingroup group_ip_filters
+     * @ingroup group_artistic_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.
@@ -1054,7 +1054,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Applies an "oil painting" effect to an image.
-     * @ingroup group_ip_filters
+     * @ingroup group_artistic_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.
@@ -1068,7 +1068,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Simulates the image being observed through a layer of frosted glass by applying random pixel disturbance.
-     * @ingroup group_ip_filters
+     * @ingroup group_artistic_filters
      * @param Input The input image data.
      * @param Output The output image data.
      * @param Height The height of the image.
@@ -1084,7 +1084,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Applies a film grain effect to an image.
-     * @ingroup group_ip_filters
+     * @ingroup group_artistic_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.
@@ -1099,7 +1099,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Applies a relief (emboss) effect to the image.
-     * @ingroup group_ip_filters
+     * @ingroup group_artistic_filters
      * @param Input The image input data buffer.
      * @param Output The image output data buffer.
      * @param Width The width of the image in pixels.

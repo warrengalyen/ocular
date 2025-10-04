@@ -8,6 +8,7 @@
 /**
  * @brief Performs edge detection using Prewitt operator. Similiar to Sobel, but with a kernel that is more uniform 
  * and does not place as much emphasis on the center pixels.
+ * @ingroup group_ip_filters
  * @param Input The image input data buffer.    
  * @param Output The image output data buffer.
  * @param Width The width of the image in pixels.
@@ -20,6 +21,7 @@ OC_STATUS ocularPrewittEdgeDetect(unsigned char* Input, unsigned char* Output, i
 /**
  * @brief Performs edge detection using Roberts Cross operator. Emphasizes edge detection along the
  * diagonals of the image.
+ * @ingroup group_ip_filters
  * @param Input The image input data buffer.
  * @param Output The image output data buffer.
  * @param Width The width of the image in pixels.
@@ -30,9 +32,10 @@ OC_STATUS ocularPrewittEdgeDetect(unsigned char* Input, unsigned char* Output, i
 OC_STATUS ocularRobertsEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
 /**
- * @brief Performs edge detection using Laplacian of Gaussian (LoG). Smooths the image with a Gaussian filter before 
- * applying the Laplacian operator to highlight edges. This combination allows for effective edge detection while 
+ * @brief Performs edge detection using Laplacian of Gaussian (LoG). Smooths the image with a Gaussian filter before
+ * applying the Laplacian operator to highlight edges. This combination allows for effective edge detection while
  * minimizing the impact of noise.
+ * @ingroup group_ip_filters
  * @param Input The image input data buffer.
  * @param Output The image output data buffer.
  * @param Width The width of the image in pixels.

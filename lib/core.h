@@ -117,8 +117,13 @@ OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output);
 
 /**
  * @brief Transpose an image by swapping the height and width data.
+ * @ingroup group_ip_general
  * @param Input The data structure of the source image to be processed. Must be single channel.
  * @param Output The data structure of the processed image.
+ * @param Width The width of the image in pixels.
+ * @param Height The height of the image in pixels.
+ * @param Stride The number of bytes in one row of pixels.
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
  */
 OC_STATUS ocularTransposeImage(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
 

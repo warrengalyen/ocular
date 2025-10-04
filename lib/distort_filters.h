@@ -27,6 +27,7 @@
  * The distortion is applied only within a radius equal to half the smaller
  * dimension (width or height). Pixels outside this radius remain untouched.
  * 
+ * @ingroup group_distort_filters
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -44,12 +45,13 @@ OC_STATUS ocularPinchDistortionFilter(unsigned char* input, unsigned char* outpu
 
 /**
  * @brief Applies a twirl distortion effect to an image
- * 
+ *
  * This filter rotates pixels around the center point within a circular region.
  * The rotation strength decreases smoothly from the center to the edge.
  * Positive amounts create clockwise rotation, negative amounts create
  * counter-clockwise rotation.
- * 
+ *
+ * @ingroup group_distort_filters
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -77,11 +79,12 @@ typedef enum {
 
 /**
  * @brief Applies a ripple distortion effect to an image
- * 
+ *
  * This filter creates concentric wave-like distortions radiating from the center
  * point. Pixels are displaced radially (toward/away from center) based on a
  * sinusoidal wave pattern, creating a water ripple effect.
- * 
+ *
+ * @ingroup group_distort_filters
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -111,11 +114,12 @@ typedef enum {
 
 /**
  * @brief Applies a spherize distortion effect to an image
- * 
+ *
  * This filter maps the image onto a spherical or cylindrical surface, creating
  * a 3D bulge or pinch effect. Simulates viewing the image wrapped around a
  * sphere or cylinder.
- * 
+ *
+ * @ingroup group_distort_filters
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels
@@ -144,10 +148,11 @@ typedef enum {
 
 /**
  * @brief Converts an image between rectangular and polar coordinate systems
- * 
+ *
  * This filter transforms images between Cartesian (rectangular) and polar
  * coordinate systems, similar to Photoshop's Polar Coordinates filter.
- * 
+ *
+ * @ingroup group_distort_filters
  * @param input Input image buffer
  * @param output Output image buffer (can be same as input for in-place operation)
  * @param width Image width in pixels

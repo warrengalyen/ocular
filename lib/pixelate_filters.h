@@ -31,6 +31,7 @@
  * composed of distinct, randomly placed dots of pure color. Areas not covered 
  * by dots are filled with the specified background color.
  * 
+ * @ingroup group_artistic_filters
  * @param input Input image buffer
  * @param output Output image buffer (must be different from input)
  * @param width Image width in pixels
@@ -63,6 +64,7 @@ OC_STATUS ocularPointillizeFilter(unsigned char* input, unsigned char* output,
  *   - Green/Magenta channel: 75° or 165°
  *   - Blue/Yellow channel: 90° or 0°
  * 
+ * @ingroup group_artistic_filters
  * @param input Input image buffer (RGB or RGBA)
  * @param output Output image buffer (must be different from input)
  * @param width Image width in pixels
