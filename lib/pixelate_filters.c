@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-3-2025
  * Last Updated: 10-3-2025
- * Last update: added pointillize filter
+ * Last update: added color halftone filter
  *
  * @brief Implementation of pixelation and artistic filters
  */
@@ -199,6 +199,172 @@ OC_STATUS ocularPointillizeFilter(unsigned char* input, unsigned char* output,
             drawFilledCircle(output, width, height, stride,
                            dotX, dotY, dotRadius,
                            dotR, dotG, dotB);
+        }
+    }
+    
+    return OC_STATUS_OK;
+}
+
+// Helper function for basic antialiasing between two values
+static inline float basicAA(float a, float b, float x) {
+    if (x < a) return 0.0f;
+    if (x >= b) return 1.0f;
+    return (x - a) / (b - a);
+}
+
+// Helper to sample a channel value with clamping
+static inline unsigned char sampleChannel(const unsigned char* input, int width, int height, 
+                                         int stride, int x, int y, int channel) {
+    if (x < 0) x = 0;
+    if (x >= width) x = width - 1;
+    if (y < 0) y = 0;
+    if (y >= height) y = height - 1;
+    
+    int channels = stride / width;
+    return input[(y * width + x) * channels + channel];
+}
+
+OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output,
+                                    int width, int height, int stride,
+                                    int radius, float dotDensity,
+                                    float cyanAngle, float magentaAngle, float yellowAngle) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    if (input == output) {
+        return OC_STATUS_ERR_INVALIDPARAMETER; // Cannot operate in-place
+    }
+    
+    // Validate radius
+    if (radius < 4 || radius > 100) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    // Validate dot density
+    if (dotDensity < 0.0f || dotDensity > 100.0f) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    int channels = stride / width;
+    if (channels < 3) {
+        return OC_STATUS_ERR_INVALIDPARAMETER; // Need at least RGB
+    }
+    
+    // Start with white background (halftone dots will be drawn as ink on white)
+    memset(output, 255, height * stride);
+    
+    // Grid spacing
+    float gridSpacing = (float)radius;
+    float halfRadius = gridSpacing * 0.5f;
+    
+    // Convert density from 0-100 to 0-1 scale
+    float densityNormalized = dotDensity * 0.01f;
+    
+    // Density scalar
+    float densityScale = sqrtf(2.0f) * halfRadius * densityNormalized;
+    
+    // Pre-calculate density lookup table based on CMY conversion
+    // (Invert RGB to CMY, square for better luminance control)
+    float densityLookup[256];
+    for (int i = 0; i < 256; i++) {
+        float cmyValue = (float)i / 255.0f;
+        cmyValue = 1.0f - (cmyValue * cmyValue); // CMY conversion with squaring
+        densityLookup[i] = cmyValue * densityScale;
+    }
+    
+    // Process each channel separately with its own angle
+    float angles[3] = {cyanAngle, magentaAngle, yellowAngle};
+    
+    // Neighboring grid offsets for overlap checking
+    int xCheck[4] = {-1, 0, 1, 0};
+    int yCheck[4] = {0, -1, 0, 1};
+    
+    for (int ch = 0; ch < 3; ch++) {
+        // Convert angle to radians
+        float angleRad = angles[ch] * M_PI / 180.0f;
+        float cosTheta = cosf(angleRad);
+        float sinTheta = sinf(angleRad);
+        
+        // Process each pixel
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // Transform pixel to rotated grid space
+                float srcX = (float)x * cosTheta + (float)y * sinTheta;
+                float srcY = -(float)x * sinTheta + (float)y * cosTheta;
+                
+                // Snap to nearest grid point
+                float gridX = floorf((srcX - halfRadius) / gridSpacing + 0.5f) * gridSpacing + halfRadius;
+                float gridY = floorf((srcY - halfRadius) / gridSpacing + 0.5f) * gridSpacing + halfRadius;
+                
+                // Transform grid point back to image space
+                float dstX = gridX * cosTheta - gridY * sinTheta;
+                float dstY = gridX * sinTheta + gridY * cosTheta;
+                
+                // Sample the channel value at grid point
+                unsigned char sampleValue = sampleChannel(input, width, height, stride, 
+                                                         (int)dstX, (int)dstY, ch);
+                
+                // Calculate distance from current pixel to grid center
+                float dx = (float)x - dstX;
+                float dy = (float)y - dstY;
+                float distance = sqrtf(dx * dx + dy * dy) + 1.0f;
+                
+                // Get dot radius for this intensity
+                float dotRadius = densityLookup[sampleValue];
+                
+                // Apply antialiasing on the dot edge
+                float coverage = 1.0f - basicAA(distance - 1.0f, distance, dotRadius);
+                
+                // Check for overlap with neighboring grid dots if this dot is large enough
+                if (distance < halfRadius) {
+                    for (int i = 0; i < 4; i++) {
+                        // Calculate neighboring grid position
+                        float neighborGridX = gridX + xCheck[i] * gridSpacing;
+                        float neighborGridY = gridY + yCheck[i] * gridSpacing;
+                        
+                        // Transform back to image space
+                        float neighborDstX = neighborGridX * cosTheta - neighborGridY * sinTheta;
+                        float neighborDstY = neighborGridX * sinTheta + neighborGridY * cosTheta;
+                        
+                        // Sample neighbor
+                        unsigned char neighborValue = sampleChannel(input, width, height, stride,
+                                                                   (int)neighborDstX, (int)neighborDstY, ch);
+                        
+                        // Calculate distance to neighbor grid center
+                        float ndx = (float)x - neighborDstX;
+                        float ndy = (float)y - neighborDstY;
+                        float neighborDist = sqrtf(ndx * ndx + ndy * ndy);
+                        
+                        // Get neighbor dot radius
+                        float neighborRadius = densityLookup[neighborValue];
+                        
+                        // Calculate coverage from neighbor
+                        float neighborCoverage = 1.0f - basicAA(neighborDist, neighborDist + 1.0f, neighborRadius);
+                        
+                        // Keep the minimum coverage (darkest/most ink)
+                        if (neighborCoverage < coverage) {
+                            coverage = neighborCoverage;
+                        }
+                    }
+                }
+                
+                // Convert coverage to final color (0 = full ink, 1 = no ink/white)
+                int idx = (y * width + x) * channels + ch;
+                output[idx] = (unsigned char)(255.0f * coverage);
+            }
+        }
+    }
+    
+    // Handle alpha channel if present
+    if (channels == 4) {
+        for (int i = 0; i < width * height; i++) {
+            output[i * channels + 3] = 255;
         }
     }
     

@@ -124,3 +124,4 @@ EXPORTS
     ocularSpherizeDistortionFilter @122
     ocularPolarCoordinatesFilter @123
     ocularPointillizeFilter @124
+    ocularColorHalftoneFilter @125  

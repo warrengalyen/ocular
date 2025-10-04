@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-3-2025
  * Last Updated: 10-3-2025
- * Last update: added pointillize filter
+ * Last update: added color halftone filter
  *
  * @brief Pixelation and artistic filter definitions
  */
@@ -31,8 +31,6 @@
  * composed of distinct, randomly placed dots of pure color. Areas not covered 
  * by dots are filled with the specified background color.
  * 
-
- * 
  * @param input Input image buffer
  * @param output Output image buffer (must be different from input)
  * @param width Image width in pixels
@@ -50,6 +48,41 @@ OC_STATUS ocularPointillizeFilter(unsigned char* input, unsigned char* output,
                                   int width, int height, int stride,
                                   int cellSize,
                                   unsigned char bgR, unsigned char bgG, unsigned char bgB);
+
+/**
+ * @brief Applies a color halftone effect to an image
+ * 
+ * This filter simulates the effect of traditional halftone printing. For each
+ * color channel, the image is divided into a grid of circles and the size of the
+ * circles is proportional to the brightness of the pixels in that cell. Each
+ * channel uses a different screen angle to simulate the offset printing process
+ * and avoid moiré patterns.
+ * 
+ * Typical screen angles for realistic halftone:
+ *   - Red/Cyan channel: 105° or 15°
+ *   - Green/Magenta channel: 75° or 165°
+ *   - Blue/Yellow channel: 90° or 0°
+ * 
+ * @param input Input image buffer (RGB or RGBA)
+ * @param output Output image buffer (must be different from input)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @param stride Row stride (typically width * channels)
+ * @param radius Maximum dot radius in pixels (4-100)
+ *               Controls the size of the halftone grid
+ * @param dotDensity Dot density percentage (0-100)
+ *                   Controls the maximum size of halftone dots
+ *                   100 = full density (dots can extend to grid corners)
+ *                   0 = no dots (white output)
+ * @param cyanAngle Screen angle for first channel (Red) in degrees (0-360)
+ * @param magentaAngle Screen angle for second channel (Green) in degrees (0-360)
+ * @param yellowAngle Screen angle for third channel (Blue) in degrees (0-360)
+ * @return OC_STATUS_OK on success, error code otherwise
+ */
+OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output,
+                                    int width, int height, int stride,
+                                    int radius, float dotDensity,
+                                    float cyanAngle, float magentaAngle, float yellowAngle);
 
 
 #endif /* PIXELATE_FILTERS_H */

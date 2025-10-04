@@ -257,6 +257,10 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularPointillizeFilter(unsigned char* input, unsigned char* output, int width, int height, int stride, int cellSize, 
                                                   unsigned char bgR, unsigned char bgG, unsigned char bgB);
 
+    DLIB_EXPORT OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output, int width, int height, int stride,
+                                                     int radius, float dotDensity,
+                                                     float cyanAngle, float magentaAngle, float yellowAngle);
+
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromFile(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     const char* filename, OcDitherMethod method, int amount);
 

@@ -112,6 +112,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Posterize
 - Relief (Emboss)
 - Pointillize
+- Color Halftone
 
 #### Distortion
 
