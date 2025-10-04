@@ -2,8 +2,8 @@
  * @file: pixelate_filters.h
  * @author Warren Galyen
  * Created: 10-3-2025
- * Last Updated: 10-3-2025
- * Last update: added color halftone filter
+ * Last Updated: 10-4-2025
+ * Last update: migrated mosaic filter from ocular.h
  *
  * @brief Pixelation and artistic filter definitions
  */
@@ -15,6 +15,25 @@
 #include <stdbool.h>
 #include "core.h"
 
+
+/**
+ * @brief Applies a mosaic effect to an image.
+ * 
+ * This filter divides the image into blocks of a given size, and then averages 
+ * the color values of all pixels within each block to create a single color value 
+ * for that block. The resulting image resembles a grid of uniform blocks with the 
+ * average color of each block.
+ * 
+ * @ingroup group_artistic_filters
+ * @param Input The image input data buffer.
+ * @param Output The image output data buffer.
+ * @param Width The width of the image in pixels.
+ * @param Height The height of the image in pixels.
+ * @param Stride The number of bytes in one row of pixels.
+ * @param blockSize The width and height of the desired pixelation block (in pixels).
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+ */
+OC_STATUS ocularMosaicFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
 /**
  * @brief Applies a pointillize effect to an image

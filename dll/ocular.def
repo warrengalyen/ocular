@@ -57,7 +57,7 @@ EXPORTS
     ocularMultiscaleRetinex @55
     ocularOilPaintFilter @56
     ocularOpacityFilter @57
-    ocularPixelateFilter @58
+    ocularMosaicFilter @58
     ocularRadialBlur @59
     ocularResamplingFilter @60
     ocularRGBFilter @61

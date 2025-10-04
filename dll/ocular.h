@@ -242,7 +242,7 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
-    DLIB_EXPORT OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
+    DLIB_EXPORT OC_STATUS ocularMosaicFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
     DLIB_EXPORT OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity);
 

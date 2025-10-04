@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 11-1-2024
- * Last update: added version and status string functions
+ * Last Updated: 10-4-2025
+ * Last update: migrated mosaic filter to pixelate_filters.h
  *
  * @brief Contains exported primary filter functions
  */
@@ -29,9 +29,9 @@ extern "C" {
 #include "quanitize.h"
 #include "edge_filters.h"
 #include "blur_filters.h"
-#include "hazeremoval.h"
 #include "distort_filters.h"
 #include "pixelate_filters.h"
+#include "hazeremoval.h"
 #include "version.h"
 #include "fft.h"
 #include <math.h>
@@ -1038,19 +1038,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
     OC_STATUS ocularDocumentDeskew(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool* Skewed);
 
     //------------------------Distort-------------------------
-
-    /**
-     * @brief Applies a pixelate effect (sometimes called "mosaic") to an image.
-     * @ingroup group_artistic_filters
-     * @param Input The image input data buffer.
-     * @param Output The image output data buffer.
-     * @param Width The width of the image in pixels.
-     * @param Height The height of the image in pixels.
-     * @param Stride The number of bytes in one row of pixels.
-     * @param blockSize The width and height of the desired pixelation block (in pixels).
-     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularPixelateFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize);
 
     /**
      * @brief Applies an "oil painting" effect to an image.

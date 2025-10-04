@@ -2,22 +2,84 @@
  * @file: pixelate_filters.c
  * @author Warren Galyen
  * Created: 10-3-2025
- * Last Updated: 10-3-2025
- * Last update: added color halftone filter
+ * Last Updated: 10-4-2025
+ * Last update: migrated mosaic filter from ocular.c
  *
  * @brief Implementation of pixelation and artistic filters
  */
 
 #include "pixelate_filters.h"
 #include "core.h"
+#include "util.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+OC_STATUS ocularMosaicFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    // Ensure filter specific parameters are within valid ranges
+    blockSize = max(blockSize, 1);
+
+    int pPos;
+    for (int y = 0; y < Height; y += blockSize) {
+        for (int x = 0; x < Width; x += blockSize) {
+
+            // Find the average color value of the pixels in a block
+            int numPix = 0;
+            int avg[3];
+            int blockAvg[3];
+            memset(avg, 0, sizeof avg);
+            for (int dy = 0; dy < blockSize; dy++) {
+                for (int dx = 0; dx < blockSize; dx++) {
+                    int xOffset = x + dx;
+                    int yOffset = y + dy;
+
+                    // If possible, add the pixel value to the average
+                    if (yOffset < Height && xOffset < Width) {
+                        pPos = xOffset * channels + yOffset * Stride;
+                        for (int c = 0; c < channels; c++) {
+                            avg[c] += Input[pPos + c];
+                        }
+                        numPix++;
+                    }
+                }
+            }
+            for (int c = 0; c < channels; c++) {
+                blockAvg[c] = avg[c] / numPix;
+            }
+
+            for (int dy = 0; dy < blockSize; dy++) {
+                for (int dx = 0; dx < blockSize; dx++) {
+                    int xOffset = x + dx;
+                    int yOffset = y + dy;
+
+                    // The pixel is the value of the upper left pixel in the block
+                    if (yOffset < Height - 1 && xOffset < Width - 1) {
+                        pPos = xOffset * channels + yOffset * Stride;
+                        for (int c = 0; c < channels; c++) {
+                            Output[pPos + c] = blockAvg[c];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return OC_STATUS_OK;
+}
 
 // Simple random number generator for pointillize (LCG)
 static unsigned int pointillize_rand_state = 1;
