@@ -365,6 +365,7 @@ INPUT                  = mainpages \
                          ../lib/distort_filters.h \
                          ../lib/edge_filters.h \
                          ../lib/blur_filters.h \
+                         ../lib/stylize_filters.h \
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
