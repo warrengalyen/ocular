@@ -33,6 +33,7 @@ set(MODULE_FILES
     blur_filters.c
     hazeremoval.c
     pixelate_filters.c
+    stylize_filters.c
     fft.c
     ocular.c
 )

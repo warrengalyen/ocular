@@ -52,6 +52,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Auto Gamma Correction
 - Auto Level
 - Auto White Balance
+- Posterize
 - Equalize (like Photoshop)
 - Histogram Stretch (contrast stretching)
 - Auto Threshold (with 13 methods)
@@ -103,14 +104,16 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Roberts Edge
 - Prewitt Edge
 
-#### Artistic
+#### Stylize
 
-- Pixelate (Mosaic)
 - Oil Paint
 - Frosted Glass
 - Film Grain
-- Posterize
 - Relief (Emboss)
+
+#### Pixelate
+
+- Mosaic
 - Pointillize
 - Color Halftone
 

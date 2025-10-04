@@ -5,7 +5,7 @@
  * Last Updated: 10-4-2025
  * Last update: migrated mosaic filter from ocular.h
  *
- * @brief Pixelation and artistic filter definitions
+ * @brief Pixelation filter definitions
  */
 
 #ifndef PIXELATE_FILTERS_H
@@ -24,7 +24,7 @@
  * for that block. The resulting image resembles a grid of uniform blocks with the 
  * average color of each block.
  * 
- * @ingroup group_artistic_filters
+ * @ingroup group_pixelate_filters
  * @param Input The image input data buffer.
  * @param Output The image output data buffer.
  * @param Width The width of the image in pixels.
@@ -50,7 +50,7 @@ OC_STATUS ocularMosaicFilter(const unsigned char* Input, unsigned char* Output, 
  * composed of distinct, randomly placed dots of pure color. Areas not covered 
  * by dots are filled with the specified background color.
  * 
- * @ingroup group_artistic_filters
+ * @ingroup group_pixelate_filters
  * @param input Input image buffer
  * @param output Output image buffer (must be different from input)
  * @param width Image width in pixels
@@ -83,7 +83,7 @@ OC_STATUS ocularPointillizeFilter(unsigned char* input, unsigned char* output,
  *   - Green/Magenta channel: 75° or 165°
  *   - Blue/Yellow channel: 90° or 0°
  * 
- * @ingroup group_artistic_filters
+ * @ingroup group_pixelate_filters
  * @param input Input image buffer (RGB or RGBA)
  * @param output Output image buffer (must be different from input)
  * @param width Image width in pixels
