@@ -106,5 +106,23 @@ OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output,
                                     float cyanAngle, float magentaAngle, float yellowAngle);
 
 
+/**
+ * @brief Applies a fragment effect to the image, similar to Photoshop's Fragment filter.
+ *
+ * This filter creates four copies of the pixels, offsets them from each other, and averages them
+ * to produce a fragmented, multi-exposure appearance. The effect creates a subtle motion blur
+ * with diagonal offset copies.
+ *
+ * @ingroup group_pixelate_filters group_inplace
+ * @param Input The image input data buffer.
+ * @param Output The image output data buffer (can be same as input for in-place operation).
+ * @param Width The width of the image in pixels.
+ * @param Height The height of the image in pixels.
+ * @param Stride The number of bytes in one row of pixels.
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+ */
+OC_STATUS ocularFragmentFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+
 #endif /* PIXELATE_FILTERS_H */
 

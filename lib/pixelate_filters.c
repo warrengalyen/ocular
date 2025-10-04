@@ -433,3 +433,90 @@ OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output,
     return OC_STATUS_OK;
 }
 
+OC_STATUS ocularFragmentFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride) {
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int Channels = Stride / Width;
+
+    // Define the four offset positions for the fragment effect
+    // These create a multi-exposure look similar to Photoshop's Fragment filter
+    // Four diagonal offsets: up-left, up-right, down-left, down-right
+    const int offsets[4][2] = {
+        { -4, -4 }, // Up-left
+        { 4, -4 },  // Up-right
+        { -4, 4 },  // Down-left
+        { 4, 4 }    // Down-right
+    };
+
+    // Create temporary buffer if doing in-place operation
+    unsigned char* source = Input;
+    unsigned char* tempBuffer = NULL;
+
+    if (Input == Output) {
+        tempBuffer = (unsigned char*)malloc(Height * Stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, Input, Height * Stride);
+        source = tempBuffer;
+    }
+
+    // Process each pixel
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            // Accumulate values from all four offset positions
+            int sumR = 0, sumG = 0, sumB = 0, sumA = 0;
+
+            for (int i = 0; i < 4; i++) {
+                int offsetX = x + offsets[i][0];
+                int offsetY = y + offsets[i][1];
+
+                // Clamp coordinates to image bounds
+                offsetX = clamp(offsetX, 0, Width - 1);
+                offsetY = clamp(offsetY, 0, Height - 1);
+
+                int srcIdx = (offsetY * Width + offsetX) * Channels;
+
+                // Accumulate channel values
+                if (Channels >= 3) {
+                    sumR += source[srcIdx + 0];
+                    sumG += source[srcIdx + 1];
+                    sumB += source[srcIdx + 2];
+                } else if (Channels == 1) {
+                    sumR += source[srcIdx];
+                }
+
+                if (Channels == 4) {
+                    sumA += source[srcIdx + 3];
+                }
+            }
+
+            // Average the accumulated values (divide by 4)
+            int dstIdx = (y * Width + x) * Channels;
+
+            if (Channels >= 3) {
+                Output[dstIdx + 0] = (unsigned char)(sumR / 4);
+                Output[dstIdx + 1] = (unsigned char)(sumG / 4);
+                Output[dstIdx + 2] = (unsigned char)(sumB / 4);
+            } else if (Channels == 1) {
+                Output[dstIdx] = (unsigned char)(sumR / 4);
+            }
+
+            if (Channels == 4) {
+                Output[dstIdx + 3] = (unsigned char)(sumA / 4);
+            }
+        }
+    }
+
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
+
+    return OC_STATUS_OK;
+}

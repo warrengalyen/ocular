@@ -30,6 +30,7 @@ extern "C" {
 #include "edge_filters.h"
 #include "blur_filters.h"
 #include "distort_filters.h"
+#include "stylize_filters.h"
 #include "pixelate_filters.h"
 #include "hazeremoval.h"
 #include "version.h"

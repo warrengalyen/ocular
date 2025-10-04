@@ -79,5 +79,5 @@ OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int
 OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset);
 
 
- #endif /* STYLIZE_FILTERS_H */
+#endif /* STYLIZE_FILTERS_H */
  
