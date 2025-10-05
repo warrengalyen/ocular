@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-3-2025
  * Last Updated: 10-4-2025
- * Last update: migrated mosaic filter from ocular.c
+ * Last update: added crystallize filter
  *
  * @brief Implementation of pixelation and artistic filters
  */
@@ -15,6 +15,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
+#include <float.h>
 
 OC_STATUS ocularMosaicFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int blockSize) {
 
@@ -518,5 +520,337 @@ OC_STATUS ocularFragmentFilter(unsigned char* Input, unsigned char* Output, int 
         free(tempBuffer);
     }
 
+    return OC_STATUS_OK;
+}
+
+// Structure to accumulate color data for each cell
+typedef struct {
+    int sumR, sumG, sumB, sumA;
+    int count;
+} CellData;
+
+// Simple hash function for deterministic random points
+static unsigned int hash(unsigned int x, unsigned int y) {
+    unsigned int h = (x * 374761393U) + (y * 668265263U);
+    h ^= h >> 13;
+    h *= 1274126177U;
+    h ^= h >> 16;
+    return h;
+}
+
+// Generate random point in grid cell
+static void getRandomPoint(int gridX, int gridY, float cellSize, float* pointX, float* pointY) {
+    unsigned int h = hash(gridX, gridY);
+    *pointX = (float)gridX * cellSize + ((float)(h & 0xFFFF) / 65536.0f) * cellSize;
+    *pointY = (float)gridY * cellSize + ((float)((h >> 16) & 0xFFFF) / 65536.0f) * cellSize;
+}
+
+OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
+                                  int width, int height, int stride,
+                                  int cellSize) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (input == output) {
+        return OC_STATUS_ERR_INVALIDPARAMETER; // Cannot operate in-place
+    }
+    
+    // Clamp cell size to valid range
+    cellSize = clamp(cellSize, 3, 100);
+    
+    int channels = stride / width;
+    if (channels < 1 || channels > 4) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+    
+    // Convert to float for Worley noise
+    float fCellSize = (float)cellSize;
+    
+    // Calculate maximum number of cells needed based on image size and cell size
+    int maxCellsNeeded = ((width / cellSize) + 3) * ((height / cellSize) + 3);
+    // Add some safety margin (50% extra) for edge cases
+    maxCellsNeeded = (int)(maxCellsNeeded * 1.5f);
+    // Ensure minimum of 1000 cells
+    if (maxCellsNeeded < 1000) maxCellsNeeded = 1000;
+    typedef struct {
+        int gridX, gridY;
+        int sumR, sumG, sumB, sumA;
+        int count;
+    } WorleyCell;
+    
+    WorleyCell* cells = (WorleyCell*)calloc(maxCellsNeeded, sizeof(WorleyCell));
+    int numActiveCells = 0;
+    
+    if (cells == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    
+    // First pass: Assign pixels to Worley cells and accumulate colors
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            // Calculate which grid cell this pixel belongs to
+            int gridX = (int)(x / fCellSize);
+            int gridY = (int)(y / fCellSize);
+            
+            // Find or create cell for this grid position
+            int cellIndex = -1;
+            for (int i = 0; i < numActiveCells; i++) {
+                if (cells[i].gridX == gridX && cells[i].gridY == gridY) {
+                    cellIndex = i;
+                    break;
+                }
+            }
+            
+            // Create new cell if not found
+            if (cellIndex == -1 && numActiveCells < maxCellsNeeded) {
+                cellIndex = numActiveCells++;
+                cells[cellIndex].gridX = gridX;
+                cells[cellIndex].gridY = gridY;
+                cells[cellIndex].sumR = 0;
+                cells[cellIndex].sumG = 0;
+                cells[cellIndex].sumB = 0;
+                cells[cellIndex].sumA = 0;
+                cells[cellIndex].count = 0;
+            }
+            
+            // Accumulate color values
+            if (cellIndex >= 0) {
+                int srcIdx = (y * width + x) * channels;
+                cells[cellIndex].count++;
+                
+                if (channels >= 3) {
+                    cells[cellIndex].sumR += input[srcIdx + 0];
+                    cells[cellIndex].sumG += input[srcIdx + 1];
+                    cells[cellIndex].sumB += input[srcIdx + 2];
+                } else if (channels == 1) {
+                    cells[cellIndex].sumR += input[srcIdx];
+                }
+                
+                if (channels == 4) {
+                    cells[cellIndex].sumA += input[srcIdx + 3];
+                }
+            }
+        }
+    }
+    
+    // Pre-calculate random points for all grid cells to avoid repeated calculations
+    int maxGridX = (int)(width / fCellSize) + 3;
+    int maxGridY = (int)(height / fCellSize) + 3;
+    float** precomputedPointsX = (float**)malloc(maxGridY * sizeof(float*));
+    float** precomputedPointsY = (float**)malloc(maxGridY * sizeof(float*));
+    
+    if (precomputedPointsX == NULL || precomputedPointsY == NULL) {
+        free(precomputedPointsX);
+        free(precomputedPointsY);
+        free(cells);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    
+    for (int gy = 0; gy < maxGridY; gy++) {
+        precomputedPointsX[gy] = (float*)malloc(maxGridX * sizeof(float));
+        precomputedPointsY[gy] = (float*)malloc(maxGridX * sizeof(float));
+        if (precomputedPointsX[gy] == NULL || precomputedPointsY[gy] == NULL) {
+            // Cleanup and exit
+            for (int i = 0; i <= gy; i++) {
+                free(precomputedPointsX[i]);
+                free(precomputedPointsY[i]);
+            }
+            free(precomputedPointsX);
+            free(precomputedPointsY);
+            free(cells);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        
+        for (int gx = 0; gx < maxGridX; gx++) {
+            getRandomPoint(gx, gy, fCellSize, &precomputedPointsX[gy][gx], &precomputedPointsY[gy][gx]);
+        }
+    }
+    
+    // Create lookup table for cell indices
+    int** cellLookup = (int**)malloc(maxGridY * sizeof(int*));
+    if (cellLookup == NULL) {
+        // Cleanup and exit
+        for (int gy = 0; gy < maxGridY; gy++) {
+            free(precomputedPointsX[gy]);
+            free(precomputedPointsY[gy]);
+        }
+        free(precomputedPointsX);
+        free(precomputedPointsY);
+        free(cells);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    
+    for (int gy = 0; gy < maxGridY; gy++) {
+        cellLookup[gy] = (int*)malloc(maxGridX * sizeof(int));
+        if (cellLookup[gy] == NULL) {
+            // Cleanup and exit
+            for (int i = 0; i <= gy; i++) {
+                free(precomputedPointsX[i]);
+                free(precomputedPointsY[i]);
+                free(cellLookup[i]);
+            }
+            for (int i = gy + 1; i < maxGridY; i++) {
+                free(precomputedPointsX[i]);
+                free(precomputedPointsY[i]);
+            }
+            free(precomputedPointsX);
+            free(precomputedPointsY);
+            free(cellLookup);
+            free(cells);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        
+        for (int gx = 0; gx < maxGridX; gx++) {
+            cellLookup[gy][gx] = -1; // Initialize to not found
+            for (int i = 0; i < numActiveCells; i++) {
+                if (cells[i].gridX == gx && cells[i].gridY == gy) {
+                    cellLookup[gy][gx] = i;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Second pass: Generate output using Worley noise with smooth edges (optimized)
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float fx = (float)x;
+            float fy = (float)y;
+            
+            // Calculate grid cell coordinates
+            int gridX = (int)(fx / fCellSize);
+            int gridY = (int)(fy / fCellSize);
+            
+            float minDistSq = FLT_MAX;
+            float secondMinDistSq = FLT_MAX;
+            int nearestGridX = gridX;
+            int nearestGridY = gridY;
+            int secondNearestGridX = gridX;
+            int secondNearestGridY = gridY;
+            
+            // Check 3x3 grid around the point for nearest cells
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int checkX = gridX + dx;
+                    int checkY = gridY + dy;
+                    
+                    if (checkX >= 0 && checkX < maxGridX && checkY >= 0 && checkY < maxGridY) {
+                        // Use precomputed points
+                        float pointX = precomputedPointsX[checkY][checkX];
+                        float pointY = precomputedPointsY[checkY][checkX];
+                        
+                        // Calculate squared distance (avoid sqrt for speed)
+                        float dx_dist = fx - pointX;
+                        float dy_dist = fy - pointY;
+                        float distSq = dx_dist * dx_dist + dy_dist * dy_dist;
+                        
+                        if (distSq < minDistSq) {
+                            secondMinDistSq = minDistSq;
+                            secondNearestGridX = nearestGridX;
+                            secondNearestGridY = nearestGridY;
+                            minDistSq = distSq;
+                            nearestGridX = checkX;
+                            nearestGridY = checkY;
+                        } else if (distSq < secondMinDistSq) {
+                            secondMinDistSq = distSq;
+                            secondNearestGridX = checkX;
+                            secondNearestGridY = checkY;
+                        }
+                    }
+                }
+            }
+            
+            // Use lookup table for cell indices
+            int nearestCellIndex = (nearestGridY >= 0 && nearestGridY < maxGridY && 
+                                   nearestGridX >= 0 && nearestGridX < maxGridX) ? 
+                                   cellLookup[nearestGridY][nearestGridX] : -1;
+            int secondNearestCellIndex = (secondNearestGridY >= 0 && secondNearestGridY < maxGridY && 
+                                         secondNearestGridX >= 0 && secondNearestGridX < maxGridX) ? 
+                                         cellLookup[secondNearestGridY][secondNearestGridX] : -1;
+            
+            int dstIdx = (y * width + x) * channels;
+            
+            // Calculate smooth blend factor based on distance ratio (balanced for all cell sizes)
+            float blendFactor = 0.0f;
+            if (secondMinDistSq > minDistSq && minDistSq > 0.0f) {
+                float distRatio = sqrtf(minDistSq) / (sqrtf(minDistSq) + sqrtf(secondMinDistSq));
+                // Moderate blend range - blend when distances are reasonably close
+                if (distRatio > 0.45f && distRatio < 0.55f) {
+                    blendFactor = (distRatio - 0.45f) / 0.1f; // 0.0 to 1.0 over 0.45-0.55 range
+                    blendFactor = blendFactor * blendFactor * (3.0f - 2.0f * blendFactor); // Smoothstep
+                    // Moderate blend strength
+                    blendFactor *= 0.5f; // 50% of the calculated blend
+                }
+            }
+            
+            // Blend between two nearest cells if they're close
+            if (blendFactor > 0.0f && nearestCellIndex >= 0 && secondNearestCellIndex >= 0 &&
+                cells[nearestCellIndex].count > 0 && cells[secondNearestCellIndex].count > 0) {
+                
+                float invBlendFactor = 1.0f - blendFactor;
+                
+                if (channels >= 3) {
+                    float avgR1 = (float)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
+                    float avgG1 = (float)(cells[nearestCellIndex].sumG / cells[nearestCellIndex].count);
+                    float avgB1 = (float)(cells[nearestCellIndex].sumB / cells[nearestCellIndex].count);
+                    
+                    float avgR2 = (float)(cells[secondNearestCellIndex].sumR / cells[secondNearestCellIndex].count);
+                    float avgG2 = (float)(cells[secondNearestCellIndex].sumG / cells[secondNearestCellIndex].count);
+                    float avgB2 = (float)(cells[secondNearestCellIndex].sumB / cells[secondNearestCellIndex].count);
+                    
+                    output[dstIdx + 0] = (unsigned char)(avgR1 * invBlendFactor + avgR2 * blendFactor);
+                    output[dstIdx + 1] = (unsigned char)(avgG1 * invBlendFactor + avgG2 * blendFactor);
+                    output[dstIdx + 2] = (unsigned char)(avgB1 * invBlendFactor + avgB2 * blendFactor);
+                } else if (channels == 1) {
+                    float avg1 = (float)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
+                    float avg2 = (float)(cells[secondNearestCellIndex].sumR / cells[secondNearestCellIndex].count);
+                    output[dstIdx] = (unsigned char)(avg1 * invBlendFactor + avg2 * blendFactor);
+                }
+                
+                if (channels == 4) {
+                    float avgA1 = (float)(cells[nearestCellIndex].sumA / cells[nearestCellIndex].count);
+                    float avgA2 = (float)(cells[secondNearestCellIndex].sumA / cells[secondNearestCellIndex].count);
+                    output[dstIdx + 3] = (unsigned char)(avgA1 * invBlendFactor + avgA2 * blendFactor);
+                }
+            } else if (nearestCellIndex >= 0 && cells[nearestCellIndex].count > 0) {
+                // Use single cell color
+                if (channels >= 3) {
+                    output[dstIdx + 0] = (unsigned char)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
+                    output[dstIdx + 1] = (unsigned char)(cells[nearestCellIndex].sumG / cells[nearestCellIndex].count);
+                    output[dstIdx + 2] = (unsigned char)(cells[nearestCellIndex].sumB / cells[nearestCellIndex].count);
+                } else if (channels == 1) {
+                    output[dstIdx] = (unsigned char)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
+                }
+                
+                if (channels == 4) {
+                    output[dstIdx + 3] = (unsigned char)(cells[nearestCellIndex].sumA / cells[nearestCellIndex].count);
+                }
+            } else {
+                // Fallback - copy original pixel
+                int srcIdx = (y * width + x) * channels;
+                for (int c = 0; c < channels; c++) {
+                    output[dstIdx + c] = input[srcIdx + c];
+                }
+            }
+        }
+    }
+    
+    // Clean up precomputed data
+    for (int gy = 0; gy < maxGridY; gy++) {
+        free(precomputedPointsX[gy]);
+        free(precomputedPointsY[gy]);
+        free(cellLookup[gy]);
+    }
+    free(precomputedPointsX);
+    free(precomputedPointsY);
+    free(cellLookup);
+    
+    // Clean up
+    free(cells);
+    
     return OC_STATUS_OK;
 }

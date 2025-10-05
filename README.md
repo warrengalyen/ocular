@@ -110,13 +110,14 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Frosted Glass
 - Film Grain
 - Relief (Emboss)
-- Fragment
 
 #### Pixelate
 
 - Mosaic
 - Pointillize
 - Color Halftone
+- Fragment
+- Crystallize
 
 #### Distortion
 

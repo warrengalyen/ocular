@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-3-2025
  * Last Updated: 10-4-2025
- * Last update: migrated mosaic filter from ocular.h
+ * Last update: added crystallize filter
  *
  * @brief Pixelation filter definitions
  */
@@ -122,6 +122,33 @@ OC_STATUS ocularColorHalftoneFilter(unsigned char* input, unsigned char* output,
  * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
  */
 OC_STATUS ocularFragmentFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride);
+
+/**
+ * @brief Applies a crystallize effect to an image, similar to Photoshop's Crystallize filter.
+ *
+ * This filter creates a crystal-like or stained glass appearance by dividing the image into
+ * irregular polygonal cells using Worley noise. Each cell is filled with the average
+ * color of all pixels within that cell, creating a mosaic of colored polygons that resembles
+ * crystalline structures.
+ *
+ * The filter generates random seed points distributed across the image, then assigns each
+ * pixel to its nearest seed point. All pixels belonging to the same cell are then colored
+ * with their average color value, resulting in smooth, flat-colored polygonal regions.
+ *
+ * @ingroup group_pixelate_filters
+ * @param input Input image buffer
+ * @param output Output image buffer (must be different from input)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @param stride The number of bytes in one row of pixels.
+ * @param cellSize Approximate size of each crystal cell in pixels (3-100)
+ *                 Smaller values = more detailed, more cells
+ *                 Larger values = more abstract, fewer larger cells
+ * @return OC_STATUS_OK on success, error code otherwise
+ */
+OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
+                                  int width, int height, int stride,
+                                  int cellSize);
 
 
 #endif /* PIXELATE_FILTERS_H */
