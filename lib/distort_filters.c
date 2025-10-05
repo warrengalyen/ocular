@@ -468,22 +468,26 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
     }
     
     // Determine the radius for normalization based on mode
-    float normRadius;
+    float normRadiusX, normRadiusY;
     switch (mode) {
         case OC_SPHERIZE_NORMAL:
-            // Use inscribed circle (smaller dimension)
-            normRadius = (width < height) ? centerX : centerY;
+            // Use full width and height for complete image coverage
+            normRadiusX = centerX;
+            normRadiusY = centerY;
             break;
         case OC_SPHERIZE_HORIZONTAL:
-            // Use full width for horizontal cylinder
-            normRadius = centerX;
+            // Use full width for horizontal cylinder, no Y distortion
+            normRadiusX = centerX;
+            normRadiusY = centerY;
             break;
         case OC_SPHERIZE_VERTICAL:
-            // Use full height for vertical cylinder
-            normRadius = centerY;
+            // Use full height for vertical cylinder, no X distortion
+            normRadiusX = centerX;
+            normRadiusY = centerY;
             break;
         default:
-            normRadius = (width < height) ? centerX : centerY;
+            normRadiusX = centerX;
+            normRadiusY = centerY;
             break;
     }
     
@@ -493,8 +497,8 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
             int dstIdx = (y * width + x) * channels;
             
             // Calculate normalized coordinates [-1, 1] range
-            float normX = (x - centerX) / normRadius;
-            float normY = (y - centerY) / normRadius;
+            float normX = (x - centerX) / normRadiusX;
+            float normY = (y - centerY) / normRadiusY;
             
             // Source coordinates (where to sample from)
             float srcX, srcY;
@@ -546,9 +550,9 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
                         normX *= scale;
                         normY *= scale;
                         
-                        // Convert back to pixel coordinates
-                        srcX = normX * normRadius + centerX;
-                        srcY = normY * normRadius + centerY;
+                        // Convert back to pixel coordinates using separate radii
+                        srcX = normX * normRadiusX + centerX;
+                        srcY = normY * normRadiusY + centerY;
                     }
                     break;
                 }
@@ -588,7 +592,7 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
                         normX *= scale;
                         
                         // Convert back to pixel coordinates
-                        srcX = normX * normRadius + centerX;
+                        srcX = normX * normRadiusX + centerX;
                         srcY = y;  // Y coordinate unchanged
                     }
                     break;
@@ -630,7 +634,7 @@ OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* ou
                         
                         // Convert back to pixel coordinates
                         srcX = x;  // X coordinate unchanged
-                        srcY = normY * normRadius + centerY;
+                        srcY = normY * normRadiusY + centerY;
                     }
                     break;
                 }

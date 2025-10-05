@@ -295,7 +295,9 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* output,
                                        int width, int height, int stride,
-                                       int amount, OcRippleSize size);
+                                       float wavelength, float amplitude,
+                                       float centerX, float centerY,
+                                       float radiusPercentage, float phase);
 
     DLIB_EXPORT OC_STATUS ocularSpherizeDistortionFilter(unsigned char* input, unsigned char* output,
                                          int width, int height, int stride,
