@@ -284,7 +284,9 @@ OC_STATUS ocularTwirlDistortionFilter(unsigned char* input, unsigned char* outpu
 
 OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* output,
                                        int width, int height, int stride,
-                                       int amount, OcRippleSize size) {
+                                       float wavelength, float amplitude,
+                                       float centerX, float centerY,
+                                       float radiusPercentage, float phase) {
     // Validate inputs
     if (input == NULL || output == NULL) {
         return OC_STATUS_ERR_NULLREFERENCE;
@@ -294,45 +296,47 @@ OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* outp
         return OC_STATUS_ERR_INVALIDPARAMETER;
     }
     
-    // If amount is zero, just copy input to output
-    if (amount == 0) {
+    // If amplitude is zero, just copy input to output
+    if (amplitude == 0.0f) {
         if (input != output) {
             memcpy(output, input, height * stride);
         }
         return OC_STATUS_OK;
     }
     
-    // Clamp amount to valid range
-    amount = clamp((float)amount, -999.0f, 999.0f);
+    // Clamp parameters to valid ranges
+    wavelength = clamp(wavelength, 1.0f, 200.0f);
+    amplitude = clamp(amplitude, 0.0f, 100.0f);
+    centerX = clamp(centerX, 0.0f, 1.0f);
+    centerY = clamp(centerY, 0.0f, 1.0f);
+    radiusPercentage = clamp(radiusPercentage, 1.0f, 100.0f);
+    phase = clamp(phase, 0.0f, 360.0f);
     
-    // Map size enum to wavelength (distance between wave peaks)
-    float wavelength;
-    switch (size) {
-        case OC_RIPPLE_SMALL:
-            wavelength = 10.0f;   // Many small ripples
-            break;
-        case OC_RIPPLE_LARGE:
-            wavelength = 50.0f;   // Few large ripples
-            break;
-        case OC_RIPPLE_MEDIUM:
-        default:
-            wavelength = 25.0f;   // Medium ripples
-            break;
-    }
-    
-    // Convert amount (percent) to amplitude (pixels)
-    // Scale based on image size for consistent visual appearance
     int channels = stride / width;
     
-    // Calculate center point
-    float centerX = (width - 1) / 2.0f;
-    float centerY = (height - 1) / 2.0f;
+    // Convert normalized center coordinates to pixel coordinates
+    float centerPixelX = centerX * (width - 1);
+    float centerPixelY = centerY * (height - 1);
     
-    // Calculate maximum radius: distance from center to nearest edge
-    float maxRadius = (width < height) ? centerX : centerY;
+    // Calculate maximum radius: use the longer dimension (width or height)
+    // This ensures the ripple effect can extend to the full extent of the image
+    float maxRadius;
+    if (width > height) {
+        // Width is longer - use half the width as max radius
+        maxRadius = (width - 1) / 2.0f;
+    } else {
+        // Height is longer or equal - use half the height as max radius
+        maxRadius = (height - 1) / 2.0f;
+    }
     
-    // Convert amount to amplitude based on image size
-    float amplitude = (amount / 100.0f) * (maxRadius / 10.0f);
+    // Ensure minimum radius for very small images
+    if (maxRadius < 10.0f) maxRadius = 10.0f;
+    
+    // Apply radius percentage to get the actual effect radius
+    float effectRadius = maxRadius * (radiusPercentage / 100.0f);
+    
+    // Convert phase from degrees to radians
+    float phaseRadians = phase * M_PI / 180.0f;
     
     // Create temporary buffer if doing in-place operation
     uint8_t* source = input;
@@ -353,12 +357,28 @@ OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* outp
             int dstIdx = (y * width + x) * channels;
             
             // Calculate distance from center
-            float dx = x - centerX;
-            float dy = y - centerY;
+            float dx = x - centerPixelX;
+            float dy = y - centerPixelY;
             float distance = sqrtf(dx * dx + dy * dy);
             
-            // Pixels outside the radius remain untouched
-            if (distance > maxRadius) {
+            // Calculate smooth falloff factor
+            float falloffFactor = 1.0f;
+            if (distance > effectRadius * 0.9f) {
+                // Start fading out at 90% of effect radius
+                float fadeStart = effectRadius * 0.9f;
+                float fadeEnd = effectRadius;
+                if (distance < fadeEnd) {
+                    float fadeProgress = (distance - fadeStart) / (fadeEnd - fadeStart);
+                    // Smooth falloff using smoothstep function
+                    falloffFactor = 1.0f - (fadeProgress * fadeProgress * (3.0f - 2.0f * fadeProgress));
+                } else {
+                    // Beyond effect radius, no effect
+                    falloffFactor = 0.0f;
+                }
+            }
+            
+            // If falloff factor is zero, just copy original pixel
+            if (falloffFactor <= 0.0f) {
                 for (int c = 0; c < channels; c++) {
                     output[dstIdx + c] = source[dstIdx + c];
                 }
@@ -375,8 +395,8 @@ OC_STATUS ocularRippleDistortionFilter(unsigned char* input, unsigned char* outp
             } else {
                 // Calculate ripple displacement using sine wave
                 // The wave propagates radially outward from the center
-                float wavePhase = (distance / wavelength) * 2.0f * M_PI;
-                float displacement = sinf(wavePhase) * amplitude;
+                float wavePhase = (distance / wavelength) * 2.0f * M_PI + phaseRadians;
+                float displacement = sinf(wavePhase) * amplitude * falloffFactor;
                 
                 // Apply displacement in radial direction (toward/away from center)
                 // Normalize the direction vector
