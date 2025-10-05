@@ -21,6 +21,10 @@
 
  @ref page_examples_color_balance "Color Balance"
 
+ @ref page_examples_color_halftone "Color Halftone"
+
+ @ref page_examples_crystallize "Crystallize"
+
  @ref page_examples_deskew "Deskew"
 
  @ref page_examples_despeckle "Despeckle"
@@ -36,16 +40,26 @@
  @ref page_examples_palettize_file "Palettize From File"
 
  @ref page_examples_palettize_image "Palettize From Image"
+ 
+ @ref page_examples_pinch "Pinch"
+
+ @ref page_examples_pointillize "Pointillize"
 
  @ref page_examples_relief "Relief (Emboss)"
     
  @ref page_examples_retinex "Retinex"
 
+ @ref page_examples_ripple "Ripple"
+ 
  @ref page_examples_rotate "Rotate an Image"
+
+ @ref page_examples_spherize "Spherize"
 
  @ref page_examples_surface_blur "Surface Blur"
 
  @ref page_examples_skin_smooth "Skin Smoothing"
+
+ @ref page_examples_twirl "Twirl"
 
  @ref page_examples_zoom_blur "Zoom Blur"
 

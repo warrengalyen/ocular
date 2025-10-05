@@ -1,14 +1,14 @@
-## Film Noir Example {#page_examples_film_noir}
+## Pinch Distortion Example {#page_examples_pinch}
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image/stb_image_write.h"
-
+#include <stdio.h>  
+#include <stdlib.h>  
+  
+#define STB_IMAGE_IMPLEMENTATION  
+#include "stb_image/stb_image.h"  
+#define STB_IMAGE_WRITE_IMPLEMENTATION  
+#include "stb_image/stb_image_write.h"  
+  
 int main(void) {  
     int width, height, channels;  
     unsigned char* inputImage = stbi_load("test.jpg", &width, &height, &channels, 0);  
@@ -17,14 +17,9 @@ int main(void) {
         if (outputImage) {  
   
             int stride = width * channels;  
-    
-            int shadowCutoff = 10;
-            int highlightCutoff = 90;
-            int contrastBoost = 10;
-            int contrastMidpoint = 50;
-            int grainPercentage = 50;
-            OC_STATUS status = ocularFilmNoirEffect(inputImage, outputImage, width, height, channels, stride, 
-                            shadowCutoff, highlightCutoff, contrastBoost, contrastMidpoint, grainPercentage);
+  
+            // Apply pinch distortion (positive = pinch, negative = bulge)
+            OC_STATUS status = ocularPinchDistortionFilter(inputImage, outputImage, width, height, stride, 50.0f);
             if (status == OC_STATUS_OK) {
                 stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
             }
@@ -39,11 +34,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="film_noir.jpg"/>
+        <img src="images/pinch.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="film_noir_out.jpg" alt=""/>
+        <img src="images/pinch_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>
