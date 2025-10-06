@@ -36,6 +36,7 @@
   
   - @ref page_examples_color_halftone "Color Halftone"
   - @ref page_examples_crystallize "Crystallize"
+  - @ref page_examples_film_grain "Film Grain"
   - @ref page_examples_frosted_glass "Frosted Glass"
   - @ref page_examples_mosaic "Mosaic"
   - @ref page_examples_pointillize "Pointillize"
@@ -64,6 +65,7 @@
   - @ref page_examples_autothreshold "Auto Threshold"
   - @ref page_examples_palettize_file "Palettize From File"
   - @ref page_examples_palettize_image "Palettize From Image"
+  - @ref page_examples_posterize "Posterize"
 
   @section examples_enhancement Image Enhancement
   Specialized enhancement filters.

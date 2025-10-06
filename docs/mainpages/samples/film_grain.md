@@ -1,6 +1,6 @@
-## Skin Smoothing Example {#page_examples_skin_smooth}
+## Film Grain Example {#page_examples_film_grain}
 
-The skin smoothing filter reduces skin imperfections and blemishes while preserving important facial features like eyes, lips, and eyebrows for natural-looking portrait enhancement.
+The film grain effect simulates the texture and noise characteristics of traditional film photography, adding a vintage or artistic quality to digital images.
 
 ```c
 #include <stdio.h>  
@@ -17,19 +17,17 @@ int main(void) {
     if (inputImage) {  
         unsigned char* outputImage = (unsigned char*)calloc(width * channels * height * sizeof(unsigned char), 1);  
         if (outputImage) {  
-  
-            int stride = width * channels;  
-  
-            int smoothingLevel = 8;
-            int applySkinFilter = false;
-            OC_STATUS status = ocularSkinSmoothingFilter(inputImage, outputImage, width, height, stride, smoothingLevel, applySkinFilter);
+
+            // Apply film grain effect with strength 80.8 and softness 2.3
+            OC_STATUS status = ocularFilmGrainEffect(inputImage, outputImage, width, height, channels, 80.8f, 2.3f); 
+            
             if (status == OC_STATUS_OK) {
-                stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100);  
+                stbi_write_jpg("test_film_grain.jpg", width, height, channels, outputImage, 100);  
             }
         }  
         free(outputImage);  
     }  
-  
+
     stbi_image_free(inputImage);  
 }
 ```
@@ -37,11 +35,11 @@ int main(void) {
 @htmlonly
 <div class="sample-images">
     <div class="img-with-text">
-        <img src="images/skin_smooth.jpg"/>
+        <img src="images/film_grain.jpg"/>
         <p>Before</p>
     </div>
     <div class="img-with-text">
-        <img src="images/skin_smooth_out.jpg" alt=""/>
+        <img src="images/film_grain_out.jpg" alt=""/>
         <p>After</p>
     </div>
 </div>
