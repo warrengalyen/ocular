@@ -27,6 +27,7 @@ set(MODULE_FILES
     ../lib/quanitize.c
     ../lib/retinex.c
     ../lib/distort_filters.c
+    ../lib/denoise_filters.c
     ../lib/edge_filters.c
     ../lib/blur_filters.c
     ../lib/pixelate_filters.c

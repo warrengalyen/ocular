@@ -28,6 +28,7 @@ set(MODULE_FILES
     dither.c
     quanitize.c
     retinex.c
+    denoise_filters.c
     distort_filters.c
     edge_filters.c
     blur_filters.c

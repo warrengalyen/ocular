@@ -18,6 +18,7 @@
   
   - @ref page_examples_beeps "BEEPS (Bi-exponential Edge-preserving Smoothing)"
   - @ref page_examples_bilateral "Bilateral"
+  - @ref page_examples_guided_filter "Guided Filter"
   - @ref page_examples_motion_blur "Motion Blur"
   - @ref page_examples_surface_blur "Surface Blur"
   - @ref page_examples_zoom_blur "Zoom Blur"
