@@ -106,24 +106,23 @@ EXPORTS
     ocularFilmGrainEffect @104
     ocularRotateImage @105
     ocularHistogramStretch @106
-    ocularTransposeImage @107
-    ocularExponentialBlur @108
-    ocularPosterizeFilter @109
-    ocularLaplacianEdgeDetect @110
-    ocularRobertsEdgeDetect @111
-    ocularPrewittEdgeDetect @112
-    ocularReliefFilter @113
-    ocularColorTemperature @114
-    ocularGuidedFilter @115
-    ocularDarkChannelPriorHazeRemoval @116
-    ocularFFTFilter @117
-    ocularFFTVisualize @118
-    ocularPinchDistortionFilter @119
-    ocularTwirlDistortionFilter @120
-    ocularRippleDistortionFilter @121
-    ocularSpherizeDistortionFilter @122
-    ocularPolarCoordinatesFilter @123
-    ocularPointillizeFilter @124
-    ocularColorHalftoneFilter @125  
-    ocularFragmentFilter @126
-    ocularCrystallizeFilter @127
+    ocularExponentialBlur @107
+    ocularPosterizeFilter @108
+    ocularLaplacianEdgeDetect @109
+    ocularRobertsEdgeDetect @110
+    ocularPrewittEdgeDetect @111
+    ocularReliefFilter @112
+    ocularColorTemperature @113
+    ocularGuidedFilter @114
+    ocularDarkChannelPriorHazeRemoval @115
+    ocularFFTFilter @116
+    ocularFFTVisualize @117
+    ocularPinchDistortionFilter @118
+    ocularTwirlDistortionFilter @119
+    ocularRippleDistortionFilter @120
+    ocularSpherizeDistortionFilter @121
+    ocularPolarCoordinatesFilter @122
+    ocularPointillizeFilter @123
+    ocularColorHalftoneFilter @124  
+    ocularFragmentFilter @125
+    ocularCrystallizeFilter @126

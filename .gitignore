@@ -16,6 +16,8 @@ Makefile
 *.zip
 /tests/
 /build/
+/build_gcc/
+/build_msvc/
 
 # local dev specific files
 /docs/out/html
@@ -33,4 +35,4 @@ demo/*.txt
 /demo_ui/
 /test_files/
 /releases/
-
+build_win_msvc_devenv.bat
