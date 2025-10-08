@@ -89,6 +89,83 @@ static inline float noiseGrad(int hash, float x, float y) {
     return PERLIN_GRADIENTS[h][0] * x + PERLIN_GRADIENTS[h][1] * y;
 }
 
+// Simplex noise constants
+#define F2 0.3660254037844386f  // (sqrt(3) - 1) / 2
+#define G2 0.21132486540518713f // (3 - sqrt(3)) / 6
+
+/**
+ * @brief Generate 2D Simplex noise (faster than Perlin, less directional artifacts)
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @return Noise value in range [-1, 1]
+ */
+static float simplexNoise2D(float x, float y) {
+    // Skew the input space to determine which simplex cell we're in
+    float s = (x + y) * F2;
+    int i = (int)floor(x + s);
+    int j = (int)floor(y + s);
+    
+    // Unskew the cell origin back to (x,y) space
+    float t = (i + j) * G2;
+    float X0 = i - t;
+    float Y0 = j - t;
+    float x0 = x - X0;
+    float y0 = y - Y0;
+    
+    // Determine which simplex we are in
+    int i1, j1;
+    if (x0 > y0) {
+        i1 = 1; j1 = 0;  // Lower triangle, XY order: (0,0)->(1,0)->(1,1)
+    } else {
+        i1 = 0; j1 = 1;  // Upper triangle, YX order: (0,0)->(0,1)->(1,1)
+    }
+    
+    // Offsets for middle corner in (x,y) unskewed coords
+    float x1 = x0 - i1 + G2;
+    float y1 = y0 - j1 + G2;
+    // Offsets for last corner in (x,y) unskewed coords
+    float x2 = x0 - 1.0f + 2.0f * G2;
+    float y2 = y0 - 1.0f + 2.0f * G2;
+    
+    // Work out the hashed gradient indices of the three simplex corners
+    int ii = i & 255;
+    int jj = j & 255;
+    int gi0 = PERLIN_PERMUTATION[ii + PERLIN_PERMUTATION[jj]] & 11;
+    int gi1 = PERLIN_PERMUTATION[ii + i1 + PERLIN_PERMUTATION[jj + j1]] & 11;
+    int gi2 = PERLIN_PERMUTATION[ii + 1 + PERLIN_PERMUTATION[jj + 1]] & 11;
+    
+    // Calculate the contribution from the three corners
+    float n0, n1, n2;
+    
+    float t0 = 0.5f - x0 * x0 - y0 * y0;
+    if (t0 < 0) {
+        n0 = 0.0f;
+    } else {
+        t0 *= t0;
+        n0 = t0 * t0 * (PERLIN_GRADIENTS[gi0][0] * x0 + PERLIN_GRADIENTS[gi0][1] * y0);
+    }
+    
+    float t1 = 0.5f - x1 * x1 - y1 * y1;
+    if (t1 < 0) {
+        n1 = 0.0f;
+    } else {
+        t1 *= t1;
+        n1 = t1 * t1 * (PERLIN_GRADIENTS[gi1][0] * x1 + PERLIN_GRADIENTS[gi1][1] * y1);
+    }
+    
+    float t2 = 0.5f - x2 * x2 - y2 * y2;
+    if (t2 < 0) {
+        n2 = 0.0f;
+    } else {
+        t2 *= t2;
+        n2 = t2 * t2 * (PERLIN_GRADIENTS[gi2][0] * x2 + PERLIN_GRADIENTS[gi2][1] * y2);
+    }
+    
+    // Add contributions from each corner to get the final noise value.
+    // The result is scaled to return values in the interval [-1,1].
+    return 70.0f * (n0 + n1 + n2);
+}
+
 /**
  * @brief Generate 2D Perlin noise
  * @param x X coordinate
