@@ -126,3 +126,4 @@ EXPORTS
     ocularColorHalftoneFilter @124  
     ocularFragmentFilter @125
     ocularCrystallizeFilter @126
+    ocularRenderClouds @127

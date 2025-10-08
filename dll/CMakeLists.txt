@@ -31,6 +31,7 @@ set(MODULE_FILES
     ../lib/edge_filters.c
     ../lib/blur_filters.c
     ../lib/pixelate_filters.c
+    ../lib/render_filters.c
     ../lib/stylize_filters.c
     ../lib/hazeremoval.c
     ../lib/fft.c

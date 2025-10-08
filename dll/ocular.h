@@ -309,6 +309,13 @@ extern "C" {
 
     //--------------------------Distort-----------------------------------
 
+
+    //--------------------------Render------------------------------------
+
+    DLIB_EXPORT OC_STATUS ocularRenderClouds(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, const CloudParams* params);
+
+    //--------------------------Render------------------------------------
+
     //--------------------------preImage processing------------------------
 
     DLIB_EXPORT bool ocularGetImageSize(const char* file_path, int* width, int* height, int* file_size);
