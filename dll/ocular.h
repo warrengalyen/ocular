@@ -307,6 +307,14 @@ extern "C" {
                                        int width, int height, int stride,
                                        OcPolarMode mode);
 
+    DLIB_EXPORT OC_STATUS ocularWaveDistortionFilter(unsigned char* input, unsigned char* output,
+                                                     int width, int height, int stride,
+                                                     int numGenerators,
+                                                     int minWavelength, int maxWavelength,
+                                                     int minAmplitude, int maxAmplitude,
+                                                     int scaleX, int scaleY,
+                                                     OcWaveType waveType, unsigned int seed);
+
     //--------------------------Distort-----------------------------------
 
 

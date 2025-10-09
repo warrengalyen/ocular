@@ -31,6 +31,7 @@
   - @ref page_examples_ripple "Ripple"
   - @ref page_examples_spherize "Spherize"
   - @ref page_examples_twirl "Twirl"
+  - @ref page_examples_wave "Wave"
 
   @section examples_stylize Artistic & Stylization
   Filters that apply artistic and stylized effects.

@@ -127,3 +127,4 @@ EXPORTS
     ocularFragmentFilter @125
     ocularCrystallizeFilter @126
     ocularRenderClouds @127
+    ocularWaveDistortionFilter @128
