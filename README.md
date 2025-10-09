@@ -126,6 +126,11 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Ripple
 - Spherize
 - Twirl
+- Wave
+
+#### Render
+
+- Clouds
 
 #### OCR Pre-preprocessing
 
