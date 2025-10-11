@@ -121,6 +121,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 #### Distortion
 
+- Kaleidoscope
 - Pinch
 - Polar Coordinates
 - Ripple

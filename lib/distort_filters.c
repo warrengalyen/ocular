@@ -17,6 +17,25 @@
 #include "util.h"
 
 
+const double ONE_DIV_PI = 1.0 / M_PI;
+
+// Triangle function - creates the kaleidoscope mirroring effect
+// Returns a repeating triangle shape in the range [0, 0.5] with wavelength 1
+// Note: For "correct" results you'd multiply output by 2 to achieve [0, 1] amplitude,
+// but the effect looks better when halved - makes the kaleidoscope pattern less busy
+static inline float triangleFunction(float t) {
+    // Get fractional part [0, 1)
+    t = t - floorf(t);
+    
+    // Mirror the second half [0.5, 1) to create triangle wave
+    if (t >= 0.5f) {
+        t = 1.0f - t;
+    }
+    
+    // Return value in range [0, 0.5] - intentionally NOT multiplied by 2
+    return t;
+}
+
 // Bilinear interpolation with clamp-to-edge sampling
 // Any coordinate outside image bounds is clamped to nearest valid pixel, then interpolated
 static inline float bilinearSample(uint8_t* image, int width, int height, 
@@ -246,7 +265,7 @@ OC_STATUS ocularTwirlDistortionFilter(unsigned char* input, unsigned char* outpu
                 float normalizedDist = distance / maxRadius;
                 
                 // Calculate rotation amount that decreases from center to edge
-                // Using quadratic falloff for smoother result (like Photoshop)
+                // Using quadratic falloff for smoother result
                 float falloff = 1.0f - normalizedDist;
                 falloff = falloff * falloff;  // Square for smoother falloff
                 float rotationAmount = angleRad * falloff;
@@ -676,7 +695,7 @@ OC_STATUS ocularPolarCoordinatesFilter(unsigned char* input, unsigned char* outp
     float centerX = (width - 1) / 2.0f;
     float centerY = (height - 1) / 2.0f;
     
-    // Maximum radius: use half of image height (Photoshop convention)
+    // Maximum radius: use half of image height
     // This ensures the bottom of the rectangular image maps to the outer circle
     float maxRadius = height / 2.0f;
     
@@ -979,6 +998,112 @@ OC_STATUS ocularWaveDistortionFilter(unsigned char* input, unsigned char* output
     
     // Free generators
     free(generators);
+    
+    return OC_STATUS_OK;
+}
+
+OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned char* output,
+                                   int width, int height, int stride,
+                                   int mirrors, float angle, float angle2,
+                                   float centerX, float centerY, float radius) {
+    // Validate inputs
+    if (input == NULL || output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    
+    if (width <= 0 || height <= 0 || stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    // Clamp parameters to valid ranges
+    mirrors = clamp(mirrors, 2, 20);
+    angle = clamp(angle, 0.0f, 360.0f);
+    angle2 = clamp(angle2, 0.0f, 360.0f);
+    centerX = clamp(centerX, 0.0f, 1.0f);
+    centerY = clamp(centerY, 0.0f, 1.0f);
+    radius = clamp(radius, 0.0f, 100.0f);
+    
+    int channels = stride / width;
+    
+    // Convert normalized center coordinates to pixel coordinates
+    float centerPixelX = centerX * (width - 1);
+    float centerPixelY = centerY * (height - 1);
+    
+    // Convert angles from degrees to radians
+    float primaryAngle = angle * M_PI / 180.0f;
+    float secondaryAngle = angle2 * M_PI / 180.0f;
+    
+    // Calculate maximum radius (distance from center to corner)
+    float maxRadius = sqrtf((float)(width * width + height * height)) * 0.5f;
+    float effectRadius = maxRadius * (radius / 100.0f);
+    
+    // Create temporary buffer if doing in-place operation
+    unsigned char* source = input;
+    unsigned char* tempBuffer = NULL;
+    
+    if (input == output) {
+        tempBuffer = (unsigned char*)malloc(height * stride);
+        if (tempBuffer == NULL) {
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        memcpy(tempBuffer, input, height * stride);
+        source = tempBuffer;
+    }
+    
+    // Apply kaleidoscope effect
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int dstIdx = (y * width + x) * channels;
+            
+            // Calculate distance and angle from center
+            float dx = x - centerPixelX;
+            float dy = y - centerPixelY;
+            float distance = sqrtf(dx * dx + dy * dy);
+            
+            // Check if pixel is within effect radius
+            if (radius > 0 && distance > effectRadius) {
+                // Outside effect radius - copy original pixel
+                for (int c = 0; c < channels; c++) {
+                    output[dstIdx + c] = source[dstIdx + c];
+                }
+                continue;
+            }
+            
+            // Calculate theta (angle from center) with primary and secondary angles
+            float theta = atan2f(dy, dx) - primaryAngle - secondaryAngle;
+            
+            // Apply triangle function to create kaleidoscope effect
+            // triangleFunction returns [0, 0.5], need to scale back to radians
+            theta = triangleFunction((theta * ONE_DIV_PI) * mirrors * 0.5f) * (2.0f * M_PI / mirrors);
+            
+            // Apply radius warping if radius is specified
+            float sDistance = distance;
+            if (radius > 0 && effectRadius > 0) {
+                float tRadius = effectRadius / cosf(theta);
+                if (tRadius != 0) {
+                    sDistance = tRadius * triangleFunction(distance / tRadius);
+                }
+            }
+            
+            // Add back primary angle
+            theta += primaryAngle;
+            
+            // Map (distance, theta) back to (srcX, srcY) in the source image
+            float srcX = centerPixelX + sDistance * cosf(theta);
+            float srcY = centerPixelY + sDistance * sinf(theta);
+            
+            // Sample from source image using bilinear interpolation
+            for (int c = 0; c < channels; c++) {
+                float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+            }
+        }
+    }
+    
+    // Free temporary buffer if allocated
+    if (tempBuffer != NULL) {
+        free(tempBuffer);
+    }
     
     return OC_STATUS_OK;
 }

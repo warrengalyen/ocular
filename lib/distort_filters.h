@@ -227,6 +227,44 @@ OC_STATUS ocularWaveDistortionFilter(unsigned char* input, unsigned char* output
                                      OcWaveType waveType,
                                      unsigned int seed);
 
+/**
+ * @brief Applies a kaleidoscope effect to an image
+ *
+ * This filter creates a kaleidoscope-like mirror effect by dividing the image
+ * into wedge-shaped sections and mirroring them around the center point. Based 
+ * on Jerry Huxtable's (JH Labs) transformation with some modifications.
+ * 
+ * @ingroup group_distort_filters
+ * @param input Input image buffer
+ * @param output Output image buffer (can be same as input for in-place operation)
+ * @param width Image width in pixels
+ * @param height Image height in pixels
+ * @param stride The
+ * @param mirrors Number of mirror segments (2-20)
+ *                Creates radial symmetry with the specified number of segments
+ *                2 mirrors = 2 segments (bilateral symmetry)
+ *                3 mirrors = 3 segments (triangular pattern with empty areas)
+ *                6 mirrors = 6 segments (hexagonal pattern)
+ *                8 mirrors = 8 segments (octagonal pattern)
+ *                12 mirrors = 12 segments (dodecagonal pattern)
+ * @param angle Primary rotation angle in degrees (0-360)
+ *              Controls the orientation of the mirror segments
+ * @param angle2 Secondary rotation angle in degrees (0-360)
+ *               Additional rotation applied after mirroring
+ * @param centerX Center X position as proportion of image width (0.0-1.0)
+ *                0.0 = left edge, 0.5 = center, 1.0 = right edge
+ * @param centerY Center Y position as proportion of image height (0.0-1.0)
+ *                0.0 = top edge, 0.5 = center, 1.0 = bottom edge
+ * @param radius Effect radius as percentage (0-100)
+ *               0 = no effect, 100 = full image
+ *               Pixels outside radius show original image
+ * @return OC_STATUS_OK on success, error code otherwise
+ */
+OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned char* output,
+                                   int width, int height, int stride,
+                                   int mirrors, float angle, float angle2,
+                                   float centerX, float centerY, float radius);
+
 
 #endif /* DISTORT_FILTERS_H */
 

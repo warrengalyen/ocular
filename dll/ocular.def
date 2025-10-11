@@ -128,3 +128,4 @@ EXPORTS
     ocularCrystallizeFilter @126
     ocularRenderClouds @127
     ocularWaveDistortionFilter @128
+    ocularKaleidoscopeFilter @129

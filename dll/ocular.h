@@ -315,6 +315,11 @@ extern "C" {
                                                      int scaleX, int scaleY,
                                                      OcWaveType waveType, unsigned int seed);
 
+    DLIB_EXPORT OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned char* output,
+                                                   int width, int height, int stride,
+                                                   int mirrors, float angle, float angle2,
+                                                   float centerX, float centerY, float radius);
+
     //--------------------------Distort-----------------------------------
 
 
