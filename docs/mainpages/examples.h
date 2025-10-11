@@ -26,6 +26,7 @@
   @section examples_distort Distortion Effects
   Filters that warp and distort the image geometry.
   
+  - @ref page_examples_kaleidoscope "Kaleidoscope"
   - @ref page_examples_pinch "Pinch"
   - @ref page_examples_polar_coordinates "Polar Coordinates"
   - @ref page_examples_ripple "Ripple"

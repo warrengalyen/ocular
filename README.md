@@ -21,50 +21,72 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 ## Features
 
-### Color Adjustment Filters
+### 🎨 Color Adjustment Filters
 
-- Grayscale
-- RGB
-- HSL
-- Average Luminance Threshold
-- Color matrix
-- Sepia
-- Chroma Key
-- Lookup (remap colors)
-- Saturation
-- Gamma
+#### Basic Adjustments
+
 - Brightness/Contrast
 - Exposure
-- False color (mix between two colors using luminance)
-- Haze (add/remove)
-- Opacity
-- Levels (like Photoshop)
-- Hue
-- Highlight/Shadow/Tint
-- Highlight/Shadow
-- Monochrome
-- Color Invert
-- Luminance Threshold (similar to Photoshop Threshold filter)
+- Gamma
+- Levels
+- Histogram Stretch (contrast stretching)
+- Equalize
+- Luminance Threshold (like Photoshop Threshold)
+- Average Luminance Threshold
+
+#### Color Balance & Tone
+
+- Color Balance
 - White Balance
+- Color Temperature
 - Vibrance
+- Saturation
+- Hue
+- HSL
+- RGB
+- Color Matrix
+- Sepia
 - Skin Tone
+- False Color (mix between two colors using luminance)
+- Monochrome
+- Grayscale
+- Color Invert
+- Highlight/Shadow/Tint
+- Levels (like Photoshop)
+- Opacity
+- Image Blending (supports 27 Photoshop modes)
+
+
+#### Lighting Correction
+
+- Haze (add/remove)
+- Haze Removal (Dark Channel Prior)
+- Retinex (Multi-Scale with Color Restoration)
+- Backlight Repair (corrects extremely low or non-uniform lighting)
+- Highlight/Shadow
+
+#### Specialized Color Processing
+
+- Lookup (Remap Colors/LUT)
+- Chroma Key (Color Key / Remove Specific Color)
+- Posterize
+- Palettize
+  - from file (remaps colors to closest color in palette file with optional dithering)
+  - from image (reduces unique colors using color quantization with optional dithering)
+
+
+#### 🧩 Compositing & Blending
+
+- Opacity
+- Image Blending (supports 27 Photoshop modes)
+
+#### 🧠 Automatic Enhancements
+
 - Auto Contrast
 - Auto Gamma Correction
 - Auto Level
 - Auto White Balance
-- Posterize
-- Equalize (like Photoshop)
-- Histogram Stretch (contrast stretching)
-- Auto Threshold (with 13 methods)
-- Backlight Repair (corrects extremely low or non-uniform lighting)
-- Image Blending (supports 27 Photoshop modes)
-- Color Balance
-- Color Temperature
-- Retinex (Multi-Scale with Color Restoration)
-- Haze Removal (Dark Channel Prior)
-- Palettize
-  - from file (remaps colors to closest color in palette file with optional dithering)
-  - from image (reduces unique colors using color quantization with optional dithering)
+- Auto Threshold
 
 ### Image Processing Filters
 
@@ -203,13 +225,6 @@ This will out the following 4 files:
 - dynamic link library `bin\ocular.dll`
 - cli image demo `bin\demo.exe`
 - cli palette demo `bin\palette.exe`
-
-## TODO
-
-### GUI Demo Application
-
-I'm working on a full-featured image viewer app in C# for showing-casing the library. 
-This is currently available in the `demo-gui` branch and is very much a work-in-progress.
 
 ## Licensing
 
