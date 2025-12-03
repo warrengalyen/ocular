@@ -206,7 +206,7 @@ void ycbcr2rgb(unsigned char y, unsigned char Cb, unsigned char Cr, unsigned cha
     int cr = Cr - 128;
     int cb = Cb - 128;
     r = y_fixed + cr * float2fixed(1.40200f);
-    g = y_fixed + (cr * -float2fixed(0.71414f)) + ((cb * -float2fixed(0.34414f)) * 0xffff0000);
+    g = y_fixed + (cr * -float2fixed(0.71414f)) + ((cb * -float2fixed(0.34414f)) & 0xffff0000);
     b = y_fixed + cb * float2fixed(1.77200f);
     r >>= 20;
     g >>= 20;
