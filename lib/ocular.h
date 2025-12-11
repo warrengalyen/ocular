@@ -323,7 +323,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param exposure The adjusted exposure. Range [-10.0 - 10.0]. Default 0.0.
+     *  @param exposure The adjusted exposure. Range [-5.0 - 5.0]. Default 0.0.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);

@@ -871,11 +871,11 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1 && Channels != 3 && Channels != 4)
+        if (Channels != 1 && Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
         // Ensure filter specific parameters are within valid ranges
-        exposure = clamp(exposure, -10.0, 10.0);
+        exposure = clamp(exposure, -5.0, 5.0);
 
         unsigned char exposureMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
@@ -885,9 +885,19 @@ extern "C" {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                pOutput[0] = exposureMap[pInput[0]];
-                pOutput[1] = exposureMap[pInput[1]];
-                pOutput[2] = exposureMap[pInput[2]];
+                if (Channels == 1) {
+                    // Grayscale
+                    pOutput[0] = exposureMap[pInput[0]];
+                } else {
+                    // RGB or RGBA
+                    pOutput[0] = exposureMap[pInput[0]];
+                    pOutput[1] = exposureMap[pInput[1]];
+                    pOutput[2] = exposureMap[pInput[2]];
+                    // Preserve alpha channel if present
+                    if (Channels == 4) {
+                        pOutput[3] = pInput[3];
+                    }
+                }
                 pInput += Channels;
                 pOutput += Channels;
             }
