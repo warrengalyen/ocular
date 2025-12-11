@@ -84,6 +84,8 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
+    DLIB_EXPORT OC_STATUS ocularBrightnessAndContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float brightness, float contrast);
+
     DLIB_EXPORT OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast);
 
     DLIB_EXPORT OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);

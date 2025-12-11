@@ -828,6 +828,58 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularBrightnessAndContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
+                                                 float brightness, float contrast) {
+
+        if (Input == NULL || Output == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int Channels = Stride / Width;
+        if (Channels != 1 && Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
+        // Ensure filter specific parameters are within valid ranges
+        brightness = clamp(brightness, -1.0f, 1.0f);
+        contrast = clamp(contrast, 0.0f, 4.0f);
+
+        // Create lookup table that applies both contrast and brightness
+        // Apply contrast first: (pixel - 127) * contrast + 127
+        // Then apply brightness: result + brightness * 255
+        unsigned char brightnessContrastMap[256] = { 0 };
+        for (int pixel = 0; pixel < 256; pixel++) {
+            float contrastValue = (pixel - 127.0f) * contrast + 127.0f;
+            float brightnessValue = contrastValue + brightness * 255.0f;
+            brightnessContrastMap[pixel] = ClampToByte(brightnessValue);
+        }
+
+        for (int Y = 0; Y < Height; Y++) {
+            unsigned char* pOutput = Output + (Y * Stride);
+            unsigned char* pInput = Input + (Y * Stride);
+            for (int X = 0; X < Width; X++) {
+                if (Channels == 1) {
+                    // Grayscale
+                    pOutput[0] = brightnessContrastMap[pInput[0]];
+                } else {
+                    // RGB or RGBA
+                    pOutput[0] = brightnessContrastMap[pInput[0]];
+                    pOutput[1] = brightnessContrastMap[pInput[1]];
+                    pOutput[2] = brightnessContrastMap[pInput[2]];
+                    // Preserve alpha channel if present
+                    if (Channels == 4) {
+                        pOutput[3] = pInput[3];
+                    }
+                }
+                pInput += Channels;
+                pOutput += Channels;
+            }
+        }
+
+        return OC_STATUS_OK;
+    }
+
+    DEPRECATED("Use ocularBrightnessAndContrastFilter instead")
     OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                    float contrast) {
 
@@ -906,6 +958,7 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    DEPRECATED("This function is deprecated. Use ocularBrightnessAndContrastFilter instead")
     OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                      int brightness) {
 

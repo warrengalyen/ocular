@@ -2,8 +2,8 @@
  * @file: util.h
  * @author Warren Galyen
  * Created: 2-12-2024
- * Last Updated: 10-15-2024
- * Last update: moved deskew utility functions to ocr.h
+ * Last Updated: 12-11-2025
+ * Last update: added deprecated macro
  *
  * @brief Ocular utility functions that support primary image processing features.
  */
@@ -16,6 +16,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fastmath.h"
+
+#if defined(__GNUC__) || defined(__clang__)
+    #define DEPRECATED(msg) __attribute__((deprecated(msg)))
+#elif defined(_MSC_VER)
+    #define DEPRECATED(msg) __declspec(deprecated(msg))
+#else
+    #define DEPRECATED(msg)
+#endif
 
 #ifndef clamp
     #define clamp(value, min, max) ((value) > (max) ? (max) : (value) < (min) ? (min) : (value))

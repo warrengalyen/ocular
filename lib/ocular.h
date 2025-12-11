@@ -2,8 +2,8 @@
  * @file: ocular.h
  * @author Warren Galyen
  * Created: 1-29-2024
- * Last Updated: 10-6-2025
- * Last update: migrated guided filter to denoise_filters.h
+ * Last Updated: 12-11-2025
+ * Last update: merged brightness and contrast filters
  *
  * @brief Contains exported primary filter functions
  */
@@ -37,6 +37,7 @@ extern "C" {
 #include "hazeremoval.h"
 #include "version.h"
 #include "fft.h"
+#include "util.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -304,7 +305,21 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularGammaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float gamma[]);
 
+    /** @brief Adjusts the brightness and contrast of the image
+     *  @ingroup group_color_filters group_inplace
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param brightness The adjusted brightness. Range [-1.0 - 1.0]. Default 0.0.
+     *  @param contrast The adjusted contrast. Range [0.0 - 4.0]. Default 1.0.
+     *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularBrightnessAndContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float brightness, float contrast);
+
     /** @brief Adjusts the contrast of the image
+     *  @deprecated Use ocularBrightnessAndContrastFilter instead
      *  @ingroup group_color_filters group_inplace
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
@@ -314,6 +329,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param contrast The adjusted contrast. Range [0.0 - 4.0]. Default 1.0.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
+    DEPRECATED("This function is deprecated. Use ocularBrightnessAndContrastFilter instead")
     OC_STATUS ocularContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float contrast);
 
     /** @brief Adjusts the exposure of the image
@@ -329,6 +345,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
     OC_STATUS ocularExposureFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float exposure);
 
     /** @brief Adjusts the brightness of the image
+     *  @deprecated Use ocularBrightnessAndContrastFilter instead
      *  @ingroup group_color_filters group_inplace
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
@@ -338,6 +355,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param brightness The adjusted brightness. Range [-1.0 - 1.0]. Default 0.0.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
+    DEPRECATED("This function is deprecated. Use ocularBrightnessAndContrastFilter instead")
     OC_STATUS ocularBrightnessFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int brightness);
 
     /** @brief Detects the dark and bright areas of an image, and replaces them with respective colors.
