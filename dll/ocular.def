@@ -129,3 +129,4 @@ EXPORTS
     ocularRenderClouds @127
     ocularWaveDistortionFilter @128
     ocularKaleidoscopeFilter @129
+    ocularBrightnessAndContrastFilter @130
