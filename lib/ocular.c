@@ -162,10 +162,10 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int Channels = Stride / Width;
-        if (Channels == 1 && Channels != 3 && Channels != 4)
+        if (Channels != 3 && Channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
-        hueAdjustment = clamp(hueAdjustment, 0.0, 360.0);
+        hueAdjustment = clamp(hueAdjustment, 0.0, 1.0);
         satAdjustment = clamp(satAdjustment, 0.0, 1.0);
         lightAdjustment = clamp(lightAdjustment, 0.0, 1.0);
 
@@ -179,33 +179,34 @@ extern "C" {
                 g = pInput[1];
                 b = pInput[2];
 
-                // get the hue and saturation
                 rgb2hsl(r, g, b, &h, &s, &l);
 
-                // Apply modifiers
-                h = h + hueAdjustment;
-                if (h > 1)
-                    h -= 1;
-                if (h < 0.0)
-                    h += 1;
+                // Hue adjustment: shift hue (wraps around at 0.0 and 1.0)
+                float hueShift = (hueAdjustment - 0.5f);
+                h = h + hueShift;
+                if (h > 1.0f)
+                    h -= 1.0f;
+                if (h < 0.0f)
+                    h += 1.0f;
 
-                s = s * satAdjustment;
-                if (s < 0)
-                    s = 0;
-                if (s > 1)
-                    s = 1;
+                // Saturation adjustment: 0.0 = desaturate, 0.5 = no change, 1.0 = max saturate
+                float saturationMultiplier = satAdjustment * 2.0f;
+                s = clamp(s * satAdjustment, 0.0f, 1.0f);
 
-                l = l + lightAdjustment;
-                if (l < 0)
-                    l = 0;
-                if (l > 1)
-                    l = 1;
+                // Lightness adjustment: 0.0 = darkest, 0.5 = no change, 1.0 = brightest
+                float lightnessMultiplier = lightAdjustment * 2.0f;
+                l = clamp(l * lightnessMultiplier, 0.0f, 1.0f);
 
                 hsl2rgb(h, s, l, &r, &g, &b);
 
                 pOutput[0] = ClampToByte(r);
                 pOutput[1] = ClampToByte(g);
                 pOutput[2] = ClampToByte(b);
+
+                // Preserve alpha channel if present
+                if (Channels == 4) {
+                    pOutput[3] = pInput[3];
+                }
 
                 pInput += Channels;
                 pOutput += Channels;

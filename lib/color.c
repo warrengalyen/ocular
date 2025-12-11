@@ -53,7 +53,7 @@ void rgb2hsl(float r, float g, float b, float* h, float* s, float* l) {
     *h = *s = *l = (max + min) / 2;
 
     if (max == min) {
-        h = s = 0; // achromatic
+        *h = *s = 0; // achromatic
     } else {
         float d = max - min;
         *s = (*l > 0.5) ? d / (2 - max - min) : d / (max + min);
@@ -93,7 +93,7 @@ float hue2rgb(float p, float q, float t) {
 void hsl2rgb(float h, float s, float l, float* r, float* g, float* b) {
 
     if (s == 0) {
-        *r = *g = *b = l; // achromatic
+        *r = *g = *b = l * 255 + 0.5; // achromatic
     } else {
         float q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         float p = 2 * l - q;

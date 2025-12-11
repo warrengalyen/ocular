@@ -174,9 +174,9 @@ static char timestamp[] = __DATE__ " " __TIME__;
      * @param Width The width of the image in pixels.
      * @param Height The height of the image in pixels.
      * @param Stride The number of bytes in one row of pixels.
-     * @param hueAdjustment The hue modifier to apply. Range [-0.5 - 0.5]
-     * @param satAdjustment The saturation modifier to apply.  Range [-2.0 - 2.0]
-     * @param lightAdjustment The lightness modifier to apply. Range [-1.0 - 1.0]
+     * @param hueAdjustment The hue modifier to apply. Range [0.0 - 1.0]
+     * @param satAdjustment The saturation modifier to apply.  Range [0.0 - 1.0]
+     * @param lightAdjustment The lightness modifier to apply. Range [0.0 - 1.0]
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularHSLFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float hueAdjustment,
