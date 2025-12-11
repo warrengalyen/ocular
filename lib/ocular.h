@@ -312,8 +312,9 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param brightness The adjusted brightness. Range [-1.0 - 1.0]. Default 0.0.
-     *  @param contrast The adjusted contrast. Range [0.0 - 4.0]. Default 1.0.
+     *  @param brightness The adjusted brightness. Range [-1.0 - 1.0]. Default 0.0 (no change).
+     *  @param contrast The adjusted contrast. Range [-1.0 - 1.0]. Default 0.0 (no change).
+     *                   Positive values increase contrast, negative values decrease it.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularBrightnessAndContrastFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float brightness, float contrast);

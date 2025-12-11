@@ -842,15 +842,24 @@ extern "C" {
 
         // Ensure filter specific parameters are within valid ranges
         brightness = clamp(brightness, -1.0f, 1.0f);
-        contrast = clamp(contrast, 0.0f, 4.0f);
+        contrast = clamp(contrast, -1.0f, 1.0f);
 
         // Create lookup table that applies both contrast and brightness
-        // Apply contrast first: (pixel - 127) * contrast + 127
-        // Then apply brightness: result + brightness * 255
         unsigned char brightnessContrastMap[256] = { 0 };
         for (int pixel = 0; pixel < 256; pixel++) {
-            float contrastValue = (pixel - 127.0f) * contrast + 127.0f;
-            float brightnessValue = contrastValue + brightness * 255.0f;
+            // Map contrast from [-1.0, 1.0] to multiplier [0.2, 2.0] where 0.0 → 1.0
+            // Piecewise linear: [-1.0, 0.0] maps to [0.2, 1.0] and [0.0, 1.0] maps to [1.0, 2.0]
+            float contrastMultiplier;
+            if (contrast <= 0.0f) {
+                // Map [-1.0, 0.0] to [0.2, 1.0]
+                contrastMultiplier = 0.2f + 0.8f * (contrast + 1.0f);
+            } else {
+                // Map [0.0, 1.0] to [1.0, 2.0]
+                contrastMultiplier = 1.0f + contrast;
+            }
+            float contrastValue = (pixel - 127.0f) * contrastMultiplier + 127.0f;
+            // Brightness adjustment: +- 128 is a reasonable maximum (half the range)
+            float brightnessValue = contrastValue + brightness * 128.0f;
             brightnessContrastMap[pixel] = ClampToByte(brightnessValue);
         }
 
