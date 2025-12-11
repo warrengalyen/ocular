@@ -111,7 +111,7 @@ extern "C" {
                                                      float highlightTintB, float shadowTintIntensity, float highlightTintIntensity);
 
     DLIB_EXPORT OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                                                 float shadows, float highlights);
+                                                 float shadows, float midtoneContrast, float highlights);
 
     DLIB_EXPORT OC_STATUS ocularMonochromeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                             unsigned char filterColorR, unsigned char filterColorG, unsigned char filterColorB, int intensity);

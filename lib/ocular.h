@@ -455,18 +455,23 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                          float shadowTintG, float shadowTintB, float highlightTintR, float highlightTintG,
                                          float highlightTintB, float shadowTintIntensity, float highlightTintIntensity);
 
-    /** @brief Adjusts the shadows and highlights of an image
+    /** @brief Adjusts the shadows, highlights, and midtone contrast of an image
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param shadows Increase to lighten shadows, from 0.0 to 1.0, with 0.0 as the default.
-     *  @param highlights Decrease to darken highlights, from 0.0 to 1.0, with 1.0 as the default.
+     *  @param shadows Adjust shadows, from -1.0 to 1.0, with 0.0 as the default.
+     *                 Positive values lighten shadows, negative values darken them.
+     *  @param midtoneContrast Adjust midtone contrast, from -1.0 to 1.0, with 0.0 as the default.
+     *                         Positive values increase contrast in midtones, negative values decrease it.
+     *  @param highlights Adjust highlights, from -1.0 to 1.0, with 0.0 as the default .
+     *                   Positive values darken highlights, negative values lighten them.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
-    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows, float highlights);
+    OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float shadows,
+                                          float midtoneContrast, float highlights);
 
     /** @brief Converts the image to a single color version, based on the luminance of each pixel
      *  @ingroup group_color_filters

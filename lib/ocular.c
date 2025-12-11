@@ -1357,7 +1357,7 @@ extern "C" {
     }
 
     OC_STATUS ocularHighlightShadowFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                          float shadows, float highlights) {
+                                          float shadows, float midtoneContrast, float highlights) {
 
         if (Input == NULL || Output == NULL)
             return OC_STATUS_ERR_NULLREFERENCE;
@@ -1369,47 +1369,112 @@ extern "C" {
             return OC_STATUS_ERR_NOTSUPPORTED;
 
         // Ensure filter specific parameters are within valid ranges
-        shadows = clamp(shadows, 0.0f, 1.0f);
-        highlights = clamp(highlights, 0.0f, 1.0f);
+        shadows = clamp(shadows, -1.0f, 1.0f);
+        highlights = clamp(highlights, -1.0f, 1.0f);
+        midtoneContrast = clamp(midtoneContrast, -1.0f, 1.0f);
 
-        short luminanceWeightingMap[256] = { 0 };
         short shadowMap[256] = { 0 };
         short highlightMap[256] = { 0 };
+        short midtoneContrastMap[256] = { 0 };
 
         int divLuminance[256 * 256] = { 0 };
+
+        // Build adjustments maps based on luminance
         for (int pixel = 0; pixel < 256; pixel++) {
-            luminanceWeightingMap[pixel] = (short)(pixel * 0.3f);
             float luminance = (1.0f / 255.0f) * pixel;
-            shadowMap[pixel] = (short)(255.0f *
-                                       clamp((powf(luminance, 1.0f / (shadows + 1.0f)) + (-0.76f) * 
-                                             powf(luminance, 2.0f / (shadows + 1.0f))) - luminance,
-                                             0.0f, 1.0f));
-            highlightMap[pixel] =
-                    (short)(255.0f *
-                            clamp((1.0f - (powf(1.0f - luminance, 1.0f / (2.0f - highlights)) + (-0.8f) * 
-                                  powf(1.0f - luminance, 2.0f / (2.0f - highlights)))) - luminance,
-                                  -1.0f, 0.0f));
+            
+            // Shadows adjustment: -1.0 = darken, 0.0 = no change, 1.0 = lighten
+            float shadowAdjustment = 0.0f;
+            if (shadows > 0.0f) {
+                // Lighten shadows
+                float shadowsMapped = shadows; // maps [0.0, 1.0] to [0.0, 1.0]
+                shadowAdjustment = (powf(luminance, 1.0f / (shadowsMapped + 1.0f)) + (-0.76f) * 
+                                   powf(luminance, 2.0f / (shadowsMapped + 1.0f))) - luminance;
+                shadowAdjustment = clamp(shadowAdjustment, 0.0f, 1.0f);
+            } else if (shadows < 0.0f) {
+                // Darken shadows: use inverse formula
+                float shadowsMapped = -shadows; // maps [-1.0, 0.0] to [1.0, 0.0]
+                shadowAdjustment = luminance - (powf(luminance, 1.0f / (shadowsMapped + 1.0f)) + (-0.76f) * 
+                                              powf(luminance, 2.0f / (shadowsMapped + 1.0f)));
+                shadowAdjustment = clamp(shadowAdjustment, -1.0f, 0.0f);
+            }
+            shadowMap[pixel] = (short)(255.0f * shadowAdjustment);
+            
+            // Highlights adjustment: -1.0 = lighten, 0.0 = no change, 1.0 = darken
+            float highlightAdjustment = 0.0f;
+            if (highlights > 0.0f) {
+                // Darken highlights: use original formula with mapped value [0.0, 1.0]
+                float highlightsMapped = highlights; // maps [0.0, 1.0] to [0.0, 1.0]
+                highlightAdjustment = (1.0f - (powf(1.0f - luminance, 1.0f / (2.0f - highlightsMapped)) + (-0.8f) * 
+                                            powf(1.0f - luminance, 2.0f / (2.0f - highlightsMapped)))) - luminance;
+                highlightAdjustment = clamp(highlightAdjustment, -1.0f, 0.0f);
+            } else if (highlights < 0.0f) {
+                // Lighten highlights: use inverse formula
+                float highlightsMapped = -highlights; // maps [-1.0, 0.0] to [1.0, 0.0]
+                highlightAdjustment = luminance - (1.0f - (powf(1.0f - luminance, 1.0f / (2.0f - highlightsMapped)) + (-0.8f) * 
+                                                    powf(1.0f - luminance, 2.0f / (2.0f - highlightsMapped))));
+                highlightAdjustment = clamp(highlightAdjustment, 0.0f, 1.0f);
+            }
+            highlightMap[pixel] = (short)(255.0f * highlightAdjustment);
+            
+            // Midtone contrast: affects values around 0.5 (128) most strongly
+            // Weight by distance from midtone: weight = 1.0 - 4.0 * (luminance - 0.5)^2
+            // This gives maximum weight at 0.5 and decreases towards 0 and 1
+            float midtoneWeight = 1.0f - 4.0f * (luminance - 0.5f) * (luminance - 0.5f);
+            midtoneWeight = clamp(midtoneWeight, 0.0f, 1.0f);
+            
+            // Apply contrast adjustment weighted by midtone proximity
+            // Contrast adjustment: (luminance - 0.5) * contrast, scaled by weight
+            // This maintains color relationships by adjusting luminance proportionally
+            float midtoneAdjustment = (luminance - 0.5f) * midtoneContrast * midtoneWeight;
+            midtoneContrastMap[pixel] = (short)(255.0f * midtoneAdjustment);
         }
+
+        // Build division lookup table for RGB scaling
         for (int luminance = 0; luminance < 256; luminance++) {
             int* pDivLuminance = divLuminance + luminance * 256;
             for (int pixel = 0; pixel < 256; pixel++) {
-                pDivLuminance[0] = (int)(255.0f * pixel * (1.0f / luminance));
+                if (luminance > 0) {
+                    pDivLuminance[0] = (int)(255.0f * pixel * (1.0f / luminance));
+                } else {
+                    pDivLuminance[0] = pixel; // When luminance is 0, preserve pixel value
+                }
                 pDivLuminance++;
             }
         }
+
         for (int Y = 0; Y < Height; Y++) {
             unsigned char* pOutput = Output + (Y * Stride);
             unsigned char* pInput = Input + (Y * Stride);
             for (int X = 0; X < Width; X++) {
-                const short luminance = luminanceWeightingMap[pInput[0]] + luminanceWeightingMap[pInput[1]] + 
-                                        luminanceWeightingMap[pInput[2]];
+                // Calculate luminance using proper perceptual weighting (ITU-R BT.601)
+                // R: 0.299, G: 0.587, B: 0.114
+                // Using fixed point: 77/256 ≈ 0.299, 150/256 ≈ 0.587, 29/256 ≈ 0.114
+                const int luminance = (pInput[0] * 77 + pInput[1] * 150 + pInput[2] * 29) >> 8;
+
                 const short shadow = shadowMap[luminance];
                 const short highlight = highlightMap[luminance];
-                short lshpixel = (luminance + shadow + highlight);
+                const short midtone = midtoneContrastMap[luminance];
+
+                // Calculate adjusted luminance and clamp to valid range
+                short lshpixel = luminance + shadow + highlight + midtone;
+                lshpixel = clamp(lshpixel, 0, 255);
+
+                // Scale RGB channels proportionally to luminance change
                 int* pDivLuminance = divLuminance + (luminance << 8);
-                pOutput[0] = (unsigned char)((lshpixel * pDivLuminance[pInput[0]]) >> 8);
-                pOutput[1] = (unsigned char)((lshpixel * pDivLuminance[pInput[1]]) >> 8);
-                pOutput[2] = (unsigned char)((lshpixel * pDivLuminance[pInput[2]]) >> 8);
+
+                int r = (lshpixel * pDivLuminance[pInput[0]]) >> 8;
+                int g = (lshpixel * pDivLuminance[pInput[1]]) >> 8;
+                int b = (lshpixel * pDivLuminance[pInput[2]]) >> 8;
+
+                pOutput[0] = (unsigned char)clamp(r, 0, 255);
+                pOutput[1] = (unsigned char)clamp(g, 0, 255);
+                pOutput[2] = (unsigned char)clamp(b, 0, 255);
+                
+                // Preserve alpha channel if present
+                if (Channels == 4) {
+                    pOutput[3] = pInput[3];
+                }
                 pInput += Channels;
                 pOutput += Channels;
             }
