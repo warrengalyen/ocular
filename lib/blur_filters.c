@@ -816,26 +816,46 @@ OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, i
     Threshold = clamp(Threshold, 2, 255);
 
     if (Channel == 1) {
-        unsigned short* ColHist = (unsigned short*)_aligned_malloc(256 * (Width + Radius + Radius) * sizeof(unsigned short), 32);
+        unsigned short* ColHist = (unsigned short*)AllocMemory(256 * (Width + Radius + Radius) * sizeof(unsigned short), false);
         if (ColHist == NULL)
             return OC_STATUS_ERR_OUTOFMEMORY;
-        unsigned short* Hist = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
-        if (Hist == NULL)
+        unsigned short* Hist = (unsigned short*)AllocMemory(256 * sizeof(unsigned short), false);
+        if (Hist == NULL) {
+            FreeMemory(ColHist);
             return OC_STATUS_ERR_OUTOFMEMORY;
+        }
 
-        unsigned short* Intensity = (unsigned short*)_aligned_malloc(511 * sizeof(unsigned short), 32); // Avoid abs when a negative value is used
-        if (Intensity == NULL)
+        unsigned short* Intensity = (unsigned short*)AllocMemory(511 * sizeof(unsigned short), false); // Avoid abs when a negative value is used
+        if (Intensity == NULL) {
+            FreeMemory(ColHist);
+            FreeMemory(Hist);
             return OC_STATUS_ERR_OUTOFMEMORY;
-        unsigned short* Level = (unsigned short*)_aligned_malloc(256 * sizeof(unsigned short), 32);
-        if (Level == NULL)
+        }
+        unsigned short* Level = (unsigned short*)AllocMemory(256 * sizeof(unsigned short), false);
+        if (Level == NULL) {
+            FreeMemory(ColHist);
+            FreeMemory(Hist);
+            FreeMemory(Intensity);
             return OC_STATUS_ERR_OUTOFMEMORY;
+        }
 
         int* RowOffset = (int*)malloc((Width + Radius + Radius) * sizeof(int));
-        if (RowOffset == NULL)
+        if (RowOffset == NULL) {
+            FreeMemory(ColHist);
+            FreeMemory(Hist);
+            FreeMemory(Intensity);
+            FreeMemory(Level);
             return OC_STATUS_ERR_OUTOFMEMORY;
+        }
         int* ColOffset = (int*)malloc((Height + Radius + Radius) * sizeof(int));
-        if (ColOffset == NULL)
+        if (ColOffset == NULL) {
+            FreeMemory(ColHist);
+            FreeMemory(Hist);
+            FreeMemory(Intensity);
+            FreeMemory(Level);
+            free(RowOffset);
             return OC_STATUS_ERR_OUTOFMEMORY;
+        }
 
         GetOffsetPos(RowOffset, Width, Radius, Radius);
         GetOffsetPos(ColOffset, Height, Radius, Radius);
@@ -893,12 +913,13 @@ OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, i
                 LinePD[X] = HistogramCalc(Hist, LinePS[X], Intensity);
             }
         }
-        _aligned_free(ColHist);
-        _aligned_free(Hist);
-        _aligned_free(Intensity);
-        _aligned_free(Level);
+        FreeMemory(ColHist);
+        FreeMemory(Hist);
+        FreeMemory(Intensity);
+        FreeMemory(Level);
         free(RowOffset);
         free(ColOffset);
+        return OC_STATUS_OK;
     } else {
         unsigned char* SrcB = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
         unsigned char* SrcG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
@@ -907,12 +928,50 @@ OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, i
         unsigned char* DstG = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
         unsigned char* DstR = (unsigned char*)malloc(Width * Height * sizeof(unsigned char));
 
-        SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
-        {
-            ocularSurfaceBlurFilter(SrcB, DstB, Width, Height, Width, Radius, Threshold);
-            ocularSurfaceBlurFilter(SrcG, DstG, Width, Height, Width, Radius, Threshold);
-            ocularSurfaceBlurFilter(SrcR, DstR, Width, Height, Width, Radius, Threshold);
+        if (SrcB == NULL || SrcG == NULL || SrcR == NULL || DstB == NULL || DstG == NULL || DstR == NULL) {
+            free(SrcB);
+            free(SrcG);
+            free(SrcR);
+            free(DstB);
+            free(DstG);
+            free(DstR);
+            return OC_STATUS_ERR_OUTOFMEMORY;
         }
+
+        SplitRGB(Input, SrcB, SrcG, SrcR, Width, Height, Stride);
+        
+        OC_STATUS statusB = ocularSurfaceBlurFilter(SrcB, DstB, Width, Height, Width, Radius, Threshold);
+        OC_STATUS statusG = ocularSurfaceBlurFilter(SrcG, DstG, Width, Height, Width, Radius, Threshold);
+        OC_STATUS statusR = ocularSurfaceBlurFilter(SrcR, DstR, Width, Height, Width, Radius, Threshold);
+        
+        if (statusB != OC_STATUS_OK) {
+            free(SrcB);
+            free(SrcG);
+            free(SrcR);
+            free(DstB);
+            free(DstG);
+            free(DstR);
+            return statusB;
+        }
+        if (statusG != OC_STATUS_OK) {
+            free(SrcB);
+            free(SrcG);
+            free(SrcR);
+            free(DstB);
+            free(DstG);
+            free(DstR);
+            return statusG;
+        }
+        if (statusR != OC_STATUS_OK) {
+            free(SrcB);
+            free(SrcG);
+            free(SrcR);
+            free(DstB);
+            free(DstG);
+            free(DstR);
+            return statusR;
+        }
+        
         CombineRGB(DstB, DstG, DstR, Output, Width, Height, Stride);
 
         free(SrcB);
@@ -921,6 +980,7 @@ OC_STATUS ocularSurfaceBlurFilter(unsigned char* Input, unsigned char* Output, i
         free(DstB);
         free(DstG);
         free(DstR);
+        return OC_STATUS_OK;
     }
 }
 
