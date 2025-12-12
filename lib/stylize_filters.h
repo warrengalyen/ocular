@@ -78,42 +78,6 @@ OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int
  */
 OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset);
 
-/**
- * @brief Wind technique types for the Wind effect filter.
- * @ingroup group_stylize_filters
- */
-typedef enum {
-    OC_WIND_TECHNIQUE_WIND = 0,     /* Standard wind effect with gradual streaking */
-    OC_WIND_TECHNIQUE_BLAST = 1,    /* Intense wind effect with stronger streaks */
-    OC_WIND_TECHNIQUE_STAGGER = 2   /* Alternating staggered wind effect */
-} OcWindTechnique;
-
-// Wind direction types for the Wind effect filter.
-typedef enum {
-    OC_WIND_FROM_LEFT = 0,   /* Wind blowing from left to right */
-    OC_WIND_FROM_RIGHT = 1   /* Wind blowing from right to left */
-} OcWindDirection;
-
-/**
- * @brief Applies a wind effect to the image, creating horizontal motion blur streaks.
- * @ingroup group_stylize_filters
- * 
- * This filter simulates wind blowing across the image, creating horizontal streaks
- * similar to the Wind filter in Photoshop. The effect works by detecting bright
- * edges and extending them horizontally in the direction of the wind.
- * 
- * @param Input The image input data buffer.
- * @param Output The image output data buffer.
- * @param Width The width of the image in pixels.
- * @param Height The height of the image in pixels.
- * @param Stride The number of bytes in one row of pixels.
- * @param technique The wind technique to apply (Wind, Blast, or Stagger).
- * @param direction The direction of the wind (from left or from right).
- * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
- */
-OC_STATUS ocularWindFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                           OcWindTechnique technique, OcWindDirection direction);
-
 
 #endif /* STYLIZE_FILTERS_H */
  

@@ -101,6 +101,7 @@ OC_STATUS ocularZoomBlur(unsigned char* Input, unsigned char* Output, int Width,
  * @param Height The height of the image in pixels.
  * @param Stride The number of bytes in one row of pixels.
  * @param Radius A radius in pixels to use for the blur, >= 0.0
+ * @param edgeMode Edge handling mode when out of bounds. OC_EDGE_WRAP or OC_EDGE_MIRROR.
  * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
  */
 OC_STATUS ocularAverageBlur(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
