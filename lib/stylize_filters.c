@@ -312,3 +312,178 @@ OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Wi
 
     return OC_STATUS_OK;
 }
+
+OC_STATUS ocularWindFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                            OcWindTechnique technique, OcWindDirection direction) {
+    
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    
+    int Channels = Stride / Width;
+    
+    // First, copy input to output as a base
+    memcpy(Output, Input, Height * Stride);
+    
+    // Define wind parameters based on technique
+    int windLength, windStrength, threshold;
+    float fadeRate;
+    
+    switch(technique) {
+        case OC_WIND_TECHNIQUE_WIND:
+            windLength = 15;       // Longer, thinner streaks
+            windStrength = 1;
+            fadeRate = 0.92f;      // Very gradual fade for longer streaks
+            threshold = 20;        // More selective edge detection
+            break;
+        case OC_WIND_TECHNIQUE_BLAST:
+            windLength = 35;       // Much longer, thinner streaks
+            windStrength = 1;
+            fadeRate = 0.88f;      // Gradual fade for long streaks
+            threshold = 15;        // Moderate edge detection
+            break;
+        case OC_WIND_TECHNIQUE_STAGGER:
+            windLength = 12;       // Longer chunks
+            windStrength = 1;
+            fadeRate = 1.0f;       // No fade within chunks
+            threshold = 18;        // More selective edge detection
+            break;
+        default:
+            windLength = 15;
+            windStrength = 1;
+            fadeRate = 0.92f;
+            threshold = 20;
+            break;
+    }
+    
+    // Allocate temporary buffer for edge detection
+    int* edgeMap = (int*)calloc(Width * Height, sizeof(int));
+    if (edgeMap == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    
+    // Detect edges where brightness increases sharply in wind direction
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            int idx = (y * Width + x) * Channels;
+            
+            // Calculate luminance of current pixel
+            int lum = (Input[idx] * 299 + Input[idx + 1] * 587 + Input[idx + 2] * 114) / 1000;
+            
+            // Check neighbor in direction opposite to wind
+            int neighborX;
+            if (direction == OC_WIND_FROM_LEFT) {
+                // Wind from left, check pixel to the left
+                neighborX = (x > 0) ? x - 1 : x;
+            } else {
+                // Wind from right, check pixel to the right  
+                neighborX = (x < Width - 1) ? x + 1 : x;
+            }
+            
+            int neighborIdx = (y * Width + neighborX) * Channels;
+            int neighborLum = (Input[neighborIdx] * 299 + Input[neighborIdx + 1] * 587 + Input[neighborIdx + 2] * 114) / 1000;
+            
+            // Detect where brightness increases sharply (bright edge facing wind)
+            int diff = lum - neighborLum;
+            
+            // Mark as edge if brightness increases significantly
+            if (diff > threshold) {
+                edgeMap[y * Width + x] = 255;  // Mark as edge
+            }
+        }
+    }
+    
+    // Apply wind effect
+    for (int pass = 0; pass < windStrength; pass++) {
+        for (int y = 0; y < Height; y++) {
+            // For stagger effect, skip alternate rows
+            if (technique == OC_WIND_TECHNIQUE_STAGGER && (y % 2) != (pass % 2)) {
+                continue;
+            }
+            
+            // Determine scan direction
+            int startX, endX, stepX;
+            if (direction == OC_WIND_FROM_LEFT) {
+                startX = 1;
+                endX = Width;
+                stepX = 1;
+            } else {
+                startX = Width - 2;
+                endX = -1;
+                stepX = -1;
+            }
+            
+            for (int x = startX; x != endX; x += stepX) {
+                int edgeStrength = edgeMap[y * Width + x];
+                if (edgeStrength == 0) {
+                    continue;
+                }
+                
+                int sourceIdx = (y * Width + x) * Channels;
+                
+                // Get the source pixel values
+                unsigned char srcR = Output[sourceIdx];
+                unsigned char srcG = Output[sourceIdx + 1];
+                unsigned char srcB = Output[sourceIdx + 2];
+                
+                // Get source luminance
+                int srcLum = (srcR * 299 + srcG * 587 + srcB * 114) / 1000;
+                
+                // Create the wind streak
+                float intensity = 1.0f;
+                
+                for (int len = 1; len < windLength; len++) {
+                    int targetX = x + (stepX * len);
+                    
+                    // Check boundaries
+                    if (targetX < 0 || targetX >= Width) {
+                        break;
+                    }
+                    
+                    int targetIdx = (y * Width + targetX) * Channels;
+                    
+                    // Get target pixel values
+                    unsigned char targetR = Output[targetIdx];
+                    unsigned char targetG = Output[targetIdx + 1];
+                    unsigned char targetB = Output[targetIdx + 2];
+                    
+                    // Calculate target luminance
+                    int targetLum = (targetR * 299 + targetG * 587 + targetB * 114) / 1000;
+                    
+                    // Only extend bright pixels over darker ones (Photoshop behavior)
+                    if (srcLum > targetLum) {
+                        // Apply intensity fade
+                        intensity *= fadeRate;
+                        if (intensity < 0.05f) {
+                            break;
+                        }
+                        
+                        // For thinner streaks, use more selective blending
+                        // Only blend if the intensity is significant
+                        if (intensity > 0.2f) {
+                            // Blend source over target with intensity
+                            int newR = (int)(srcR * intensity + targetR * (1.0f - intensity));
+                            int newG = (int)(srcG * intensity + targetG * (1.0f - intensity));
+                            int newB = (int)(srcB * intensity + targetB * (1.0f - intensity));
+                            
+                            Output[targetIdx] = (unsigned char)clamp(newR, 0, 255);
+                            Output[targetIdx + 1] = (unsigned char)clamp(newG, 0, 255);
+                            Output[targetIdx + 2] = (unsigned char)clamp(newB, 0, 255);
+                        }
+                    }
+                    
+                    if (Channels == 4) {
+                        Output[targetIdx + 3] = Input[targetIdx + 3];
+                    }
+                }
+            }
+        }
+    }
+    
+    free(edgeMap);
+    
+    return OC_STATUS_OK;
+}
