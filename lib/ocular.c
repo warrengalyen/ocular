@@ -1754,7 +1754,7 @@ extern "C" {
             return OC_STATUS_ERR_INVALIDPARAMETER;
 
         int channels = stride / width;
-        if (channels != 3 && channels != 4)
+        if (channels != 3 || channels != 4)
             return OC_STATUS_ERR_NOTSUPPORTED;
 
         // Ensure filter specific parameters are within valid ranges

@@ -561,7 +561,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param output The image output data buffer.
      *  @param width The width of the image in pixels.
      *  @param height The height of the image in pixels.
-     *  @param channels The number of color channels in the image.
      *  @param colorCoeff Used to measure the intensity of color casting. Range [0 - 127]
      *  @param cutLimit The histogram clipping upper/lower limit. Range [0 - 1.0]
      *  @param contrast The histogram contrast strength. Range [0 - 1.0]

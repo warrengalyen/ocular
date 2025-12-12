@@ -22,7 +22,7 @@ int main(void) {
             float cutLimit = 0.01;  
             float contrast = 0.9;  
             bool colorCast = false;
-            OC_STATUS status = ocularAutoWhiteBalance(inputImage, outputImage, width, height, channels, stride, colorCoeff, cutLimit, contrast, &colorCast);
+            OC_STATUS status = ocularAutoWhiteBalance(inputImage, outputImage, width, height, stride, colorCoeff, cutLimit, contrast, &colorCast);
             if (status == OC_STATUS_OK) {
                 if (colorCast) {  
                     printf("[✓] ColorCast\n");  
