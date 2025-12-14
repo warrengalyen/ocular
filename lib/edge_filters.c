@@ -1,5 +1,5 @@
 #include "edge_filters.h"
-
+#include <math.h>
 
 OC_STATUS ocularPrewittEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
@@ -117,7 +117,14 @@ OC_STATUS ocularLaplacianEdgeDetect(unsigned char* Input, unsigned char* Output,
         kernel[i] -= mean;
     }
 
-    // Apply LoG filter
+    // Apply LoG filter and find output range for proper scaling
+    float minOutput = 0.0f, maxOutput = 0.0f;
+    float* tempOutput = (float*)malloc(Width * Height * sizeof(float));
+    if (!tempOutput) {
+        free(kernel);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
     for (int y = 0; y < Height; y++) {
         for (int x = 0; x < Width; x++) {
             float sum = 0.0f;
@@ -131,10 +138,34 @@ OC_STATUS ocularLaplacianEdgeDetect(unsigned char* Input, unsigned char* Output,
                 }
             }
 
-            // Store absolute value of result
-            Output[y * Width + x] = ClampToByte(fabs(sum));
+            float absSum = fabsf(sum);
+            tempOutput[y * Width + x] = absSum;
+            
+            if (absSum > maxOutput) {
+                maxOutput = absSum;
+            }
+            if (absSum < minOutput) {
+                minOutput = absSum;
+            }
         }
     }
+
+    // Scale output to full dynamic range (0-255)
+    // Avoid division by zero
+    float outputRange = maxOutput - minOutput;
+    if (outputRange > 0.0f) {
+        float scale = 255.0f / outputRange;
+        for (int i = 0; i < Width * Height; i++) {
+            Output[i] = ClampToByte((tempOutput[i] - minOutput) * scale);
+        }
+    } else {
+        // All values are the same, output black
+        for (int i = 0; i < Width * Height; i++) {
+            Output[i] = 0;
+        }
+    }
+
+    free(tempOutput);
 
     // Clean up
     free(kernel);
