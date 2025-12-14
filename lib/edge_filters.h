@@ -88,7 +88,7 @@ OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Outpu
  *  @param Channels The numbers of color channels in the image.
  *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
  */
-OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+OC_STATUS ocularSobelEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
 /**
  * @brief Performs edge detection on an image based on the Sobel operator.

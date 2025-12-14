@@ -346,7 +346,7 @@ OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Outpu
     return OC_STATUS_OK;
 }
 
-OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
+OC_STATUS ocularSobelEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels) {
 
     if ((Input == NULL) || (Output == NULL)) {
         return OC_STATUS_ERR_NULLREFERENCE;

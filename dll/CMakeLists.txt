@@ -53,6 +53,11 @@ add_library(ocular_dll SHARED ${MODULE_FILES})
 
 set_target_properties(ocular_dll PROPERTIES PREFIX "")
 set_target_properties(ocular_dll PROPERTIES OUTPUT_NAME "ocular")
+# Set archive output directory for DLL import library to bin folder
+# On MinGW this creates libocular.dll.a, on MSVC it creates ocular.lib
+set_target_properties(ocular_dll PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
 
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to

@@ -42,6 +42,11 @@ set(MODULE_FILES
 
 add_library(ocular STATIC ${MODULE_FILES})
 
+# Set archive output directory for static library to bin folder
+set_target_properties(ocular PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
 # Pre-build step to update VERSION_BUILD
 if (!MSVC)
     add_custom_command(

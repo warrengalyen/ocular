@@ -66,7 +66,7 @@ EXPORTS
     ocularSharpenFilter @64
     ocularSkinSmoothingFilter @65
     ocularSkinToneFilter @66
-    ocularSobelEdgeFilter @67
+    ocularSobelEdgeDetect @67
     ocularSolidColorGenerator @68
     ocularSurfaceBlurFilter @69
     ocularUnsharpMaskFilter @70

@@ -240,7 +240,7 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularCannyEdgeDetect(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels,
                                                 CannyNoiseFilter kernel_size, int weak_threshold, int strong_threshold);
 
-    DLIB_EXPORT OC_STATUS ocularSobelEdgeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
+    DLIB_EXPORT OC_STATUS ocularSobelEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
     DLIB_EXPORT OC_STATUS ocularGradientEdgeDetect(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);
 
