@@ -53,7 +53,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Color Invert
 - Highlight/Shadow/Tint
 - Levels (like Photoshop)
-- Opacity
+- Curves
 - Image Blending (supports 27 Photoshop modes)
 
 

@@ -21,6 +21,7 @@ extern "C" {
 #include "../lib/interpolate.h"
 #include "../lib/palette.h"
 #include "../lib/dither.h"
+#include "../lib/curves.h"
 #include "dlib_export.h"
 
     // Parameters for Levels filter
@@ -162,6 +163,9 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularDarkChannelPriorHazeRemoval(unsigned char* Input, unsigned char* Output, 
                                                             int Width, int Height, int Stride,
                                                             int radius, int guideRadius, float maxAtm, float omega, float epsilon, float t0);
+
+    DLIB_EXPORT OC_STATUS ocularCurvesFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                             const OcCurve* curveR, const OcCurve* curveG, const OcCurve* curveB, const OcCurve* curveL);
 
     //--------------------------Color adjustments--------------------------
 

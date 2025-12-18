@@ -35,6 +35,7 @@ extern "C" {
 #include "stylize_filters.h"
 #include "pixelate_filters.h"
 #include "hazeremoval.h"
+#include "curves.h"
 #include "version.h"
 #include "fft.h"
 #include "util.h"
@@ -223,7 +224,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularLuminosity(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Luminance);
 
-    /** @brief Transforms the colors of an image by apply a matrix to them.
+    /** @brief Transforms the colors of an image by applying a matrix to them.
      *  @param Input The image input data buffer.
      *  @param Output The image output data buffer.
      *  @param Width The width of the image in pixels.

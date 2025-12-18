@@ -36,6 +36,7 @@ set(MODULE_FILES
     pixelate_filters.c
     render_filters.c
     stylize_filters.c
+    curves.c
     fft.c
     ocular.c
 )

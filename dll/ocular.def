@@ -130,3 +130,4 @@ EXPORTS
     ocularWaveDistortionFilter @128
     ocularKaleidoscopeFilter @129
     ocularBrightnessAndContrastFilter @130
+    ocularCurvesFilter @131
