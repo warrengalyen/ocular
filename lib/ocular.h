@@ -810,6 +810,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
    /**
      * @brief Apply a minimum filter. This is the same as Erode except it uses a circular kernel that accounts for edges.
+     * @ingroup group_ip_filters
      * @param Input The image input data buffer
      * @param Output The image output data buffer
      * @param Width The width of the image in pixels
@@ -822,6 +823,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
 
     /**
      * @brief Apply a maximum filter. This is the same as Dialte except it uses a circular kernel that accounts for edges.
+     * @ingroup group_ip_filters
      * @param Input The image input data buffer
      * @param Output The image output data buffer
      * @param Width The width of the image in pixels

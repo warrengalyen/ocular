@@ -1032,10 +1032,10 @@ OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned char* output,
     // Convert angles from degrees to radians
     float primaryAngle = angle * M_PI / 180.0f;
     float secondaryAngle = angle2 * M_PI / 180.0f;
-    
-    // Calculate maximum radius (distance from center to corner)
-    float maxRadius = sqrtf((float)(width * width + height * height)) * 0.5f;
-    float effectRadius = maxRadius * (radius / 100.0f);
+
+    // Calculate maximum radius (half diagonal)
+    float effectRadius = sqrtf((float)(width * width + height * height)) * 0.5f;
+    effectRadius *= (radius / 100.0f);
     
     // Create temporary buffer if doing in-place operation
     unsigned char* source = input;
@@ -1060,25 +1060,26 @@ OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned char* output,
             float dy = y - centerPixelY;
             float distance = sqrtf(dx * dx + dy * dy);
             
-            // Check if pixel is within effect radius
-            if (radius > 0 && distance > effectRadius) {
-                // Outside effect radius - copy original pixel
-                for (int c = 0; c < channels; c++) {
-                    output[dstIdx + c] = source[dstIdx + c];
-                }
-                continue;
-            }
-            
             // Calculate theta (angle from center) with primary and secondary angles
             float theta = atan2f(dy, dx) - primaryAngle - secondaryAngle;
             
             // Apply triangle function to create kaleidoscope effect
             // triangleFunction returns [0, 0.5], need to scale back to radians
             theta = triangleFunction((theta * ONE_DIV_PI) * mirrors * 0.5f) * (2.0f * M_PI / mirrors);
-            
+
+            if (effectRadius <= 0.0f) {
+                float srcX = centerPixelX;
+                float srcY = centerPixelY;
+                for (int c = 0; c < channels; c++) {
+                    float value = bilinearSample(source, width, height, channels, c, srcX, srcY);
+                    output[dstIdx + c] = (unsigned char)clamp(value, 0.0f, 255.0f);
+                }
+                continue;
+            }
+
             // Apply radius warping if radius is specified
             float sDistance = distance;
-            if (radius > 0 && effectRadius > 0) {
+            if (effectRadius > 0.0f) {
                 float tRadius = effectRadius / cosf(theta);
                 if (tRadius != 0) {
                     sDistance = tRadius * triangleFunction(distance / tRadius);

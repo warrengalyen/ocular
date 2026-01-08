@@ -118,7 +118,7 @@ OC_STATUS ocularCloneImage(OcImage* Input, OcImage** Output);
 /**
  * @brief Transpose an image by swapping the height and width data.
  * @ingroup group_ip_general
- * @param Input The data structure of the source image to be processed. Must be single channel.
+ * @param Input The data structure of the source image to be processed.
  * @param Output The data structure of the processed image.
  * @param Width The width of the image in pixels.
  * @param Height The height of the image in pixels.
