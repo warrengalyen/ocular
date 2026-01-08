@@ -21,45 +21,48 @@ int main(void) {
         unsigned char fillColorG = 29;
         unsigned char fillColorB = 36;
         float angle = 45.0f;
-        OcInterpolationType interpolation = OC_INTERPOLATE_BICUBIC;
-
-        // Calculate new dimensions if needed
-        int newWidth, newHeight;
-        bool keepSize = false; // set to true to keep the original dimensions while cropping corners
+        OcInterpolationMode interpolation = OC_INTERPOLATE_BICUBIC;
+        bool preserveSize = false; // set to true to keep original dimensions (corners cropped), false to enlarge to fit
         bool useTransparency = true;
-        if (!keepSize) {
-            float angleRad = fabs(angle * M_PI / 180.0f);
-            newWidth = (int)(width * fabs(cos(angleRad)) + height * fabs(sin(angleRad)));
-            newHeight = (int)(width * fabs(sin(angleRad)) + height * fabs(cos(angleRad)));
-        } else {
-            newWidth = width;
-            newHeight = height;
-        }
 
-        // allocate output buffer
+        // Initialize output dimensions (will be calculated by the function)
+        int newWidth = 0;
+        int newHeight = 0;
+
+        // allocate output buffer (will be resized after rotation if needed)
+        // For preserveSize = false, allocate a buffer large enough for rotated image
         unsigned char* output = NULL;
-        if (useTransparency) {
-            output = (unsigned char*)malloc(newWidth * newHeight * (channels + 1));
-            channels = channels == 1 ? 2 : 4;
+        if (preserveSize) {
+            if (useTransparency) {
+                output = (unsigned char*)malloc(width * height * (channels == 1 ? 2 : 4));
+            } else {
+                output = (unsigned char*)malloc(width * height * channels);
+            }
         } else {
-            output = (unsigned char*)malloc(newWidth * newHeight * channels);
+            // Allocate buffer large enough for rotated image (approximate)
+            int tempWidth = (int)(width * 1.5f);
+            int tempHeight = (int)(height * 1.5f);
+            if (useTransparency) {
+                output = (unsigned char*)malloc(tempWidth * tempHeight * (channels == 1 ? 2 : 4));
+            } else {
+                output = (unsigned char*)malloc(tempWidth * tempHeight * channels);
+            }
         }
 
-        if (outputImage) {  
-
-            OC_STATUS status = ocularRotateImage(input, width, height, stride, output, newWidth, newHeight, angle,
-                                                 useTransparency, interpolation, fillColorR, fillColorG, 
+        if (output) {  
+            OC_STATUS status = ocularRotateImage(input, width, height, stride, output, &newWidth, &newHeight, angle,
+                                                 preserveSize, useTransparency, interpolation, fillColorR, fillColorG, 
                                                  fillColorB);
             if (status == OC_STATUS_OK) {
+                int outputChannels = (channels == 1 && useTransparency) ? 2 : (useTransparency ? 4 : channels);
                 if (useTransparency) {
-                    stbi_write_png("test_out.png", width, height, channels, outputImage, width * channels);  
+                    stbi_write_png("test_out.png", newWidth, newHeight, outputChannels, output, newWidth * outputChannels);  
                 } else {
-                    stbi_write_jpg("test_out.jpg", width, height, channels, outputImage, 100); 
+                    stbi_write_jpg("test_out.jpg", newWidth, newHeight, outputChannels, output, 100); 
                 }
-               
             }
+            free(output);
         }  
-        free(outputImage);  
     }  
   
     stbi_image_free(inputImage);  

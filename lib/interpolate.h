@@ -257,6 +257,80 @@ static void bilinearRotate(unsigned char* Input, int Width, int Height, int Stri
     }
 }
 
+static void nearestNeighborRotate(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int newWidth, int newHeight,
+                               float angle, bool useTransparency, unsigned char fillColorR, unsigned char fillColorG, unsigned char fillColorB) {
+
+    int Channels = Stride / Width;
+    float oldXradius = (float)(Width - 1) / 2;
+    float oldYradius = (float)(Height - 1) / 2;
+    float newXradius = (float)(newWidth - 1) / 2;
+    float newYradius = (float)(newHeight - 1) / 2;
+
+    float angleRad = -angle * M_PI / 180.0f;
+    float angleCos = fastCos(angleRad);
+    float angleSin = fastSin(angleRad);
+
+    int lastHeight = Height - 1;    
+    int lastWidth = Width - 1;
+
+    int outputChannels = (Channels == 1 && useTransparency) ? 2 : (useTransparency ? 4 : Channels);
+
+    // Set up fill colors based on number of channels and transparency setting
+    unsigned char fillColors[4] = { fillColorR, fillColorG, fillColorB, 255 };
+    if (Channels == 1) {
+        fillColors[0] = fillColorR; // Use R value for grayscale
+    }
+    if (useTransparency) {
+        fillColors[3] = 0; // Alpha channel for out-of-bounds
+    }
+
+    float cy = -newYradius;
+    for (int y = 0; y < newHeight; y++) {
+        const float tx = angleSin * cy + oldXradius;
+        const float ty = angleCos * cy + oldYradius;
+
+        float cx = -newXradius;
+        for (int x = 0; x < newWidth; x++) {
+            // Calculate source pixel position
+            const float ox = tx + angleCos * cx;
+            const float oy = ty - angleSin * cx;
+            
+            // Round to nearest neighbor (add 0.5 for proper rounding)
+            const int ox1 = (int)(ox + 0.5f);
+            const int oy1 = (int)(oy + 0.5f);
+
+            // Check if position is valid
+            if ((ox1 < 0) || (oy1 < 0) || (ox1 >= Width) || (oy1 >= Height)) {
+                // If we have an alpha channel and useTransparency is true, set it to 0
+                if (useTransparency) {
+                    Output[(y * newWidth + x) * outputChannels + (outputChannels - 1)] = fillColors[3];
+                } else {
+                    // Fill with background color
+                    for (int c = 0; c < outputChannels; c++) {
+                        Output[(y * newWidth + x) * outputChannels + c] = fillColors[c];
+                    }
+                }
+            } else {
+                // Use mirror coordinates for edge handling
+                int srcX = mirrorCoord(ox1, Width);
+                int srcY = mirrorCoord(oy1, Height);
+
+                // Copy pixel directly from source (nearest neighbor)
+                for (int c = 0; c < Channels; c++) {
+                    Output[(y * newWidth + x) * outputChannels + c] = Input[(srcY * Width + srcX) * Channels + c];
+                }
+
+                // Set the alpha channel if transparency is used
+                if (Channels <= 3 && useTransparency) {
+                    Output[(y * newWidth + x) * outputChannels + (outputChannels - 1)] = 255; // Fully opaque
+                }
+            }
+            cx++;
+        }
+        cy++;
+    }
+}
+
 static void bicubicRotate(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, int newWidth, int newHeight,
                            float angle, bool useTransparency, unsigned char fillColorR, unsigned char fillColorG, unsigned char fillColorB) {
 

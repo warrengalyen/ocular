@@ -2560,18 +2560,14 @@ extern "C" {
     }
 
     OC_STATUS ocularRotateImage(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                int newWidth, int newHeight, float angle, bool useTransparency,
+                                int* newWidth, int* newHeight, float angle, bool preserveSize, bool useTransparency,
                                 OcInterpolationMode InterpolationMode, unsigned char fillColorR, unsigned char fillColorG, 
                                 unsigned char fillColorB) {
 
-        // print parameters for testing
-        printf("Width: %d, Height: %d, Stride: %d, newWidth: %d, newHeight: %d, angle: %f, useTransparency: %d, fillColorR: %d, fillColorG: %d, fillColorB: %d\n", 
-               Width, Height, Stride, newWidth, newHeight, angle, useTransparency, fillColorR, fillColorG, fillColorB);
-
         int Channels = Stride / Width;
-        if ((Input == NULL) || (Output == NULL))
+        if ((Input == NULL) || (Output == NULL) || (newWidth == NULL) || (newHeight == NULL))
             return OC_STATUS_ERR_NULLREFERENCE;
-        if ((Width <= 0) || (Height <= 0) || (newWidth <= 0) || (newHeight <= 0))
+        if ((Width <= 0) || (Height <= 0))
             return OC_STATUS_ERR_INVALIDPARAMETER;
         if ((Channels != 1) && (Channels != 3) && (Channels != 4))
             return OC_STATUS_ERR_NOTSUPPORTED;
@@ -2582,13 +2578,43 @@ extern "C" {
         fillColorG = ClampToByte(fillColorG);
         fillColorB = ClampToByte(fillColorB);
 
+        int calculatedWidth, calculatedHeight;
+        
+        // Calculate output dimensions based on preserveSize parameter
+        if (preserveSize) {
+            // Preserve original size (corners may be cropped)
+            calculatedWidth = Width;
+            calculatedHeight = Height;
+        } else {
+            // Enlarge to fit rotated image (no cropping)
+            if (*newWidth > 0 && *newHeight > 0) {
+                // Use provided dimensions if valid
+                calculatedWidth = *newWidth;
+                calculatedHeight = *newHeight;
+            } else {
+                // Calculate dimensions automatically to fit rotated image
+                calculateNewSize(Width, Height, &calculatedWidth, &calculatedHeight, false, angle);
+            }
+        }
+        
+        // Update output parameters with calculated values
+        *newWidth = calculatedWidth;
+        *newHeight = calculatedHeight;
+        
+        if ((calculatedWidth <= 0) || (calculatedHeight <= 0))
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
         switch (InterpolationMode) {
+            case OC_INTERPOLATE_NEAREST:
+                nearestNeighborRotate(Input, Width, Height, Stride, Output, calculatedWidth, calculatedHeight, angle, useTransparency, 
+                                fillColorR, fillColorG, fillColorB);
+                break;
             case OC_INTERPOLATE_BILINEAR:
-                bilinearRotate(Input, Width, Height, Stride, Output, newWidth, newHeight, angle, useTransparency, 
+                bilinearRotate(Input, Width, Height, Stride, Output, calculatedWidth, calculatedHeight, angle, useTransparency, 
                                 fillColorR, fillColorG, fillColorB);
                 break;
             case OC_INTERPOLATE_BICUBIC:
-                bicubicRotate(Input, Width, Height, Stride, Output, newWidth, newHeight, angle, useTransparency, 
+                bicubicRotate(Input, Width, Height, Stride, Output, calculatedWidth, calculatedHeight, angle, useTransparency, 
                                 fillColorR, fillColorG, fillColorB);
                 break;
             default: return OC_STATUS_ERR_INVALIDPARAMETER;

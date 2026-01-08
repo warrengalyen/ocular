@@ -969,24 +969,27 @@ static char timestamp[] = __DATE__ " " __TIME__;
                                     OcInterpolationMode InterpolationMode);
 
     /**
-     * @brief Rotates an image using bilinear or bicubic interpolation. Non-image areas are filled with color or transparency.
+     * @brief Rotates an image using nearest neighbor, bilinear, or bicubic interpolation. Non-image areas are filled with color or transparency.
      * @ingroup group_ip_general
      * @param Input The image input data buffer.
      * @param Width The width of the image in pixels.
      * @param Height The height of the image in pixels.
      * @param Stride The number of bytes in one row of pixels.
      * @param Output The image output data buffer.
+     * @param[in,out] newWidth On input: desired output width (ignored if preserveSize is true or if 0 and preserveSize is false). On output: actual output width used.
+     * @param[in,out] newHeight On input: desired output height (ignored if preserveSize is true or if 0 and preserveSize is false). On output: actual output height used.
      * @param angle The angle to rotate in degrees. Range [0 - 359].
+     * @param preserveSize If true, output size equals input size (original dimensions preserved, corners may be cropped). If false and newWidth/newHeight are 0, dimensions are calculated to fit rotated image.
      * @param useTransparency If true, we will use transparency instead of a solid color for non-image areas.
      * Must allocate Output buffer with one extra channel to hold the alpha channel. 2 channels if grayscale, 4 channels if color.
-     * @param InterpolationMode The interpolation method to use. [OC_INTERPOLATE_BILINEAR, OC_INTERPOLATE_BICUBIC]
+     * @param InterpolationMode The interpolation method to use. [OC_INTERPOLATE_NEAREST, OC_INTERPOLATE_BILINEAR, OC_INTERPOLATE_BICUBIC]
      * @param fillColorR The red channel value to use for filling non-image area. Used if channels = 1.
      * @param fillColorG The green channel value to use for filling non-image area.
      * @param fillColorB The blue channel value to use for filling non-image area.
      * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularRotateImage(unsigned char* Input, int Width, int Height, int Stride, unsigned char* Output, 
-                                 int newWidth, int newHeight, float angle, bool useTransparency, 
+                                 int* newWidth, int* newHeight, float angle, bool preserveSize, bool useTransparency, 
                                  OcInterpolationMode InterpolationMode, unsigned char fillColorR, unsigned char fillColorG, 
                                  unsigned char fillColorB);
 

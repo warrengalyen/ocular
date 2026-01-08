@@ -2,8 +2,8 @@
  * @file: distort_filters.c
  * @author Warren Galyen
  * Created: 10-2-2025
- * Last Updated: 10-3-2025
- * Last update: added polar coordinates filter
+ * Last Updated: 1-8-2026
+ * Last update: improved kaleidoscope filter
  *
  * @brief Implementation of distortion filters
  */
