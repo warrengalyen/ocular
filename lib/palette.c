@@ -646,7 +646,10 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
     unsigned short version_major, version_minor;
     int block_count;
 
-    fread(&signature, 4, 1, file);
+    if (fread(&signature, 4, 1, file) != 1) {
+        fclose(file);
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
     signature = BIG_ENDIAN_32(signature);
 
     if (signature != ASE_SIGNATURE) {
@@ -654,13 +657,21 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
         return OC_STATUS_ERR_NOTSUPPORTED;
     }
 
-    fread(&version_major, 2, 1, file);
-    fread(&version_minor, 2, 1, file);
-    fread(&block_count, 4, 1, file);
+    if (fread(&version_major, 2, 1, file) != 1 ||
+        fread(&version_minor, 2, 1, file) != 1 ||
+        fread(&block_count, 4, 1, file) != 1) {
+        fclose(file);
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
 
     version_major = BIG_ENDIAN_16(version_major);
     version_minor = BIG_ENDIAN_16(version_minor);
     block_count = BIG_ENDIAN_32(block_count);
+
+    if (block_count < 0 || block_count > 1000000) {
+        fclose(file);
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
 
     // Initialize palette
     palette->num_colors = 0;
@@ -669,9 +680,13 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
 
     palette->capacity = DEFAULT_PALETTE_CAPACITY;
     palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+    if (!palette->colors) {
+        fclose(file);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
 
     // Read blocks
-    while (!feof(file)) {
+    while (!feof(file) && !ferror(file)) {
         unsigned short block_type;
         int block_length;
 
@@ -683,10 +698,40 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
         block_type = BIG_ENDIAN_16(block_type);
         block_length = BIG_ENDIAN_32(block_length);
 
+        // Validate block_length
+        if (block_length < 0 || block_length > 10000000) {
+            free(palette->colors);
+            palette->colors = NULL;
+            fclose(file);
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
         if (block_type == ASE_BLOCK_COLOR) {
             unsigned short name_length;
-            fread(&name_length, 2, 1, file);
+            if (fread(&name_length, 2, 1, file) != 1) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
             name_length = BIG_ENDIAN_16(name_length);
+
+            if (name_length < 0 || name_length > 512) { 
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
+
+            // Ensure we have space for the color
+            if (!resize_palette(palette)) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_OUTOFMEMORY;
+            }
+
+            OcPaletteColor* color = &palette->colors[palette->num_colors];
 
             // Read color name (UTF-16)
             char color_name[256] = { 0 };
@@ -696,41 +741,46 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
 
             // Read color model
             int color_model;
-            fread(&color_model, 4, 1, file);
+            if (fread(&color_model, 4, 1, file) != 1) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
             color_model = BIG_ENDIAN_32(color_model);
 
-            OcPaletteColor* color = &palette->colors[palette->num_colors];
             strncpy(color->name, color_name, 255);
             color->name[255] = '\0';
 
             // Read color values
             if (color_model == ASE_COLOR_RGB) {
                 float r, g, b;
-                fread(&r, 4, 1, file);
-                fread(&g, 4, 1, file);
-                fread(&b, 4, 1, file);
+                if (fread(&r, 4, 1, file) != 1 ||
+                    fread(&g, 4, 1, file) != 1 ||
+                    fread(&b, 4, 1, file) != 1) {
+                    free(palette->colors);
+                    palette->colors = NULL;
+                    fclose(file);
+                    return OC_STATUS_ERR_INVALIDPARAMETER;
+                }
 
                 r = swap_float_endian(r);
                 g = swap_float_endian(g);
                 b = swap_float_endian(b);
 
-                // Convert from big-endian float and scale to 0-255
-                // union {
-                //     float f;
-                //     int i;
-                // } ur, ug, ub;
-                // ur.i = BIG_ENDIAN_32(*(int*)&r);
-                // ug.i = BIG_ENDIAN_32(*(int*)&g);
-                // ub.i = BIG_ENDIAN_32(*(int*)&b);
-
-                color->r = (int)(r * 255.0f);
-                color->g = (int)(g * 255.0f);
-                color->b = (int)(b * 255.0f);
+                color->r = ClampToByte((int)(r * 255.0f));
+                color->g = ClampToByte((int)(g * 255.0f));
+                color->b = ClampToByte((int)(b * 255.0f));
 
                 palette->num_colors++;
             } else if (color_model == ASE_COLOR_GRAY) {
                 float gray;
-                fread(&gray, 4, 1, file);
+                if (fread(&gray, 4, 1, file) != 1) {
+                    free(palette->colors);
+                    palette->colors = NULL;
+                    fclose(file);
+                    return OC_STATUS_ERR_INVALIDPARAMETER;
+                }
 
                 union {
                     float f;
@@ -738,14 +788,19 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
                 } ug;
                 ug.i = BIG_ENDIAN_32(*(int*)&gray);
 
-                color->r = color->g = color->b = (int)(ug.f * 255.0f);
+                color->r = color->g = color->b = ClampToByte((int)(ug.f * 255.0f));
                 palette->num_colors++;
             } else if (color_model == ASE_COLOR_CMYK) {
                 float c, m, y, k;
-                fread(&c, 4, 1, file);
-                fread(&m, 4, 1, file);
-                fread(&y, 4, 1, file);
-                fread(&k, 4, 1, file);
+                if (fread(&c, 4, 1, file) != 1 ||
+                    fread(&m, 4, 1, file) != 1 ||
+                    fread(&y, 4, 1, file) != 1 ||
+                    fread(&k, 4, 1, file) != 1) {
+                    free(palette->colors);
+                    palette->colors = NULL;
+                    fclose(file);
+                    return OC_STATUS_ERR_INVALIDPARAMETER;
+                }
 
                 // use custom function to maintain precision
                 c = swap_float_endian(c);
@@ -762,9 +817,14 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
                 palette->num_colors++;
             } else if (color_model == ASE_COLOR_LAB) {
                 float L, a, B;
-                fread(&L, 4, 1, file);
-                fread(&a, 4, 1, file);
-                fread(&B, 4, 1, file);
+                if (fread(&L, 4, 1, file) != 1 ||
+                    fread(&a, 4, 1, file) != 1 ||
+                    fread(&B, 4, 1, file) != 1) {
+                    free(palette->colors);
+                    palette->colors = NULL;
+                    fclose(file);
+                    return OC_STATUS_ERR_INVALIDPARAMETER;
+                }
 
                 L = swap_float_endian(L);
                 a = swap_float_endian(a);
@@ -773,30 +833,52 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
                 // scale from float to percentage
                 L *= 100.0f;
 
-                printf("lab: %f %f %f\n", L, a, B);
-
                 unsigned char r, g, b;
                 lab2rgb(L, a, B, &r, &g, &b);
                 color->r = r;
                 color->g = g;
                 color->b = b;
 
-                printf("rgb: %d %d %d\n", color->r, color->g, color->b);
                 palette->num_colors++;
             } else {
+                free(palette->colors);
+                palette->colors = NULL;
                 fclose(file);
                 return OC_STATUS_ERR_NOTSUPPORTED;
             }
 
             // Skip color type (global or spot)
-            fseek(file, 2, SEEK_CUR);
+            if (fseek(file, 2, SEEK_CUR) != 0) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
         } else if (block_type == ASE_BLOCK_GROUP_START) {
             // Skip group blocks
-            fseek(file, block_length, SEEK_CUR);
+            if (fseek(file, block_length, SEEK_CUR) != 0) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
         } else if (block_type == ASE_BLOCK_GROUP_END) {
             // Skip group end blocks
-            fseek(file, block_length, SEEK_CUR);
+            if (fseek(file, block_length, SEEK_CUR) != 0) {
+                free(palette->colors);
+                palette->colors = NULL;
+                fclose(file);
+                return OC_STATUS_ERR_INVALIDPARAMETER;
+            }
         }
+    }
+
+    // Check for file errors
+    if (ferror(file)) {
+        free(palette->colors);
+        palette->colors = NULL;
+        fclose(file);
+        return OC_STATUS_ERR_INVALIDPARAMETER;
     }
 
     fclose(file);
