@@ -279,6 +279,8 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularPalettetizeFromImage(unsigned char* input, unsigned char* output, int width, int height, int channels,
                                                     OcQuantizeMethod method, int maxColors, int amount);
 
+    DLIB_EXPORT OC_STATUS ocularKuwaharaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
+
     DLIB_EXPORT OC_STATUS ocularFFTFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, OcFFTFilterParams* params);
 
     DLIB_EXPORT OC_STATUS ocularFFTVisualize(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, bool logScale);

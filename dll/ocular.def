@@ -132,3 +132,4 @@ EXPORTS
     ocularBrightnessAndContrastFilter @130
     ocularCurvesFilter @131
     ocularSplitToningFilter @132
+    ocularKuwaharaFilter @133

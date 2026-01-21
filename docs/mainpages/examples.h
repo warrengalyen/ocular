@@ -13,6 +13,7 @@
   - @ref page_examples_curves "Curves"
   - @ref page_examples_haze_removal "Haze Removal"
   - @ref page_examples_retinex "Retinex"
+  - @ref page_examples_split_tone "Split Toning"
 
   @section examples_blur Blur & Smoothing
   Filters for blurring and smoothing operations.
@@ -42,6 +43,7 @@
   - @ref page_examples_crystallize "Crystallize"
   - @ref page_examples_film_grain "Film Grain"
   - @ref page_examples_frosted_glass "Frosted Glass"
+  - @ref page_examples_kuwahara "Kuwahara"
   - @ref page_examples_mosaic "Mosaic"
   - @ref page_examples_pointillize "Pointillize"
   - @ref page_examples_relief "Relief (Emboss)"

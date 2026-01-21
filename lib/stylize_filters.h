@@ -74,10 +74,25 @@ OC_STATUS ocularFilmGrainEffect(unsigned char* Input, unsigned char* Output, int
  * @param Offset Controls the base brightness of the relief effect. Range [0 - 255]. ~127 will produce a balanced effect.
  * Lower values will darken the image (emphasizing raised edges), higher values will lighten the image
  * (emphasizing sunken edges).
- * @return OC_STATUS
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
  */
 OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float Angle, int Offset);
 
+/**
+ * @brief Reduces image noise and emphasizes the details and textures within an image. 
+ * It achieves this by dividing the image into small, overlapping square regions and calculating the average color and 
+ * standard deviation for each region. The final result is a stylized image with a distinctive patchwork-like 
+ * appearance, reminiscent of brush strokes.
+ * @ingroup group_stylize_filters
+ * @param Input Input image buffer
+ * @param Output Output image buffer
+ * @param Width Image width
+ * @param Height Image height
+ * @param Stride Image stride (Width * Channels)
+ * @param Radius Filter radius. Range [1 - 10].
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+ */
+OC_STATUS ocularKuwaharaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
 #endif /* STYLIZE_FILTERS_H */
  

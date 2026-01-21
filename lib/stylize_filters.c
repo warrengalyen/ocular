@@ -312,3 +312,96 @@ OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Wi
 
     return OC_STATUS_OK;
 }
+
+OC_STATUS ocularKuwaharaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius) {
+    if (!Input || !Output || Width <= 0 || Height <= 0 || Radius < 1)
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+
+    int Channels = Stride / Width;
+    if (Channels != 1 && Channels != 3)
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+
+    // Make sure radius is odd
+    if (!(Radius & 1))
+        Radius++;
+    
+    // Clamp radius to valid range
+    if (Radius > 10)
+        Radius = 10;
+
+    // Pre-calculate kernel bounds
+    int kernelSize = Radius * 2 + 1;
+    int kernelArea = kernelSize * kernelSize;
+
+    // Process each pixel
+    for (int y = 0; y < Height; y++) {
+        // Pre-calculate y bounds to reduce checks in inner loop
+        int yMin = (y >= Radius) ? -Radius : -y;
+        int yMax = (y + Radius < Height) ? Radius : Height - 1 - y;
+
+        for (int x = 0; x < Width; x++) {
+            // Pre-calculate x bounds to reduce checks in inner loop
+            int xMin = (x >= Radius) ? -Radius : -x;
+            int xMax = (x + Radius < Width) ? Radius : Width - 1 - x;
+
+            // Use sum and sum of squares for single-pass variance calculation
+            // Q0: top-left, Q1: top-right, Q2: bottom-left, Q3: bottom-right
+            int sums[4][3] = { { 0 } };
+            int sumSquares[4][3] = { { 0 } };
+            int counts[4] = { 0 };
+
+            // Single pass: calculate both sum and sum of squares
+            for (int ky = yMin; ky <= yMax; ky++) {
+                int py = y + ky;
+                int pyStride = py * Stride;
+                
+                for (int kx = xMin; kx <= xMax; kx++) {
+                    int px = x + kx;
+                    
+                    // Determine quadrant using bit operations (faster than conditionals)
+                    // Q0: kx<=0 && ky<=0, Q1: kx>0 && ky<=0, Q2: kx<=0 && ky>0, Q3: kx>0 && ky>0
+                    int quadrant = ((kx > 0) << 1) | (ky > 0);
+                    
+                    int idx = pyStride + px * Channels;
+                    counts[quadrant]++;
+                    
+                    // Accumulate sum and sum of squares in one pass
+                    for (int c = 0; c < Channels; c++) {
+                        int val = Input[idx + c];
+                        sums[quadrant][c] += val;
+                        sumSquares[quadrant][c] += val * val;
+                    }
+                }
+            }
+
+            // Calculate means and variances using sum and sum of squares
+            int outIdx = y * Stride + x * Channels;
+            for (int c = 0; c < Channels; c++) {
+                float minVariance = 1e10f;
+                float selectedMean = 0.0f;
+
+                for (int q = 0; q < 4; q++) {
+                    if (counts[q] > 0) {
+                        // Calculate mean: sum / count
+                        float mean = (float)sums[q][c] / counts[q];
+                        
+                        // Calculate variance: E[X^2] - E[X]^2
+                        float meanSquared = mean * mean;
+                        float variance = ((float)sumSquares[q][c] / counts[q]) - meanSquared;
+
+                        if (variance < minVariance) {
+                            minVariance = variance;
+                            selectedMean = mean;
+                        }
+                    }
+                }
+
+                // Clamp and convert to byte
+                int result = (int)(selectedMean + 0.5f);
+                Output[outIdx + c] = (unsigned char)((result < 0) ? 0 : (result > 255) ? 255 : result);
+            }
+        }
+    }
+
+    return OC_STATUS_OK;
+}
