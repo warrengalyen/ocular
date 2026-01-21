@@ -25,37 +25,36 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 #### Basic Adjustments
 
+- Average Luminance Threshold
 - Brightness/Contrast
 - Exposure
-- Gamma
-- Levels
-- Histogram Stretch (contrast stretching)
 - Equalize
+- Gamma
+- Histogram Stretch (contrast stretching)
+- Levels
 - Luminance Threshold (like Photoshop Threshold)
-- Average Luminance Threshold
 
 #### Color Balance & Tone
 
 - Color Balance
-- White Balance
+- Color Invert
 - Color Temperature
-- Vibrance
-- Saturation
+- Color Matrix
+- Curves
+- False Color (mix between two colors using luminance)
+- Grayscale (desaturate)
+- Highlight/Shadow/Tint
 - Hue
 - HSL
+- Levels
+- Monochrome
 - RGB
-- Color Matrix
+- Saturation
 - Sepia
 - Skin Tone
-- False Color (mix between two colors using luminance)
-- Monochrome
-- Grayscale
-- Color Invert
-- Highlight/Shadow/Tint
-- Levels (like Photoshop)
-- Curves
-- Image Blending (supports 27 Photoshop modes)
-
+- Split Toning
+- Vibrance
+- White Balance
 
 #### Lighting Correction
 
@@ -74,7 +73,6 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
   - from file (remaps colors to closest color in palette file with optional dithering)
   - from image (reduces unique colors using color quantization with optional dithering)
 
-
 #### 🧩 Compositing & Blending
 
 - Opacity
@@ -92,54 +90,55 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 #### Blur/De-noise
 
-- Bilateral (selectively blurs preserving edges and other details)
 - Average (Mean) Blur
-- Gaussian Blur
+- BEEPS (Bi-exponential Edge-preserving Smoothing)
+- Bilateral (selectively blurs preserving edges and other details)
 - Box Blur
-- Motion Blur
-- Zoom Blur
+- Exponential Blur
+- Gaussian Blur
+- Guided Filter
 - Median Blur
+- Motion Blur
 - Radial Blur
 - Surface Blur
 - Skin Smoothing
-- BEEPS (Bi-exponential Edge-preserving Smoothing)
-- Exponential Blur
-- Guided Filter
+- Zoom Blur
 
 #### Morphology
 
 - Erode/Dilate
-- Min/Max
 - High Pass
+- Min/Max
 
 #### Sharpening
 
-- Unsharp Mask
 - Sharpen
+- Unsharp Mask
 
 #### Edge Detection
 
 - Canny Edge
 - Gradient Edge
-- Sobel Edge
 - Laplacian Edge (Laplacian of Gaussian)
-- Roberts Edge
 - Prewitt Edge
+- Roberts Edge
+- Sobel Edge
 
 #### Stylize
 
-- Oil Paint
 - Frosted Glass
 - Film Grain
+- Kuwahara
+- Oil Paint
 - Relief (Emboss)
 
 #### Pixelate
 
+- Color Halftone
+- Crystallize
+- Fragment
 - Mosaic
 - Pointillize
-- Color Halftone
-- Fragment
-- Crystallize
 
 #### Distortion
 
@@ -164,6 +163,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 - 2D Convolution
 - Resampling (resize) [Nearest-neighbor, bilinear, bicubic and lanzcos]
+- Image Blending (supports 27 Photoshop modes)
 - FFT (Fast Fourier Transform) [Low-pass, high-pass, band-pass, band-stop, custom]
 - FFT Visualization (outputs frequency domain)
 
