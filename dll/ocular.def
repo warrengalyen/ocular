@@ -131,3 +131,4 @@ EXPORTS
     ocularKaleidoscopeFilter @129
     ocularBrightnessAndContrastFilter @130
     ocularCurvesFilter @131
+    ocularSplitToningFilter @132

@@ -134,6 +134,8 @@ extern "C" {
     DLIB_EXPORT OC_STATUS ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
                                                float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
 
+    DLIB_EXPORT OC_STATUS ocularSplitToningFilter(unsigned char* input, unsigned char* output, int width, int height, int stride,
+
     DLIB_EXPORT OC_STATUS ocularAutoLevel(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float fraction);
 
     DLIB_EXPORT OC_STATUS ocularAutoContrast(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels);

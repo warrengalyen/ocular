@@ -618,6 +618,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
     OC_STATUS ocularSkinToneFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float skinToneAdjust,
                               float skinHue, float skinHueThreshold, float maxHueShift, float maxSaturationShift, int upperSkinToneColor);
 
+    /** @brief Applies split toning effect to an image
+     *  @ingroup group_color_filters
+     *  @param input The image input data buffer.
+     *  @param output The image output data buffer.
+     *  @param width The width of the image in pixels.
+     *  @param height The height of the image in pixels.
+     *  @param stride The number of bytes in one row of pixels.
+     *  @param highlightColor The color to apply to highlights.
+     *  @param shadowColor The color to apply to shadows.
+     *  @param balance The balance between highlights/shadows (-100 to 100).
+     *  @param strength The overall intensity of the effect (0-100).
+     *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularSplitToningFilter(unsigned char* input, unsigned char* output, int width, int height, int stride,
+                                      OcColor highlightColor, OcColor shadowColor, float balance, float strength);
+
     /** @brief Automatically calculates levels of an image.
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.

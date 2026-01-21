@@ -2001,6 +2001,96 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularSplitToningFilter(unsigned char* input, unsigned char* output, int width, int height, int stride,
+                                      OcColor highlightColor, OcColor shadowColor, float balance, float strength) {
+        if (!input || !output) {
+            return OC_STATUS_ERR_NULLREFERENCE;
+        }
+        if (width <= 0 || height <= 0 || stride <= 0) {
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+        }
+
+        // Validate and normalize parameters
+        balance = clamp(balance, -100.0f, 100.0f);
+        strength = clamp(strength, 0.0f, 100.0f) / 100.0f;
+
+        int channels = stride / width;
+        if (channels != 3 && channels != 4) {
+            return OC_STATUS_ERR_NOTSUPPORTED;
+        }
+
+        float highlightH, highlightS, ignoreLuminance;
+        float shadowH, shadowS;
+        rgb2hsl(highlightColor.R, highlightColor.G, highlightColor.B, &highlightH, &highlightS, &ignoreLuminance);
+        rgb2hsl(shadowColor.R, shadowColor.G, shadowColor.B, &shadowH, &shadowS, &ignoreLuminance);
+
+        // Convert balance from [-100, 100] to [0, 1] range
+        float balanceFactor = (balance + 100.0f) / 200.0f;
+        float splitThreshold = 1.0f - balanceFactor;
+
+        // Prevent divide-by-zero errors
+        balanceFactor = (balanceFactor <= 1e-7f) ? 1e-7f : balanceFactor;
+        splitThreshold = (splitThreshold <= 1e-7f) ? 1e-7f : splitThreshold;
+
+        // Pre-calculate inverse values
+        float invHighlightRange = 1.0f / balanceFactor;
+        float invShadowRange = 1.0f / splitThreshold;
+
+        const float ONE_DIV_255 = 1.0f / 255.0f;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int idx = y * stride + x * channels;
+
+                unsigned char r = input[idx];
+                unsigned char g = input[idx + 1];
+                unsigned char b = input[idx + 2];
+
+                // Calculate HSL-compatible luminance
+                float v = 0.299f * r + 0.587f * g + 0.114f * b;
+                float vFloat = v * ONE_DIV_255;
+
+                // Retrieve RGB conversions for the highlight and shadow hue/saturation,
+                // but using this pixel's current luminance
+                float rHighlight, gHighlight, bHighlight;
+                float rShadow, gShadow, bShadow;
+
+                hsl2rgb(highlightH, highlightS, vFloat, &rHighlight, &gHighlight, &bHighlight);
+                hsl2rgb(shadowH, shadowS, vFloat, &rShadow, &gShadow, &bShadow);
+
+                // Apply split toning based on balance parameter
+                float newR, newG, newB;
+                float blendFactor;
+
+                if (vFloat > splitThreshold) {
+                    // Pixel is brighter than balance point: fade between gray and highlight
+                    blendFactor = (vFloat - splitThreshold) * invHighlightRange;
+                    newR = rHighlight * blendFactor + v * (1.0f - blendFactor);
+                    newG = gHighlight * blendFactor + v * (1.0f - blendFactor);
+                    newB = bHighlight * blendFactor + v * (1.0f - blendFactor);
+                } else {
+                    // Pixel is darker than balance point: fade between shadow and gray
+                    blendFactor = fabsf(splitThreshold - vFloat) * invShadowRange;
+                    newR = rShadow * blendFactor + v * (1.0f - blendFactor);
+                    newG = gShadow * blendFactor + v * (1.0f - blendFactor);
+                    newB = bShadow * blendFactor + v * (1.0f - blendFactor);
+                }
+
+                // Blend the split-toned result with the original
+                output[idx] = ClampToByte(newR * strength + r * (1.0f - strength));
+                output[idx + 1] = ClampToByte(newG * strength + g * (1.0f - strength));
+                output[idx + 2] = ClampToByte(newB * strength + b * (1.0f - strength));
+
+                // Preserve alpha channel if present
+                if (channels == 4) {
+                    output[idx + 3] = input[idx + 3];
+                }
+            }
+        }
+
+        return OC_STATUS_OK;
+    }
+
     static void bilateralHorizontal(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, float* range_table_f,
                                     float inv_alpha_f, float* left_Color_Buffer, float* left_Factor_Buffer, float* right_Color_Buffer,
                                     float* right_Factor_Buffer) {
