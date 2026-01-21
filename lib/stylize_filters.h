@@ -94,5 +94,33 @@ OC_STATUS ocularReliefFilter(unsigned char* Input, unsigned char* Output, int Wi
  */
 OC_STATUS ocularKuwaharaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
+/**
+ * @brief Glow style options for portrait glow filter
+ */
+typedef enum {
+    OC_GLOW_STYLE_CLASSIC = 0,  // Screen blend mode
+    OC_GLOW_STYLE_MODERN = 1,   // Overlay blend mode
+    OC_GLOW_STYLE_SUBTLE = 2    // Soft Light blend mode
+} OcGlowStyle;
+
+/**
+ * @brief Applies a portrait glow effect similar to Photoshop, creating a soft, luminous glow around the subject.
+ * The effect is achieved by blurring the image, applying exposure boost, and compositing it with the original
+ * using various blend modes.
+ * @ingroup group_stylize_filters
+ * @param Input The image input data buffer.
+ * @param Output The image output data buffer.
+ * @param Width The width of the image in pixels.
+ * @param Height The height of the image in pixels.
+ * @param Stride The number of bytes in one row of pixels.
+ * @param Style The glow style to use. Classic = Screen, Modern = Overlay, Subtle = Soft Light.
+ * @param GlowRadius The radius of the Gaussian blur. Range [1 - 100].
+ * @param ExposureBoost The exposure boost to apply to the blurred image. Range [0 - 200]. 100 = neutral, >100 = brighter.
+ * @param Strength Controls the blend opacity. Range [0 - 100]. Higher values produce a more pronounced effect.
+ * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+ */
+OC_STATUS ocularPortraitGlowFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                   OcGlowStyle Style, int GlowRadius, int ExposureBoost, int Strength);
+
 #endif /* STYLIZE_FILTERS_H */
  

@@ -13,6 +13,8 @@
  #include "core.h"
  #include "util.h"
  #include "blur_filters.h"
+ #include "blend.h"
+ #include <math.h>
 
 OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
 
@@ -402,6 +404,114 @@ OC_STATUS ocularKuwaharaFilter(unsigned char* Input, unsigned char* Output, int 
             }
         }
     }
+
+    return OC_STATUS_OK;
+}
+
+OC_STATUS ocularPortraitGlowFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                   OcGlowStyle Style, int GlowRadius, int ExposureBoost, int Strength) {
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int Channels = Stride / Width;
+    if (Channels != 3 && Channels != 4) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    // Clamp parameters to valid ranges
+    GlowRadius = clamp(GlowRadius, 1, 100);
+    ExposureBoost = clamp(ExposureBoost, 0, 200);
+    Strength = clamp(Strength, 0, 100);
+
+    // Map exposure boost (0-200) to exposure values (0.0 to +2.0)
+    float exposure = ((float)ExposureBoost / 100.0f) * 2.0f;
+
+    OcBlendMode blendMode;
+    switch (Style) {
+        case OC_GLOW_STYLE_CLASSIC:
+            blendMode = OC_BLEND_SCREEN;
+            break;
+        case OC_GLOW_STYLE_MODERN:
+            blendMode = OC_BLEND_OVERLAY;
+            break;
+        case OC_GLOW_STYLE_SUBTLE:
+            blendMode = OC_BLEND_SOFTLIGHT;
+            break;
+        default:
+            blendMode = OC_BLEND_SCREEN;
+            break;
+    }
+
+    // Allocate temporary buffer for blurred image
+    size_t imageSize = (size_t)Height * Stride;
+    unsigned char* blurredImage = (unsigned char*)malloc(imageSize);
+    if (blurredImage == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    memcpy(blurredImage, Input, imageSize);
+
+    // Apply Gaussian blur
+    float sigma = (float)GlowRadius / 2.0f;
+    OC_STATUS blurStatus = ocularGaussianBlurFilter(blurredImage, blurredImage, Width, Height, Stride, sigma);
+    if (blurStatus != OC_STATUS_OK) {
+        free(blurredImage);
+        return blurStatus;
+    }
+
+    // Apply exposure boost to blurred image
+    if (exposure != 0.0f) {
+        // Create exposure lookup table
+        unsigned char exposureMap[256] = { 0 };
+        for (int pixel = 0; pixel < 256; pixel++) {
+            exposureMap[pixel] = ClampToByte((float)pixel * pow(2.0, exposure));
+        }
+
+        // Apply exposure map to blurred image
+        for (int y = 0; y < Height; y++) {
+            unsigned char* pBlurred = blurredImage + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                pBlurred[0] = exposureMap[pBlurred[0]]; // R
+                pBlurred[1] = exposureMap[pBlurred[1]]; // G
+                pBlurred[2] = exposureMap[pBlurred[2]]; // B
+
+                pBlurred += Channels;
+            }
+        }
+    }
+
+    // Blend the blurred/exposed image with the original using the selected blend mode
+    for (int y = 0; y < Height; y++) {
+        const unsigned char* pInput = Input + (y * Stride);
+        const unsigned char* pBlurred = blurredImage + (y * Stride);
+        unsigned char* pOutput = Output + (y * Stride);
+
+        for (int x = 0; x < Width; x++) {
+            int baseR = pInput[0];
+            int baseG = pInput[1];
+            int baseB = pInput[2];
+            int mixR = pBlurred[0];
+            int mixG = pBlurred[1];
+            int mixB = pBlurred[2];
+
+            int resR, resG, resB;
+            layerBlend(baseR, baseG, baseB, mixR, mixG, mixB, &resR, &resG, &resB, blendMode, Strength);
+
+            pOutput[0] = (unsigned char)resR;
+            pOutput[1] = (unsigned char)resG;
+            pOutput[2] = (unsigned char)resB;
+
+            pInput += Channels;
+            pBlurred += Channels;
+            pOutput += Channels;
+        }
+    }
+
+    free(blurredImage);
 
     return OC_STATUS_OK;
 }
