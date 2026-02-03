@@ -201,6 +201,8 @@ extern "C" {
 
     DLIB_EXPORT OC_STATUS ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
 
+    DLIB_EXPORT OC_STATUS ocularSkeletonizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Threshold);
+
     DLIB_EXPORT OC_STATUS ocularBilateralFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                            float sigmaSpatial, float sigmaRange);
 

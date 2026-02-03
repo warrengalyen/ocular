@@ -375,6 +375,197 @@ OC_STATUS ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int 
     return OC_STATUS_OK;
 }
 
+/* Skeletonize helpers: 3x3 neighborhood around (x,y). */
+static int count_01_transitions(const unsigned char* grid, int w, int h, int x, int y) {
+    int topLeft   = (y > 0 && x > 0) ? (grid[(y - 1) * w + (x - 1)] ? 1 : 0) : 0;
+    int top       = (y > 0) ? (grid[(y - 1) * w + x] ? 1 : 0) : 0;
+    int topRight  = (y > 0 && x < w - 1) ? (grid[(y - 1) * w + (x + 1)] ? 1 : 0) : 0;
+    int right     = (x < w - 1) ? (grid[y * w + (x + 1)] ? 1 : 0) : 0;
+    int bottomRight = (y < h - 1 && x < w - 1) ? (grid[(y + 1) * w + (x + 1)] ? 1 : 0) : 0;
+    int bottom    = (y < h - 1) ? (grid[(y + 1) * w + x] ? 1 : 0) : 0;
+    int bottomLeft = (y < h - 1 && x > 0) ? (grid[(y + 1) * w + (x - 1)] ? 1 : 0) : 0;
+    int left      = (x > 0) ? (grid[y * w + (x - 1)] ? 1 : 0) : 0;
+    int n = 0;
+    if (top == 0 && topRight == 1) n++;
+    if (topRight == 0 && right == 1) n++;
+    if (right == 0 && bottomRight == 1) n++;
+    if (bottomRight == 0 && bottom == 1) n++;
+    if (bottom == 0 && bottomLeft == 1) n++;
+    if (bottomLeft == 0 && left == 1) n++;
+    if (left == 0 && topLeft == 1) n++;
+    if (topLeft == 0 && top == 1) n++;
+    return n;
+}
+
+static int count_foreground_neighbors(const unsigned char* grid, int w, int h, int x, int y) {
+    int topLeft   = (y > 0 && x > 0) ? (grid[(y - 1) * w + (x - 1)] ? 1 : 0) : 0;
+    int top       = (y > 0) ? (grid[(y - 1) * w + x] ? 1 : 0) : 0;
+    int topRight  = (y > 0 && x < w - 1) ? (grid[(y - 1) * w + (x + 1)] ? 1 : 0) : 0;
+    int right     = (x < w - 1) ? (grid[y * w + (x + 1)] ? 1 : 0) : 0;
+    int bottomRight = (y < h - 1 && x < w - 1) ? (grid[(y + 1) * w + (x + 1)] ? 1 : 0) : 0;
+    int bottom    = (y < h - 1) ? (grid[(y + 1) * w + x] ? 1 : 0) : 0;
+    int bottomLeft = (y < h - 1 && x > 0) ? (grid[(y + 1) * w + (x - 1)] ? 1 : 0) : 0;
+    int left      = (x > 0) ? (grid[y * w + (x - 1)] ? 1 : 0) : 0;
+    return topLeft + top + topRight + right + bottomRight + bottom + bottomLeft + left;
+}
+
+static void get_neighbor_bits(const unsigned char* grid, int w, int h, int x, int y,
+    int* topLeft, int* top, int* topRight, int* right, int* bottomRight, int* bottom, int* bottomLeft, int* left) {
+    *topLeft     = (y > 0 && x > 0) ? (grid[(y - 1) * w + (x - 1)] ? 1 : 0) : 0;
+    *top         = (y > 0) ? (grid[(y - 1) * w + x] ? 1 : 0) : 0;
+    *topRight    = (y > 0 && x < w - 1) ? (grid[(y - 1) * w + (x + 1)] ? 1 : 0) : 0;
+    *right       = (x < w - 1) ? (grid[y * w + (x + 1)] ? 1 : 0) : 0;
+    *bottomRight = (y < h - 1 && x < w - 1) ? (grid[(y + 1) * w + (x + 1)] ? 1 : 0) : 0;
+    *bottom      = (y < h - 1) ? (grid[(y + 1) * w + x] ? 1 : 0) : 0;
+    *bottomLeft  = (y < h - 1 && x > 0) ? (grid[(y + 1) * w + (x - 1)] ? 1 : 0) : 0;
+    *left        = (x > 0) ? (grid[y * w + (x - 1)] ? 1 : 0) : 0;
+}
+
+/* Thinning pass 1: delete pixel if connectivity and neighbor counts allow (YSC-WHH rules). */
+static int thin_should_delete_pass1(int numTransitions, int numNeighbors,
+    int topLeft, int top, int topRight, int right, int bottomRight, int bottom, int bottomLeft, int left) {
+    if (numNeighbors < 2 || numNeighbors > 7) return 0;
+    if (numTransitions == 1)
+        return (top * right * bottom == 0) && (right * bottom * left == 0);
+    if (numTransitions == 2)
+        return ((top && right) && !(bottom || bottomLeft || left)) || ((right && bottom) && !(top || left || topLeft));
+    return 0;
+}
+
+/* Thinning pass 2: same idea, different neighbor triplets. */
+static int thin_should_delete_pass2(int numTransitions, int numNeighbors,
+    int topLeft, int top, int topRight, int right, int bottomRight, int bottom, int bottomLeft, int left) {
+    if (numNeighbors < 2 || numNeighbors > 7) return 0;
+    if (numTransitions == 1)
+        return (top * right * left == 0) && (top * bottom * left == 0);
+    if (numTransitions == 2)
+        return ((top && left) && !(right || bottomRight || bottom)) || ((bottom && left) && !(top || topRight || right));
+    return 0;
+}
+
+OC_STATUS ocularSkeletonizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Threshold) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int Channels = Stride / Width;
+    if (Channels != 1 && Channels != 3 && Channels != 4) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    /* pixels with value < threshold become foreground. */
+    Threshold = ClampToByte(Threshold);
+
+    size_t n = (size_t)Width * Height;
+    unsigned char* bin = (unsigned char*)malloc(n);
+    if (bin == NULL) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    if (Channels == 1) {
+        for (int i = 0; i < (int)n; i++) {
+            bin[i] = (Input[i] < Threshold) ? 255 : 0;
+        }
+    } else {
+        for (int y = 0; y < Height; y++) {
+            const unsigned char* row = Input + (y * Stride);
+            for (int x = 0; x < Width; x++) {
+                int r = row[x * Channels + 0];
+                int g = row[x * Channels + 1];
+                int b = row[x * Channels + 2];
+                int lum = (int)(0.299f * r + 0.587f * g + 0.114f * b + 0.5f);
+                bin[y * Width + x] = (lum < Threshold) ? 255 : 0;
+            }
+        }
+    }
+
+    /* Working copy for iterative thinning (algorithm uses 0/1; we use 0/255) */
+    unsigned char* work = (unsigned char*)malloc(n);
+    if (work == NULL) {
+        free(bin);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+    for (size_t i = 0; i < n; i++) {
+        work[i] = bin[i];
+    }
+
+    /* Zhang-Suen: two subiterations per round; repeat until no pixels removed.
+     * Each subiteration: copy work to bin first, then mark deletions in bin (parallel update). */
+    for (;;) {
+        int changed = 0;
+
+        /* Subiteration 1 */
+        for (size_t i = 0; i < n; i++) bin[i] = work[i];
+        for (int y = 1; y < Height - 1; y++) {
+            for (int x = 1; x < Width - 1; x++) {
+                int idx = y * Width + x;
+                if (work[idx] == 0) continue;
+
+                int numNeighbors = count_foreground_neighbors(work, Width, Height, x, y);
+                int numTransitions = count_01_transitions(work, Width, Height, x, y);
+                int topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left;
+                get_neighbor_bits(work, Width, Height, x, y, &topLeft, &top, &topRight, &right, &bottomRight, &bottom, &bottomLeft, &left);
+
+                if (!thin_should_delete_pass1(numTransitions, numNeighbors, topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left)) continue;
+
+                bin[idx] = 0;
+                changed = 1;
+            }
+        }
+        for (size_t i = 0; i < n; i++) work[i] = bin[i];
+
+        /* Subiteration 2 */
+        for (size_t i = 0; i < n; i++) bin[i] = work[i];
+        for (int y = 1; y < Height - 1; y++) {
+            for (int x = 1; x < Width - 1; x++) {
+                int idx = y * Width + x;
+                if (work[idx] == 0) continue;
+
+                int numNeighbors = count_foreground_neighbors(work, Width, Height, x, y);
+                int numTransitions = count_01_transitions(work, Width, Height, x, y);
+                int topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left;
+                get_neighbor_bits(work, Width, Height, x, y, &topLeft, &top, &topRight, &right, &bottomRight, &bottom, &bottomLeft, &left);
+
+                if (!thin_should_delete_pass2(numTransitions, numNeighbors, topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left)) continue;
+
+                bin[idx] = 0;
+                changed = 1;
+            }
+        }
+        for (size_t i = 0; i < n; i++) work[i] = bin[i];
+
+        if (!changed) break;
+    }
+
+    free(work);
+
+    /* Write output: skeleton black on white background */
+    if (Channels == 1) {
+        for (size_t i = 0; i < n; i++) {
+            Output[i] = bin[i] ? 0 : 255;
+        }
+    } else {
+        for (int y = 0; y < Height; y++) {
+            unsigned char* outRow = Output + (y * Stride);
+            const unsigned char* binRow = bin + (y * Width);
+            for (int x = 0; x < Width; x++) {
+                unsigned char v = binRow[x] ? 0 : 255;
+                outRow[x * Channels + 0] = v;
+                outRow[x * Channels + 1] = v;
+                outRow[x * Channels + 2] = v;
+                if (Channels == 4) outRow[x * Channels + 3] = 255;
+            }
+        }
+    }
+
+    free(bin);
+    return OC_STATUS_OK;
+}
+
 #ifdef __cplusplus
 }
 #endif

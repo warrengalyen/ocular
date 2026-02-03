@@ -109,6 +109,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Erode/Dilate
 - High Pass
 - Min/Max
+- Skeletonize (thinning)
 
 #### Sharpening
 
@@ -159,6 +160,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 - Despeckle (Salt & Pepper Noise Removal)
 - Deskewing
+- Skeletonize (thinning)
 
 #### Misc
 
@@ -203,7 +205,7 @@ Note: These are primarly used for included filters and added on as needed basis.
 |---------------------|-----------------------------------|:-------:|:-------:|
 | `.aco`              | Adobe Color Swatch                |   ✓     |    ✓*   |
 | `.act`              | Adobe Color Table                 |   ✓     |    ✓    |
-| `.ase`              | Adobe Swatch Exchange             |   ✓    |         |
+| `.ase`              | Adobe Swatch Exchange             |   ✓     |         |
 | `.gpl`              | GIMP Palette                      |   ✓     |    ✓    |
 | `.pal, .psppalette` | Paint Shop Pro Palette            |   ✓     |    ✓    |
 | `.pal`              | Microsoft RIFF Palette            |   ✓     |    ✓    |
