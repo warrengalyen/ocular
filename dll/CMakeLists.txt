@@ -30,6 +30,7 @@ set(MODULE_FILES
     ../lib/denoise_filters.c
     ../lib/edge_filters.c
     ../lib/blur_filters.c
+    ../lib/morphology_filters.c
     ../lib/pixelate_filters.c
     ../lib/render_filters.c
     ../lib/stylize_filters.c

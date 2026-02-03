@@ -32,6 +32,7 @@ set(MODULE_FILES
     distort_filters.c
     edge_filters.c
     blur_filters.c
+    morphology_filters.c
     hazeremoval.c
     pixelate_filters.c
     render_filters.c

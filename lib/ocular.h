@@ -30,6 +30,7 @@ extern "C" {
 #include "denoise_filters.h"
 #include "edge_filters.h"
 #include "blur_filters.h"
+#include "morphology_filters.h"
 #include "distort_filters.h"
 #include "render_filters.h"
 #include "stylize_filters.h"
@@ -404,6 +405,7 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param opacity The value to multiply the incoming alpha channel for each pixel. Range [0.0 - 1.0]. Default 1.0.
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
+    DEPRECATED("This function is deprecated. Use ocularBlendFilter instead")
     OC_STATUS ocularOpacityFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float opacity);
 
     /** @brief Photoshop-like levels adjustment. The min, max, minOut and maxOut parameters are floats in the range [0 - 1].
@@ -799,72 +801,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
     //--------------------------Blur filters--------------------------
 
     /**
-     * @brief Performs a minimum rank filter that replaces the central pixel with the darkest one in the radius.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param Radius A radius in pixels to use for calculation, >= 0
-     *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularErodeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
-    /**
-     * @brief Performs a maximum rank filter that replaces the central pixel with the lightest one in the radius.
-     *  @ingroup group_ip_filters
-     *  @param Input The image input data buffer.
-     *  @param Output The image output data buffer.
-     *  @param Width The width of the image in pixels.
-     *  @param Height The height of the image in pixels.
-     *  @param Stride The number of bytes in one row of pixels.
-     *  @param Radius A radius in pixels to use for calculation, >= 0
-     *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularDilateFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
-   /**
-     * @brief Apply a minimum filter. This is the same as Erode except it uses a circular kernel that accounts for edges.
-     * @ingroup group_ip_filters
-     * @param Input The image input data buffer
-     * @param Output The image output data buffer
-     * @param Width The width of the image in pixels
-     * @param Height The height of the image in pixels
-     * @param Stride The number of bytes in one row of pixels
-     * @param Radius The radius of the kernel. Range [1 - 256]
-     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularMinFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
-    /**
-     * @brief Apply a maximum filter. This is the same as Dialte except it uses a circular kernel that accounts for edges.
-     * @ingroup group_ip_filters
-     * @param Input The image input data buffer
-     * @param Output The image output data buffer
-     * @param Width The width of the image in pixels
-     * @param Height The height of the image in pixels
-     * @param Stride The number of bytes in one row of pixels
-     * @param Radius The radius of the kernel. Range [1 - 256]
-     */
-    OC_STATUS ocularMaxFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
-    /**
-     * @brief Perform a high pass filter that emphasizes high-frequency components (edges and details) while reducing
-     * low-frequency components (smooth areas)
-     * @ingroup group_ip_filters
-     * @param Input The image input data buffer.
-     * @param Output The image output data buffer.
-     * @param Width The width of the image in pixels.
-     * @param Height The height of the image in pixels.
-     * @param Stride The number of bytes in one row of pixels.
-     * @param Radius Controls the cutoff frequency - larger values will remove more low frequency content, resulting in
-     * a more pronounced high pass effect. Range [1 - 512]
-     * @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
-     */
-    OC_STATUS ocularHighPassFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int Radius);
-
-    /**
      * @brief Performs a Bi-Exponential Edge-Perserving Smoothing filter that removes irrelevant details while preserving strong edges.
      *        It is faster than a bilateral filter and uses a range akin to the one found in bilateral.
      * @ingroup group_ip_filters
@@ -1115,12 +1051,8 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularPosterizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, int Levels);
 
-    //------------------------Distort-------------------------
-
     //--------------------------Misc--------------------------
 
-
-    
     /**
     *  @brief Performs a Hough transform to detect lines in an image.
     *  @ingroup group_ip_general
