@@ -40,6 +40,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Color Invert
 - Color Temperature
 - Color Matrix
+- Channel Mixer
 - Curves
 - False Color (mix between two colors using luminance)
 - Grayscale (desaturate)

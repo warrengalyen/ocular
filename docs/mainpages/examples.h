@@ -9,6 +9,7 @@
   
   - @ref page_examples_autowb "Auto White Balance"
   - @ref page_examples_backlight "Backlight Repair"
+  - @ref page_examples_channel_mixer "Channel Mixer"
   - @ref page_examples_color_balance "Color Balance"
   - @ref page_examples_curves "Curves"
   - @ref page_examples_haze_removal "Haze Removal"

@@ -239,6 +239,22 @@ static char timestamp[] = __DATE__ " " __TIME__;
     OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                      float* colorMatrix, float intensity);
 
+    /** @brief A color correction filter that allows you to recombine image color channels of an image.
+     *  @param Input The image input data buffer.
+     *  @param Output The image output data buffer.
+     *  @param Width The width of the image in pixels.
+     *  @param Height The height of the image in pixels.
+     *  @param Stride The number of bytes in one row of pixels.
+     *  @param mixer Array of 16 ints: 4 output channels (R, G, B, Gray) × 4 inputs each (R, G, B, Constant).
+     *               Layout: mixer[out*4 + 0]=R, mixer[out*4+1]=G, mixer[out*4+2]=B, mixer[out*4+3]=Constant.
+     *               Ranges are in [-255, 255].
+     *  @param monochrome If true, output is grayscale (R=G=B from Gray row of mixer only).
+     *  @param preserveLuminance If true (and not monochrome), scale RGB so overall luminance is unchanged.
+     *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
+     */
+    OC_STATUS ocularChannelMixerFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                      const int* mixer, bool monochrome, bool preserveLuminance);
+
     /** @brief Applies a simple sepia tone filter
      *  @ingroup group_color_filters
      *  @param Input The image input data buffer.

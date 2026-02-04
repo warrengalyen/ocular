@@ -552,6 +552,73 @@ extern "C" {
         return OC_STATUS_OK;
     }
 
+    OC_STATUS ocularChannelMixerFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                      const int* mixer, bool monochrome, bool preserveLuminance) {
+
+        if (Input == NULL || Output == NULL || mixer == NULL)
+            return OC_STATUS_ERR_NULLREFERENCE;
+        if (Width <= 0 || Height <= 0 || Stride <= 0)
+            return OC_STATUS_ERR_INVALIDPARAMETER;
+
+        int Channels = Stride / Width;
+        if (Channels != 3 && Channels != 4)
+            return OC_STATUS_ERR_NOTSUPPORTED;
+
+        /* Clamp constants to [-255, 255]; RGB coeffs left as-is */
+        int m[16];
+        for (int i = 0; i < 4; i++) {
+            m[i * 4 + 0] = mixer[i * 4 + 0];
+            m[i * 4 + 1] = mixer[i * 4 + 1];
+            m[i * 4 + 2] = mixer[i * 4 + 2];
+            m[i * 4 + 3] = clamp(mixer[i * 4 + 3], -255, 255);
+        }
+
+        /* Luminance weights (BT.601) */
+        const float Lr = 0.299f, Lg = 0.587f, Lb = 0.114f;
+
+        for (int Y = 0; Y < Height; Y++) {
+            unsigned char* pInput = Input + Y * Stride;
+            unsigned char* pOutput = Output + Y * Stride;
+            for (int X = 0; X < Width; X++) {
+                const int r = pInput[0];
+                const int g = pInput[1];
+                const int b = pInput[2];
+
+                int outR, outG, outB, outGray;
+                if (monochrome) {
+                    outGray = (r * m[12] + g * m[13] + b * m[14]) / 255 + m[15];
+                    outR = outG = outB = outGray;
+                } else {
+                    outR = (r * m[0] + g * m[1] + b * m[2]) / 255 + m[3];
+                    outG = (r * m[4] + g * m[5] + b * m[6]) / 255 + m[7];
+                    outB = (r * m[8] + g * m[9] + b * m[10]) / 255 + m[11];
+
+                    if (preserveLuminance) {
+                        float L_in = Lr * r + Lg * g + Lb * b;
+                        float L_out = Lr * outR + Lg * outG + Lb * outB;
+                        if (L_out > 0) {
+                            float scale = L_in / L_out;
+                            outR = (int)(outR * scale + 0.5f);
+                            outG = (int)(outG * scale + 0.5f);
+                            outB = (int)(outB * scale + 0.5f);
+                        }
+                    }
+                }
+
+                pOutput[0] = ClampToByte(outR);
+                pOutput[1] = ClampToByte(outG);
+                pOutput[2] = ClampToByte(outB);
+                if (Channels == 4)
+                    pOutput[3] = pInput[3];
+
+                pInput += Channels;
+                pOutput += Channels;
+            }
+        }
+
+        return OC_STATUS_OK;
+    }
+
     OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
                                 int intensity) {
 
