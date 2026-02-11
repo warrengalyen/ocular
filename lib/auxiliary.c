@@ -1,7 +1,8 @@
 #include "util.h"
 #include "ocular.h"
 
-OC_STATUS GetValidCoordinate(int Width, int Height, int Left, int Right, int Top, int Bottom, OcEdgeMode Edge, OcImage** Row, OcImage** Col) {
+OC_STATUS GetValidCoordinate(int Width, int Height, int Left, int Right, int Top, int Bottom, OcEdgeMode Edge, 
+                              OcImage** Row, OcImage** Col) {
 
     if ((Left < 0) || (Right < 0) || (Top < 0) || (Bottom < 0))
         return OC_STATUS_ERR_INVALIDPARAMETER;
@@ -127,7 +128,8 @@ OC_STATUS GetExpandImage(OcImage* Src, OcImage** Dest, int Left, int Right, int 
     return OC_STATUS_OK;
 }
 
-OC_STATUS SplitRGBA(unsigned char* Input, int Width, int Height, int Stride, OcImage** Red, OcImage** Green, OcImage** Blue, OcImage** Alpha) {
+OC_STATUS SplitRGBA(unsigned char* Input, int Width, int Height, int Stride, OcImage** Red, OcImage** Green, 
+                    OcImage** Blue, OcImage** Alpha) {
 
     if (Input == NULL)
         return OC_STATUS_ERR_NULLREFERENCE;
@@ -274,7 +276,8 @@ FreeMemory:
     return Ret;
 }
 
-OC_STATUS CombineRGBA(unsigned char* Output, int Width, int Height, int Stride, OcImage* Red, OcImage* Green, OcImage* Blue, OcImage* Alpha) {
+OC_STATUS CombineRGBA(unsigned char* Output, int Width, int Height, int Stride, OcImage* Red, OcImage* Green, 
+                      OcImage* Blue, OcImage* Alpha) {
 
     if (Output == NULL)
         return OC_STATUS_ERR_NULLREFERENCE;
@@ -411,5 +414,96 @@ void CopyAlphaChannel(unsigned char* Src, unsigned char* Dest, int Width, int He
     int Y, Index = 3;
     for (Y = 0; Y < Width * Height; Y++, Index += 4) {
         SrcP[Index] = DestP[Index];
+    }
+}
+
+
+void GetPixelWithEdgeBehavior(unsigned char* Input, int Width, int Height, int Stride, int x, int y, OcEdgeMode edgeMode,
+                              unsigned char* pixel, int channels) {
+
+    int newX = x;
+    int newY = y;
+
+    if (x >= 0 && x < Width && y >= 0 && y < Height) {
+        // Within bounds
+        int pos = x * channels + y * Stride;
+        for (int c = 0; c < channels; c++) {
+            pixel[c] = Input[pos + c];
+        }
+        return;
+    }
+
+    switch (edgeMode) {
+    case OC_EDGE_CLAMP:
+        newX = (x < 0) ? 0 : (x >= Width) ? Width - 1 : x;
+        newY = (y < 0) ? 0 : (y >= Height) ? Height - 1 : y;
+        break;
+
+    case OC_EDGE_MIRROR:
+        if (x < 0)
+            newX = -x - 1;
+        else if (x >= Width)
+            newX = 2 * Width - x - 1;
+        else
+            newX = x;
+
+        if (y < 0)
+            newY = -y - 1;
+        else if (y >= Height)
+            newY = 2 * Height - y - 1;
+        else
+            newY = y;
+
+        // Clamp after reflection
+        newX = (newX < 0) ? 0 : (newX >= Width) ? Width - 1 : newX;
+        newY = (newY < 0) ? 0 : (newY >= Height) ? Height - 1 : newY;
+        break;
+
+    case OC_EDGE_WRAP:
+        newX = ((x % Width) + Width) % Width;
+        newY = ((y % Height) + Height) % Height;
+        break;
+
+    case OC_EDGE_ERASE:
+        // Return black/transparent
+        for (int c = 0; c < channels; c++) {
+            pixel[c] = 0;
+        }
+        return;
+
+    case OC_EDGE_IGNORE:
+        // Return original pixel value at the out-of-bounds location
+        newX = (x < 0) ? 0 : (x >= Width) ? Width - 1 : x;
+        newY = (y < 0) ? 0 : (y >= Height) ? Height - 1 : y;
+        break;
+    }
+
+    int pos = newX * channels + newY * Stride;
+    for (int c = 0; c < channels; c++) {
+        pixel[c] = Input[pos + c];
+    }
+}
+
+void GetPixelBilinear(unsigned char* Input, int Width, int Height, int Stride, float x, float y, 
+                      OcEdgeMode edgeMode, unsigned char* pixel, int channels) {
+
+    int x0 = (int)floor(x);
+    int y0 = (int)floor(y);
+    int x1 = x0 + 1;
+    int y1 = y0 + 1;
+
+    float fx = x - x0;
+    float fy = y - y0;
+
+    unsigned char p00[4], p10[4], p01[4], p11[4];
+
+    GetPixelWithEdgeBehavior(Input, Width, Height, Stride, x0, y0, edgeMode, p00, channels);
+    GetPixelWithEdgeBehavior(Input, Width, Height, Stride, x1, y0, edgeMode, p10, channels);
+    GetPixelWithEdgeBehavior(Input, Width, Height, Stride, x0, y1, edgeMode, p01, channels);
+    GetPixelWithEdgeBehavior(Input, Width, Height, Stride, x1, y1, edgeMode, p11, channels);
+
+    for (int c = 0; c < channels; c++) {
+        float val = (1 - fx) * (1 - fy) * p00[c] + fx * (1 - fy) * p10[c] + (1 - fx) * fy * p01[c] + fx * fy * p11[c];
+        pixel[c] = (unsigned char)(val + 0.5f);
     }
 }

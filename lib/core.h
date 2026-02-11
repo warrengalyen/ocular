@@ -23,9 +23,11 @@ typedef struct {
  * @brief Edge handling mode to apply when certain filters radius' are out of image bounds.
  */
 typedef enum {
-    OC_EDGE_WRAP = 0,  // repeat edge pixel
+    OC_EDGE_WRAP = 0,   // repeat edge pixel
     OC_EDGE_MIRROR = 1, // mirror edge pixel
     OC_EDGE_CLAMP = 2,   // clamp edge pixel
+    OC_EDGE_ERASE = 3,   // erase edge pixel
+    OC_EDGE_IGNORE = 4,  // ignore edge pixel
 } OcEdgeMode;
 
 /**
