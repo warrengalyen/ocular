@@ -177,4 +177,22 @@ void skinDenoise(unsigned char* input, unsigned char* output, int width, int hei
 // BEEP filter
 float calcWeight(const float weight, const float spatialContraDecay, const float diff);
 
+
+#define ANTI_ALIAS_LEVEL 4
+#define ANTI_ALIAS_SAMPLES ((ANTI_ALIAS_LEVEL * ANTI_ALIAS_LEVEL) + 1)
+
+/** Maximum number of supersampling offset pairs (for quality 1-5 → 1-13 samples). */
+#define OC_SUPERSAMPLE_MAX_SAMPLES 13
+
+/**
+ * Fill precomputed supersampling offsets using a modified rotated grid (RGSS-style).
+ * Reusable by any filter that needs 1–13 sample offsets for antialiasing.
+ * @param numSamples Number of samples (1–13). 1 = no supersampling (single center offset 0,0).
+ * @param sinAngle Sine of the grid rotation angle (e.g. from effect rotation).
+ * @param cosAngle Cosine of the grid rotation angle.
+ * @param outX Array of at least numSamples floats; receives x offsets.
+ * @param outY Array of at least numSamples floats; receives y offsets.
+ */
+void ocularSupersampleOffsets(int numSamples, float sinAngle, float cosAngle, float* outX, float* outY);
+
 #endif  /* OCULAR_UTIL_H */

@@ -134,3 +134,4 @@ EXPORTS
     ocularSplitToningFilter @132
     ocularKuwaharaFilter @133
     ocularSkeletonizeFilter @134
+    ocularGlassTilesFilter @135

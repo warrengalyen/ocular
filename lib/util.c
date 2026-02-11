@@ -682,3 +682,30 @@ void skinDenoise(unsigned char* input, unsigned char* output, int width, int hei
 float calcWeight(const float weight, const float spatialContraDecay, const float diff) {
     return spatialContraDecay * expf(weight * (diff * diff)) * diff;
 }
+
+/* Rotated grid supersampling: level 4 → 17 points; we use first numSamples (1–13). */
+#define OC_SUPERSAMPLE_GRID_LEVEL 4
+#define OC_SUPERSAMPLE_GRID_TOTAL ((OC_SUPERSAMPLE_GRID_LEVEL * OC_SUPERSAMPLE_GRID_LEVEL) + 1)
+
+void ocularSupersampleOffsets(int numSamples, float sinAngle, float cosAngle, float* outX, float* outY) {
+    if (numSamples <= 0 || outX == NULL || outY == NULL)
+        return;
+    if (numSamples == 1) {
+        outX[0] = 0.0f;
+        outY[0] = 0.0f;
+        return;
+    }
+    {
+        int n = numSamples <= OC_SUPERSAMPLE_MAX_SAMPLES ? numSamples : OC_SUPERSAMPLE_MAX_SAMPLES;
+        const double total = (double)OC_SUPERSAMPLE_GRID_TOTAL;
+        const int level = OC_SUPERSAMPLE_GRID_LEVEL;
+        for (int i = 0; i < n; i++) {
+            double x = (double)(i * level) / total;
+            double y = (double)i / total;
+            x -= (int)x;
+            // Rotate
+            outX[i] = (float)((double)cosAngle * x + (double)sinAngle * y);
+            outY[i] = (float)((double)cosAngle * y - (double)sinAngle * x);
+        }
+    }
+}

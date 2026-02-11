@@ -426,7 +426,7 @@ void GetPixelWithEdgeBehavior(unsigned char* Input, int Width, int Height, int S
 
     if (x >= 0 && x < Width && y >= 0 && y < Height) {
         // Within bounds
-        int pos = x * channels + y * Stride;
+        int pos = y * Stride + x * channels;
         for (int c = 0; c < channels; c++) {
             pixel[c] = Input[pos + c];
         }
@@ -478,7 +478,7 @@ void GetPixelWithEdgeBehavior(unsigned char* Input, int Width, int Height, int S
         break;
     }
 
-    int pos = newX * channels + newY * Stride;
+    int pos = newY * Stride + newX * channels;
     for (int c = 0; c < channels; c++) {
         pixel[c] = Input[pos + c];
     }

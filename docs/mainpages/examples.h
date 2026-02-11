@@ -44,6 +44,7 @@
   - @ref page_examples_crystallize "Crystallize"
   - @ref page_examples_film_grain "Film Grain"
   - @ref page_examples_frosted_glass "Frosted Glass"
+  - @ref page_examples_glass_tiles "Glass Tiles"
   - @ref page_examples_kuwahara "Kuwahara"
   - @ref page_examples_mosaic "Mosaic"
   - @ref page_examples_pointillize "Pointillize"
