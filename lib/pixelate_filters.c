@@ -523,11 +523,25 @@ OC_STATUS ocularFragmentFilter(unsigned char* Input, unsigned char* Output, int 
     return OC_STATUS_OK;
 }
 
-// Structure to accumulate color data for each cell
-typedef struct {
+// Hash table entry for cell lookup
+typedef struct HashEntry {
+    int gridX, gridY;
     int sumR, sumG, sumB, sumA;
     int count;
-} CellData;
+    int cellIndex; // Index in the cells array
+    struct HashEntry* next;
+} HashEntry;
+
+typedef struct {
+    HashEntry** buckets;
+    int size;
+} HashMap;
+
+typedef struct {
+    int gridX, gridY;
+    int sumR, sumG, sumB, sumA;
+    int count;
+} WorleyCell;
 
 // Simple hash function for deterministic random points
 static unsigned int hash(unsigned int x, unsigned int y) {
@@ -538,6 +552,69 @@ static unsigned int hash(unsigned int x, unsigned int y) {
     return h;
 }
 
+// Hash function for grid coordinates
+static unsigned int gridHash(int gridX, int gridY, int tableSize) {
+    return (unsigned int)((gridX * 73856093) ^ (gridY * 19349663)) % tableSize;
+}
+
+// Create hash map
+static HashMap* createHashMap(int expectedCells) {
+    HashMap* map = (HashMap*)malloc(sizeof(HashMap));
+    if (!map)
+        return NULL;
+
+    map->size = expectedCells * 2;
+    map->buckets = (HashEntry**)calloc(map->size, sizeof(HashEntry*));
+    if (!map->buckets) {
+        free(map);
+        return NULL;
+    }
+    return map;
+}
+
+// Add cell to hash map
+static void addToHashMap(HashMap* map, int gridX, int gridY, int cellIndex) {
+    unsigned int idx = gridHash(gridX, gridY, map->size);
+    HashEntry* entry = (HashEntry*)malloc(sizeof(HashEntry));
+    if (entry) {
+        entry->gridX = gridX;
+        entry->gridY = gridY;
+        entry->cellIndex = cellIndex;
+        entry->next = map->buckets[idx];
+        map->buckets[idx] = entry;
+    }
+}
+
+// Find cell index in hash map
+static int findCellIndex(HashMap* map, int gridX, int gridY) {
+    unsigned int idx = gridHash(gridX, gridY, map->size);
+    HashEntry* entry = map->buckets[idx];
+
+    while (entry) {
+        if (entry->gridX == gridX && entry->gridY == gridY) {
+            return entry->cellIndex;
+        }
+        entry = entry->next;
+    }
+
+    return -1;
+}
+
+static void freeHashMap(HashMap* map) {
+    if (!map)
+        return;
+    for (int i = 0; i < map->size; i++) {
+        HashEntry* entry = map->buckets[i];
+        while (entry) {
+            HashEntry* next = entry->next;
+            free(entry);
+            entry = next;
+        }
+    }
+    free(map->buckets);
+    free(map);
+}
+
 // Generate random point in grid cell
 static void getRandomPoint(int gridX, int gridY, float cellSize, float* pointX, float* pointY) {
     unsigned int h = hash(gridX, gridY);
@@ -545,9 +622,7 @@ static void getRandomPoint(int gridX, int gridY, float cellSize, float* pointX, 
     *pointY = (float)gridY * cellSize + ((float)((h >> 16) & 0xFFFF) / 65536.0f) * cellSize;
 }
 
-OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
-                                  int width, int height, int stride,
-                                  int cellSize) {
+OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output, int width, int height, int stride, int cellSize) {
     // Validate inputs
     if (input == NULL || output == NULL) {
         return OC_STATUS_ERR_NULLREFERENCE;
@@ -556,55 +631,50 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
         return OC_STATUS_ERR_INVALIDPARAMETER;
     }
     if (input == output) {
-        return OC_STATUS_ERR_INVALIDPARAMETER; // Cannot operate in-place
+        return OC_STATUS_ERR_INVALIDPARAMETER;
     }
-    
+
     // Clamp cell size to valid range
     cellSize = clamp(cellSize, 3, 100);
-    
+
     int channels = stride / width;
     if (channels < 1 || channels > 4) {
         return OC_STATUS_ERR_NOTSUPPORTED;
     }
-    
+
     // Convert to float for Worley noise
     float fCellSize = (float)cellSize;
-    
-    // Calculate maximum number of cells needed based on image size and cell size
+
+    // Calculate maximum number of cells needed
     int maxCellsNeeded = ((width / cellSize) + 3) * ((height / cellSize) + 3);
-    // Add some safety margin (50% extra) for edge cases
     maxCellsNeeded = (int)(maxCellsNeeded * 1.5f);
-    // Ensure minimum of 1000 cells
-    if (maxCellsNeeded < 1000) maxCellsNeeded = 1000;
-    typedef struct {
-        int gridX, gridY;
-        int sumR, sumG, sumB, sumA;
-        int count;
-    } WorleyCell;
-    
+    if (maxCellsNeeded < 1000)
+        maxCellsNeeded = 1000;
+
     WorleyCell* cells = (WorleyCell*)calloc(maxCellsNeeded, sizeof(WorleyCell));
     int numActiveCells = 0;
-    
+
     if (cells == NULL) {
         return OC_STATUS_ERR_OUTOFMEMORY;
     }
-    
+
+    // Create hash map for O(1) lookups
+    HashMap* cellMap = createHashMap(maxCellsNeeded);
+    if (!cellMap) {
+        free(cells);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
     // First pass: Assign pixels to Worley cells and accumulate colors
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             // Calculate which grid cell this pixel belongs to
             int gridX = (int)(x / fCellSize);
             int gridY = (int)(y / fCellSize);
-            
-            // Find or create cell for this grid position
-            int cellIndex = -1;
-            for (int i = 0; i < numActiveCells; i++) {
-                if (cells[i].gridX == gridX && cells[i].gridY == gridY) {
-                    cellIndex = i;
-                    break;
-                }
-            }
-            
+
+            // Find or create cell for this grid position using hash map
+            int cellIndex = findCellIndex(cellMap, gridX, gridY);
+
             // Create new cell if not found
             if (cellIndex == -1 && numActiveCells < maxCellsNeeded) {
                 cellIndex = numActiveCells++;
@@ -615,13 +685,14 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
                 cells[cellIndex].sumB = 0;
                 cells[cellIndex].sumA = 0;
                 cells[cellIndex].count = 0;
+                addToHashMap(cellMap, gridX, gridY, cellIndex);
             }
-            
+
             // Accumulate color values
             if (cellIndex >= 0) {
                 int srcIdx = (y * width + x) * channels;
                 cells[cellIndex].count++;
-                
+
                 if (channels >= 3) {
                     cells[cellIndex].sumR += input[srcIdx + 0];
                     cells[cellIndex].sumG += input[srcIdx + 1];
@@ -629,125 +700,70 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
                 } else if (channels == 1) {
                     cells[cellIndex].sumR += input[srcIdx];
                 }
-                
+
                 if (channels == 4) {
                     cells[cellIndex].sumA += input[srcIdx + 3];
                 }
             }
         }
     }
-    
-    // Pre-calculate random points for all grid cells to avoid repeated calculations
+
+    // Pre-calculate random points
     int maxGridX = (int)(width / fCellSize) + 3;
     int maxGridY = (int)(height / fCellSize) + 3;
-    float** precomputedPointsX = (float**)malloc(maxGridY * sizeof(float*));
-    float** precomputedPointsY = (float**)malloc(maxGridY * sizeof(float*));
-    
-    if (precomputedPointsX == NULL || precomputedPointsY == NULL) {
+    int totalGridCells = maxGridX * maxGridY;
+    float* precomputedPointsX = (float*)malloc(totalGridCells * sizeof(float));
+    float* precomputedPointsY = (float*)malloc(totalGridCells * sizeof(float));
+
+    if (!precomputedPointsX || !precomputedPointsY) {
         free(precomputedPointsX);
         free(precomputedPointsY);
+        freeHashMap(cellMap);
         free(cells);
         return OC_STATUS_ERR_OUTOFMEMORY;
     }
-    
+
     for (int gy = 0; gy < maxGridY; gy++) {
-        precomputedPointsX[gy] = (float*)malloc(maxGridX * sizeof(float));
-        precomputedPointsY[gy] = (float*)malloc(maxGridX * sizeof(float));
-        if (precomputedPointsX[gy] == NULL || precomputedPointsY[gy] == NULL) {
-            // Cleanup and exit
-            for (int i = 0; i <= gy; i++) {
-                free(precomputedPointsX[i]);
-                free(precomputedPointsY[i]);
-            }
-            free(precomputedPointsX);
-            free(precomputedPointsY);
-            free(cells);
-            return OC_STATUS_ERR_OUTOFMEMORY;
-        }
-        
         for (int gx = 0; gx < maxGridX; gx++) {
-            getRandomPoint(gx, gy, fCellSize, &precomputedPointsX[gy][gx], &precomputedPointsY[gy][gx]);
+            int idx = gy * maxGridX + gx;
+            getRandomPoint(gx, gy, fCellSize, &precomputedPointsX[idx], &precomputedPointsY[idx]);
         }
     }
-    
-    // Create lookup table for cell indices
-    int** cellLookup = (int**)malloc(maxGridY * sizeof(int*));
-    if (cellLookup == NULL) {
-        // Cleanup and exit
-        for (int gy = 0; gy < maxGridY; gy++) {
-            free(precomputedPointsX[gy]);
-            free(precomputedPointsY[gy]);
-        }
-        free(precomputedPointsX);
-        free(precomputedPointsY);
-        free(cells);
-        return OC_STATUS_ERR_OUTOFMEMORY;
-    }
-    
-    for (int gy = 0; gy < maxGridY; gy++) {
-        cellLookup[gy] = (int*)malloc(maxGridX * sizeof(int));
-        if (cellLookup[gy] == NULL) {
-            // Cleanup and exit
-            for (int i = 0; i <= gy; i++) {
-                free(precomputedPointsX[i]);
-                free(precomputedPointsY[i]);
-                free(cellLookup[i]);
-            }
-            for (int i = gy + 1; i < maxGridY; i++) {
-                free(precomputedPointsX[i]);
-                free(precomputedPointsY[i]);
-            }
-            free(precomputedPointsX);
-            free(precomputedPointsY);
-            free(cellLookup);
-            free(cells);
-            return OC_STATUS_ERR_OUTOFMEMORY;
-        }
-        
-        for (int gx = 0; gx < maxGridX; gx++) {
-            cellLookup[gy][gx] = -1; // Initialize to not found
-            for (int i = 0; i < numActiveCells; i++) {
-                if (cells[i].gridX == gx && cells[i].gridY == gy) {
-                    cellLookup[gy][gx] = i;
-                    break;
-                }
-            }
-        }
-    }
-    
-    // Second pass: Generate output using Worley noise with smooth edges (optimized)
+
+    // Second pass: Generate output
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             float fx = (float)x;
             float fy = (float)y;
-            
+
             // Calculate grid cell coordinates
             int gridX = (int)(fx / fCellSize);
             int gridY = (int)(fy / fCellSize);
-            
+
             float minDistSq = FLT_MAX;
             float secondMinDistSq = FLT_MAX;
             int nearestGridX = gridX;
             int nearestGridY = gridY;
             int secondNearestGridX = gridX;
             int secondNearestGridY = gridY;
-            
+
             // Check 3x3 grid around the point for nearest cells
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dx = -1; dx <= 1; dx++) {
                     int checkX = gridX + dx;
                     int checkY = gridY + dy;
-                    
+
                     if (checkX >= 0 && checkX < maxGridX && checkY >= 0 && checkY < maxGridY) {
                         // Use precomputed points
-                        float pointX = precomputedPointsX[checkY][checkX];
-                        float pointY = precomputedPointsY[checkY][checkX];
-                        
-                        // Calculate squared distance (avoid sqrt for speed)
+                        int idx = checkY * maxGridX + checkX;
+                        float pointX = precomputedPointsX[idx];
+                        float pointY = precomputedPointsY[idx];
+
+                        // Calculate squared distance
                         float dx_dist = fx - pointX;
                         float dy_dist = fy - pointY;
                         float distSq = dx_dist * dx_dist + dy_dist * dy_dist;
-                        
+
                         if (distSq < minDistSq) {
                             secondMinDistSq = minDistSq;
                             secondNearestGridX = nearestGridX;
@@ -763,45 +779,39 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
                     }
                 }
             }
-            
-            // Use lookup table for cell indices
-            int nearestCellIndex = (nearestGridY >= 0 && nearestGridY < maxGridY && 
-                                   nearestGridX >= 0 && nearestGridX < maxGridX) ? 
-                                   cellLookup[nearestGridY][nearestGridX] : -1;
-            int secondNearestCellIndex = (secondNearestGridY >= 0 && secondNearestGridY < maxGridY && 
-                                         secondNearestGridX >= 0 && secondNearestGridX < maxGridX) ? 
-                                         cellLookup[secondNearestGridY][secondNearestGridX] : -1;
-            
+
+            // Use hash map for cell lookups
+            int nearestCellIndex = findCellIndex(cellMap, nearestGridX, nearestGridY);
+            int secondNearestCellIndex = findCellIndex(cellMap, secondNearestGridX, secondNearestGridY);
+
             int dstIdx = (y * width + x) * channels;
-            
-            // Calculate smooth blend factor based on distance ratio (balanced for all cell sizes)
+
+            // Calculate smooth blend factor
             float blendFactor = 0.0f;
             if (secondMinDistSq > minDistSq && minDistSq > 0.0f) {
                 float distRatio = sqrtf(minDistSq) / (sqrtf(minDistSq) + sqrtf(secondMinDistSq));
-                // Moderate blend range - blend when distances are reasonably close
                 if (distRatio > 0.45f && distRatio < 0.55f) {
-                    blendFactor = (distRatio - 0.45f) / 0.1f; // 0.0 to 1.0 over 0.45-0.55 range
-                    blendFactor = blendFactor * blendFactor * (3.0f - 2.0f * blendFactor); // Smoothstep
-                    // Moderate blend strength
-                    blendFactor *= 0.5f; // 50% of the calculated blend
+                    blendFactor = (distRatio - 0.45f) / 0.1f;
+                    blendFactor = blendFactor * blendFactor * (3.0f - 2.0f * blendFactor);
+                    blendFactor *= 0.5f;
                 }
             }
-            
+
             // Blend between two nearest cells if they're close
-            if (blendFactor > 0.0f && nearestCellIndex >= 0 && secondNearestCellIndex >= 0 &&
-                cells[nearestCellIndex].count > 0 && cells[secondNearestCellIndex].count > 0) {
-                
+            if (blendFactor > 0.0f && nearestCellIndex >= 0 && secondNearestCellIndex >= 0 && cells[nearestCellIndex].count > 0 &&
+                cells[secondNearestCellIndex].count > 0) {
+
                 float invBlendFactor = 1.0f - blendFactor;
-                
+
                 if (channels >= 3) {
                     float avgR1 = (float)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
                     float avgG1 = (float)(cells[nearestCellIndex].sumG / cells[nearestCellIndex].count);
                     float avgB1 = (float)(cells[nearestCellIndex].sumB / cells[nearestCellIndex].count);
-                    
+
                     float avgR2 = (float)(cells[secondNearestCellIndex].sumR / cells[secondNearestCellIndex].count);
                     float avgG2 = (float)(cells[secondNearestCellIndex].sumG / cells[secondNearestCellIndex].count);
                     float avgB2 = (float)(cells[secondNearestCellIndex].sumB / cells[secondNearestCellIndex].count);
-                    
+
                     output[dstIdx + 0] = (unsigned char)(avgR1 * invBlendFactor + avgR2 * blendFactor);
                     output[dstIdx + 1] = (unsigned char)(avgG1 * invBlendFactor + avgG2 * blendFactor);
                     output[dstIdx + 2] = (unsigned char)(avgB1 * invBlendFactor + avgB2 * blendFactor);
@@ -810,7 +820,7 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
                     float avg2 = (float)(cells[secondNearestCellIndex].sumR / cells[secondNearestCellIndex].count);
                     output[dstIdx] = (unsigned char)(avg1 * invBlendFactor + avg2 * blendFactor);
                 }
-                
+
                 if (channels == 4) {
                     float avgA1 = (float)(cells[nearestCellIndex].sumA / cells[nearestCellIndex].count);
                     float avgA2 = (float)(cells[secondNearestCellIndex].sumA / cells[secondNearestCellIndex].count);
@@ -825,7 +835,7 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
                 } else if (channels == 1) {
                     output[dstIdx] = (unsigned char)(cells[nearestCellIndex].sumR / cells[nearestCellIndex].count);
                 }
-                
+
                 if (channels == 4) {
                     output[dstIdx + 3] = (unsigned char)(cells[nearestCellIndex].sumA / cells[nearestCellIndex].count);
                 }
@@ -838,19 +848,12 @@ OC_STATUS ocularCrystallizeFilter(unsigned char* input, unsigned char* output,
             }
         }
     }
-    
-    // Clean up precomputed data
-    for (int gy = 0; gy < maxGridY; gy++) {
-        free(precomputedPointsX[gy]);
-        free(precomputedPointsY[gy]);
-        free(cellLookup[gy]);
-    }
+
+    // Clean up
     free(precomputedPointsX);
     free(precomputedPointsY);
-    free(cellLookup);
-    
-    // Clean up
+    freeHashMap(cellMap);
     free(cells);
-    
+
     return OC_STATUS_OK;
 }
