@@ -21,7 +21,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 ## Features
 
-### 🎨 Color Adjustment Filters
+### Color Adjustment Filters
 
 #### Basic Adjustments
 
@@ -74,7 +74,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
   - from file (remaps colors to closest color in palette file with optional dithering)
   - from image (reduces unique colors using color quantization with optional dithering)
 
-#### 🧩 Compositing & Blending
+#### Compositing & Blending
 
 - Opacity
 - Image Blending (supports 27 Photoshop modes)
@@ -126,10 +126,11 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Roberts Edge
 - Sobel Edge
 
-#### Stylize
+#### Stylize/Artistic
 
 - Frosted Glass
 - Film Grain
+- Glass Tiles
 - Kuwahara
 - Oil Paint
 - Portrait Glow
