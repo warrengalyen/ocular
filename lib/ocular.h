@@ -1055,28 +1055,6 @@ static char timestamp[] = __DATE__ " " __TIME__;
      */
     OC_STATUS ocularPosterizeFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Channels, 
                                     int Levels);
-
-    /**
-     * @brief Creates a glass tile effect by dividing the image into tiles and applying
-     * curved distortion within each tile using supersampling.
-     * Based on Paint.NET's Glass Blocks effect by Ed Harvey. Mostly written from scratch
-     * with multiple performance optimizations.
-     * @ingroup group_ip_filters
-     * @param Input - Input image buffer
-     * @param Output - Output image buffer
-     * @param Width - Image width in pixels
-     * @param Height - Image height in pixels
-     * @param Stride - Row stride in bytes
-     * @param rotation - Rotation angle in degrees (-45 to 45)
-     * @param tileSize - Size of each tile in pixels (2 to 200)
-     * @param curvature - Curvature of the tiles (-20 to 20). Positive values create convex tiles, negative values create
-     * concave tiles. Zero value creates flat tiles.
-     * @param quality - Interpolation quality 1–5: 1 = no antialiasing, 2–5 = supersampling (4/7/10/13 samples)
-     * @param edgeMode - How to handle pixels outside image bounds
-     * @return OC_STATUS_OK on success, error code otherwise
-     */
-    OC_STATUS ocularGlassTilesFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, 
-                                     float rotation, int tileSize, float curvature, int quality, OcEdgeMode edgeMode);
     
     //--------------------------Misc--------------------------
 

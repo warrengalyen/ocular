@@ -341,6 +341,9 @@ DLIB_EXPORT OC_STATUS ocularKaleidoscopeFilter(unsigned char* input, unsigned ch
 DLIB_EXPORT OC_STATUS ocularGlassTilesFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                                 float rotation, int tileSize, float curvature, int quality, OcEdgeMode edgeMode);
 
+DLIB_EXPORT OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                        float scale, float turbulence, int quality, OcEdgeMode edgeMode, unsigned int seed);
+
 //--------------------------Distort-----------------------------------
 
 

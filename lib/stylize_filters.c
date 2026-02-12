@@ -14,6 +14,8 @@
  #include "util.h"
  #include "blur_filters.h"
  #include "blend.h"
+ #include "auxiliary.h"
+ #include "noise.h"
  #include <math.h>
 
 OC_STATUS ocularOilPaintFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int radius, int intensity) {
@@ -512,6 +514,292 @@ OC_STATUS ocularPortraitGlowFilter(const unsigned char* Input, unsigned char* Ou
     }
 
     free(blurredImage);
+
+    return OC_STATUS_OK;
+}
+
+// Check if point is on surface (Glass Tiles filter)
+static inline int isOnSurface(float u, float v, int Width, int Height) {
+    return (u >= 0.0f && u <= (float)(Width - 1) && v >= 0.0f && v <= (float)(Height - 1));
+}
+
+OC_STATUS ocularGlassTilesFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, float rotation,
+                                 int tileSize, float curvature, int quality, OcEdgeMode edgeMode) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    // Validate filter-specific parameters
+    if (rotation < -45.0f || rotation > 45.0f) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (tileSize < 2 || tileSize > 200) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (curvature < -20.0f || curvature > 20.0f) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (quality < 1 || quality > 5) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    // Quality 1–5 → 1, 4, 7, 10, 13 samples (no antialiasing at 1, supersampling above 1)
+    int numSamples = 1 + (quality - 1) * 3;
+
+    // Pre-compute settings
+    float halfWidth = (float)Width / 2.0f;
+    float halfHeight = (float)Height / 2.0f;
+
+    // Rotation
+    float rotRad = -rotation * M_PI / 180.0f;
+    float sinRot = sinf(rotRad);
+    float cosRot = cosf(rotRad);
+
+    // Adjust tile size as a ratio of the smaller dimension of image
+    if (Width < Height) {
+        tileSize = (tileSize * Width) * 0.005f;
+    } else {
+        tileSize = (tileSize * Height) * 0.005f;
+    }
+
+    // Tile scale for wave function
+    float tileScale = (float)M_PI / (float)tileSize;
+
+    float adjustedCurvature = curvature * curvature / 10.0f * (curvature >= 0.0f ? 1.0f : -1.0f);
+
+    // Precalculated supersampling offsets (reusable rotated-grid table)
+    float xOffsets[OC_SUPERSAMPLE_MAX_SAMPLES];
+    float yOffsets[OC_SUPERSAMPLE_MAX_SAMPLES];
+    ocularSupersampleOffsets(numSamples, sinRot, cosRot, xOffsets, yOffsets);
+
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            int pPos = y * Stride + x * channels;
+
+            // Get original pixel for EDGE_ORIGINAL mode
+            unsigned char originalPixel[4];
+            for (int c = 0; c < channels; c++) {
+                originalPixel[c] = Input[pPos + c];
+            }
+
+            // Translate to center
+            float i = (float)x - halfWidth;
+            float j = (float)y - halfHeight;
+
+            // Accumulator for anti-aliased result
+            float accumR = 0.0f, accumG = 0.0f, accumB = 0.0f;
+
+            // Supersampling loop (1 = no AA, 2–5 = 4/7/10/13 samples)
+            for (int p = 0; p < numSamples; p++) {
+                // Initial coordinates after applying supersampling offsets
+                float initialU = i + xOffsets[p];
+                float initialV = j - yOffsets[p];
+
+                // Rotate coordinates to align with the effect's orientation
+                float rotatedS = cosRot * initialU + sinRot * initialV;
+                float rotatedT = -sinRot * initialU + cosRot * initialV;
+
+                // Apply wave function: tan gives sharp tile edges (glass tiles)
+                float nS = rotatedS * tileScale;
+                float nT = rotatedT * tileScale;
+                float functionS = tanf(nS);
+                float functionT = tanf(nT);
+                /* Clamp to avoid inf/nan when n is near ±π/2 */
+                if (functionS > 20.0f)
+                    functionS = 20.0f;
+                else if (functionS < -20.0f)
+                    functionS = -20.0f;
+                if (functionT > 20.0f)
+                    functionT = 20.0f;
+                else if (functionT < -20.0f)
+                    functionT = -20.0f;
+
+                // Apply curvature transformation to create the tile effect
+                float transformedS = rotatedS + adjustedCurvature * functionS;
+                float transformedT = rotatedT + adjustedCurvature * functionT;
+
+                // Rotate back to the original coordinate space
+                float finalU = cosRot * transformedS - sinRot * transformedT;
+                float finalV = sinRot * transformedS + cosRot * transformedT;
+
+                // Translate back to image coordinates
+                float preliminaryX = halfWidth + finalU;
+                float preliminaryY = halfHeight + finalV;
+
+                // Get sample based on edge behavior
+                unsigned char samplePixel[4] = { 0, 0, 0, 0 };
+
+                if (isOnSurface(preliminaryX, preliminaryY, Width, Height)) {
+                    // Fast path - direct sample
+                    int floorX = (int)preliminaryX;
+                    int floorY = (int)preliminaryY;
+                    int samplePos = floorY * Stride + floorX * channels;
+                    for (int c = 0; c < channels; c++) {
+                        samplePixel[c] = Input[samplePos + c];
+                    }
+                } else {
+                    // Edge behavior
+                    GetPixelBilinear(Input, Width, Height, Stride, preliminaryX, preliminaryY, edgeMode, samplePixel, channels);
+                }
+
+                // Accumulate samples
+                if (channels == 1) {
+                    accumR += (float)samplePixel[0];
+                } else {
+                    accumR += (float)samplePixel[0];
+                    accumG += (float)samplePixel[1];
+                    accumB += (float)samplePixel[2];
+                }
+            }
+
+            // Average and write output
+            float invSamples = 1.0f / (float)numSamples;
+            if (channels == 1) {
+                Output[pPos] = (unsigned char)(accumR * invSamples + 0.5f);
+            } else {
+                Output[pPos + 0] = (unsigned char)(accumR * invSamples + 0.5f);
+                Output[pPos + 1] = (unsigned char)(accumG * invSamples + 0.5f);
+                Output[pPos + 2] = (unsigned char)(accumB * invSamples + 0.5f);
+            }
+        }
+    }
+
+    return OC_STATUS_OK;
+}
+
+/* Compute deterministic coordinate offset from seed for reproducible marble patterns. */
+static inline void marbleSeedOffsets(int seed, float* outX, float* outY) {
+    if (seed == 0) {
+        *outX = 0.0f;
+        *outY = 0.0f;
+        return;
+    }
+    unsigned int s = (unsigned int)seed;
+    *outX = (float)((s * 1103515245u + 12345u) & 0x7FFFFFFFu) / 2147483647.0f * 1000.0f;
+    *outY = (float)((s * 134775813u + 1u) & 0x7FFFFFFFu) / 2147483647.0f * 1000.0f;
+}
+
+OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                             float scale, float turbulence, int quality, OcEdgeMode edgeMode, unsigned int seed) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    /* Validate filter-specific parameters */
+    if (scale < 0.0f || scale > 100.0f) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (turbulence < 0.0f || turbulence > 1.0f) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+    if (quality < 1 || quality > 5) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    // Quality 1–5 → 1, 4, 7, 10, 13 samples
+    int numSamples = 1 + (quality - 1) * 3;
+
+    /* Scale as a fraction of the image's smallest dimension */
+    int minDim = (Width < Height) ? Width : Height;
+    float effectiveScale = (scale * 0.01f) * (float)minDim;
+    if (effectiveScale < 0.001f)
+        effectiveScale = 1.0f;
+    float xScale = effectiveScale;
+    float yScale = effectiveScale;
+
+    // Pre-compute sin/cos displacement tables
+    const float TWO_PI = 6.283185307179586f;
+    float sinTable[256];
+    float cosTable[256];
+    for (int i = 0; i < 256; i++) {
+        float angle = TWO_PI * (float)i / 256.0f * turbulence;
+        sinTable[i] = -yScale * sinf(angle);
+        cosTable[i] = yScale * cosf(angle);
+    }
+
+    // Seed-based coordinate offset for reproducible patterns
+    float seedX, seedY;
+    marbleSeedOffsets((int)seed, &seedX, &seedY);
+
+    // Supersampling offsets (use sin=0, cos=1)
+    float xOffsets[OC_SUPERSAMPLE_MAX_SAMPLES];
+    float yOffsets[OC_SUPERSAMPLE_MAX_SAMPLES];
+    ocularSupersampleOffsets(numSamples, 0.0f, 1.0f, xOffsets, yOffsets);
+
+    for (int y = 0; y < Height; y++) {
+        for (int x = 0; x < Width; x++) {
+            int pPos = y * Stride + x * channels;
+
+            float accumR = 0.0f, accumG = 0.0f, accumB = 0.0f;
+
+            for (int p = 0; p < numSamples; p++) {
+                // Sample coordinate with supersampling offset
+                float px = (float)x + xOffsets[p];
+                float py = (float)y + yOffsets[p];
+
+                // Displacement map
+                float nx = px / xScale + seedX;
+                float ny = py / yScale + seedY;
+                float noiseVal = perlinNoise2D(nx, ny);
+                int displacement = (int)(127.0f * (1.0f + noiseVal));
+                if (displacement < 0)
+                    displacement = 0;
+                else if (displacement > 255)
+                    displacement = 255;
+
+                // Inverse transform
+                float srcX = px + sinTable[displacement];
+                float srcY = py + cosTable[displacement];
+
+                unsigned char samplePixel[4] = { 0, 0, 0, 0 };
+                if (srcX >= 0.0f && srcX <= (float)(Width - 1) && srcY >= 0.0f && srcY <= (float)(Height - 1)) {
+                    int floorX = (int)srcX;
+                    int floorY = (int)srcY;
+                    int samplePos = floorY * Stride + floorX * channels;
+                    for (int c = 0; c < channels; c++) {
+                        samplePixel[c] = Input[samplePos + c];
+                    }
+                } else {
+                    GetPixelBilinear(Input, Width, Height, Stride, srcX, srcY, edgeMode, samplePixel, channels);
+                }
+
+                if (channels == 1) {
+                    accumR += (float)samplePixel[0];
+                } else {
+                    accumR += (float)samplePixel[0];
+                    accumG += (float)samplePixel[1];
+                    accumB += (float)samplePixel[2];
+                }
+            }
+
+            float invSamples = 1.0f / (float)numSamples;
+            if (channels == 1) {
+                Output[pPos] = (unsigned char)(accumR * invSamples + 0.5f);
+            } else {
+                Output[pPos + 0] = (unsigned char)(accumR * invSamples + 0.5f);
+                Output[pPos + 1] = (unsigned char)(accumG * invSamples + 0.5f);
+                Output[pPos + 2] = (unsigned char)(accumB * invSamples + 0.5f);
+            }
+        }
+    }
 
     return OC_STATUS_OK;
 }

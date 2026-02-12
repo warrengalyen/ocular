@@ -135,3 +135,4 @@ EXPORTS
     ocularKuwaharaFilter @133
     ocularSkeletonizeFilter @134
     ocularGlassTilesFilter @135
+    ocularMarbleFilter @136
