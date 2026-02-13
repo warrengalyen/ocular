@@ -131,6 +131,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Frosted Glass
 - Film Grain
 - Glass Tiles
+- Marble
 - Kuwahara
 - Oil Paint
 - Portrait Glow

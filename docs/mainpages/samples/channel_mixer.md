@@ -1,6 +1,6 @@
 ## Channel Mixer Example {#page_examples_channel_mixer}
 
-The default example below uses **Example 5 (Red–blue channel swap)**. The mixer array has 16 ints: 4 output channels (R, G, B, Gray) × 4 inputs each (R, G, B, Constant). Constant is clamped to [-255, 255].
+The default example below uses **Red–blue channel swap**. The mixer array has 16 floats: 4 rows (R out, G out, B out, Gray) × 4 inputs each (R, G, B, Constant). RGB and Gray rows use the same modifier scale: percentages in [-2.0, 2.0] (e.g. 1.0 = 100%). Gray is calculated internally from the Gray row; a default ITU luminance uses 0.21, 0.72, 0.07 (R, G, B). Constant modifiers are in [-255.0, 255.0].
 
 ```c
 #include <stdio.h>
@@ -20,75 +20,77 @@ int main(void) {
 
             int stride = width * channels;
 
-            /* Identity (no change)
-            int mixer[] = {
-                255, 0, 0, 0,   // Red out   = 100% R
-                0, 255, 0, 0,   // Green out = 100% G
-                0, 0, 255, 0,   // Blue out  = 100% B
-                77, 150, 29, 0  // Gray = BT.601 luminance
+            /* Identity (no change) — RGB & Gray: [-2.0, 2.0], Constant: [-255, 255]
+            float mixer[] = {
+                1.0f, 0.0f, 0.0f, 0.0f,   // Red out   = 100% R
+                0.0f, 1.0f, 0.0f, 0.0f,   // Green out = 100% G
+                0.0f, 0.0f, 1.0f, 0.0f,   // Blue out  = 100% B
+                0.21f, 0.72f, 0.07f, 0.0f  // Gray row (default ITU: R, G, B same scale as RGB)
             };
             bool monochrome = false;
             bool preserveLuminance = false;
             */
 
             /* Grayscale (monochrome)
-            int mixer[] = {
-                255, 0, 0, 0,
-                0, 255, 0, 0,
-                0, 0, 255, 0,
-                77, 150, 29, 0   // Gray = luminance
+            float mixer[] = {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.21f, 0.72f, 0.07f, 0.0f   // Gray row (default ITU)
             };
             bool monochrome = true;
             bool preserveLuminance = false;
             */
 
             /* Warm tint
-            int mixer[] = {
-                255, 20, 0, 10,   // Red: +G, +constant
-                0, 255, 0, 0,
-                0, 0, 230, -15    // Blue: reduced
+            float mixer[] = {
+                1.0f, 0.08f, 0.0f, 10.0f,   // Red: +8% G, constant +10
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.9f, -15.0f,  // Blue: 90%, constant -15
+                0.21f, 0.72f, 0.07f, 0.0f
             };
             bool monochrome = false;
             bool preserveLuminance = true;
             */
 
             /* Cool tint
-            int mixer[] = {
-                230, 0, 0, 0,
-                0, 255, 20, 0,
-                0, 0, 255, 15
+            float mixer[] = {
+                0.9f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.08f, 0.0f,
+                0.0f, 0.0f, 1.0f, 15.0f,
+                0.21f, 0.72f, 0.07f, 0.0f
             };
             bool monochrome = false;
             bool preserveLuminance = true;
             */
 
             /* Red–blue channel swap */
-            int mixer[] = {
-                0, 0, 255, 0,   /* Red out   = Blue in */
-                0, 255, 0, 0,   /* Green out = Green in */
-                255, 0, 0, 0,   /* Blue out  = Red in */
-                29, 150, 77, 0  /* Gray row (BT.601-style weights) */
+            float mixer[] = {
+                0.0f, 0.0f, 1.0f, 0.0f,   /* Red out   = 100% Blue in */
+                0.0f, 1.0f, 0.0f, 0.0f,   /* Green out = 100% Green in */
+                1.0f, 0.0f, 0.0f, 0.0f,   /* Blue out  = 100% Red in */
+                0.21f, 0.72f, 0.07f, 0.0f   /* Gray row (default ITU) */
             };
             bool monochrome = false;
             bool preserveLuminance = false;
 
             /* Brightness lift (constants only)
-            int mixer[] = {
-                255, 0, 0, 25,
-                0, 255, 0, 25,
-                0, 0, 255, 25,
-                77, 150, 29, 25
+            float mixer[] = {
+                1.0f, 0.0f, 0.0f, 25.0f,
+                0.0f, 1.0f, 0.0f, 25.0f,
+                0.0f, 0.0f, 1.0f, 25.0f,
+                0.21f, 0.72f, 0.07f, 25.0f
             };
             bool monochrome = false;
             bool preserveLuminance = false;
             */
 
             /* Infrared-style (strong red, weak G/B)
-            int mixer[] = {
-                255, 0, 0, 0,
-                80, 80, 80, 0,
-                80, 80, 80, 0,
-                77, 150, 29, 0
+            float mixer[] = {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.31f, 0.31f, 0.31f, 0.0f,
+                0.31f, 0.31f, 0.31f, 0.0f,
+                0.21f, 0.72f, 0.07f, 0.0f
             };
             bool monochrome = false;
             bool preserveLuminance = true;

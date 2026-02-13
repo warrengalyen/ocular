@@ -233,15 +233,15 @@ static char timestamp[] = __DATE__ " " __TIME__;
      *  @param Width The width of the image in pixels.
      *  @param Height The height of the image in pixels.
      *  @param Stride The number of bytes in one row of pixels.
-     *  @param mixer Array of 16 ints: 4 output channels (R, G, B, Gray) × 4 inputs each (R, G, B, Constant).
-     *               Layout: mixer[out*4 + 0]=R, mixer[out*4+1]=G, mixer[out*4+2]=B, mixer[out*4+3]=Constant.
-     *               Ranges are in [-255, 255].
-     *  @param monochrome If true, output is grayscale (R=G=B from Gray row of mixer only).
-     *  @param preserveLuminance If true (and not monochrome), scale RGB so overall luminance is unchanged.
+     *  @param mixer Array of 16 floats: 4 rows (R out, G out, B out, Gray) × 4 inputs each (R, G, B, Constant).
+     *               Layout: mixer[row*4 + 0]=R, mixer[row*4+1]=G, mixer[row*4+2]=B, mixer[row*4+3]=Constant.
+     *               RGB and Gray modifiers are percentages in [-2.0, 2.0] (e.g. 1.0 = 100%). Constant modifiers in [-255.0, 255.0].
+     *  @param monochrome If true, output is grayscale.
+     *  @param preserveLuminance If true, output keeps the input’s HSL lightness (color path: mixed hue/sat + original L; monochrome: gray level = original L).
      *  @return OC_STATUS_OK if successful, otherwise an error code (see core.h)
      */
     OC_STATUS ocularChannelMixerFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                                      const int* mixer, bool monochrome, bool preserveLuminance);
+                                      const float* mixer, bool monochrome, bool preserveLuminance);
 
     /** @brief Applies a simple sepia tone filter
      *  @ingroup group_color_filters

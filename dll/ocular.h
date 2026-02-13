@@ -76,7 +76,7 @@ DLIB_EXPORT OC_STATUS ocularColorMatrixFilter(unsigned char* Input, unsigned cha
                                             float* colorMatrix, float intensity);
 
 DLIB_EXPORT OC_STATUS ocularChannelMixerFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                                                const int* mixer, bool monochrome, bool preserveLuminance);
+                                                const float* mixer, bool monochrome, bool preserveLuminance);
 
 DLIB_EXPORT OC_STATUS ocularSepiaFilter(unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride, int intensity);
 
