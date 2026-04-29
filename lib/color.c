@@ -403,6 +403,11 @@ void xyz2rgb(double X, double Y, double Z, unsigned char* R, unsigned char* G, u
         var_B = 12.92 * var_B;
     }
 
+     
+    // Clamp to prevent out of sRGB gamut Lab inputs
+    if (var_R < 0.0) var_R = 0.0; else if (var_R > 1.0) var_R = 1.0;
+    if (var_G < 0.0) var_G = 0.0; else if (var_G > 1.0) var_G = 1.0;
+    if (var_B < 0.0) var_B = 0.0; else if (var_B > 1.0) var_B = 1.0;
     *R = (unsigned char)(var_R * 255.0 + 0.5);
     *G = (unsigned char)(var_G * 255.0 + 0.5);
     *B = (unsigned char)(var_B * 255.0 + 0.5);
