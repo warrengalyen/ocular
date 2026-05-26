@@ -4466,6 +4466,16 @@ extern "C" {
                     return OC_STATUS_ERR_NOTSUPPORTED;
                 }
                 return OC_STATUS_OK;
+            case FORMAT_PROCREATE:
+                if (read_procreate_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
+            case FORMAT_AFPALETTE:
+                if (read_afpalette_palette(filename, palette) != OC_STATUS_OK) {
+                    return OC_STATUS_ERR_NOTSUPPORTED;
+                }
+                return OC_STATUS_OK;
             default: return OC_STATUS_ERR_NOTSUPPORTED;
         }
     }

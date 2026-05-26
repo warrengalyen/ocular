@@ -1,6 +1,8 @@
 #include "palette.h"
 #include "color.h"
 #include "util.h"
+#include "miniz.h"
+#include <stdint.h>
 
 static float swap_float_endian(float value) {
     float result;
@@ -885,6 +887,1018 @@ OC_STATUS read_ase_palette(const char* filename, OcPalette* palette) {
     return OC_STATUS_OK;
 }
 
+/* Affinity Designer .afpalette (binary chunk format) */
+
+#define AF_MAGIC 0x414BFF00u
+#define AF_HEADER_SIZE 80u
+#define AF_CRC_START 76u /* headerSize - 4; CRC includes last 4 header bytes */
+#define AF_END_MARKER_SIZE 5u
+#define AF_FAT_FOOTER_SIZE 107u /* #FAT chunk after end marker */
+
+typedef struct {
+    const uint8_t* data;
+    size_t size;
+    size_t pos;
+} AfReader;
+
+typedef struct {
+    uint8_t* data;
+    size_t size;
+    size_t capacity;
+} AfBuffer;
+
+static bool af_buffer_reserve(AfBuffer* buf, size_t extra) {
+    size_t needed = buf->size + extra;
+    if (needed <= buf->capacity) {
+        return true;
+    }
+    size_t new_cap = buf->capacity ? buf->capacity * 2 : 256;
+    while (new_cap < needed) {
+        new_cap *= 2;
+    }
+    uint8_t* next = (uint8_t*)realloc(buf->data, new_cap);
+    if (!next) {
+        return false;
+    }
+    buf->data = next;
+    buf->capacity = new_cap;
+    return true;
+}
+
+static bool af_buffer_append(AfBuffer* buf, const void* bytes, size_t len) {
+    if (!len) {
+        return true;
+    }
+    if (!af_buffer_reserve(buf, len)) {
+        return false;
+    }
+    memcpy(buf->data + buf->size, bytes, len);
+    buf->size += len;
+    return true;
+}
+
+static bool af_buffer_append_u8(AfBuffer* buf, uint8_t v) {
+    return af_buffer_append(buf, &v, 1);
+}
+
+static bool af_buffer_append_u32(AfBuffer* buf, uint32_t v) {
+    return af_buffer_append(buf, &v, sizeof(v));
+}
+
+static bool af_buffer_append_u64(AfBuffer* buf, uint64_t v) {
+    return af_buffer_append(buf, &v, sizeof(v));
+}
+
+static bool af_buffer_append_f32(AfBuffer* buf, float v) {
+    return af_buffer_append(buf, &v, sizeof(v));
+}
+
+static size_t af_find_pattern(const uint8_t* data, size_t size, size_t start, const char* pattern) {
+    size_t pat_len = strlen(pattern);
+    if (pat_len == 0 || start >= size) {
+        return size;
+    }
+    for (size_t i = start; i + pat_len <= size; i++) {
+        if (memcmp(data + i, pattern, pat_len) == 0) {
+            return i;
+        }
+    }
+    return size;
+}
+
+static bool af_reader_load(const char* filename, AfReader* reader, uint8_t** owned_out) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        return false;
+    }
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
+        return false;
+    }
+    long file_size = ftell(file);
+    if (file_size < 0) {
+        fclose(file);
+        return false;
+    }
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
+        return false;
+    }
+    uint8_t* data = (uint8_t*)malloc((size_t)file_size);
+    if (!data) {
+        fclose(file);
+        return false;
+    }
+    size_t read_bytes = fread(data, 1, (size_t)file_size, file);
+    fclose(file);
+    if (read_bytes != (size_t)file_size) {
+        free(data);
+        return false;
+    }
+    reader->data = data;
+    reader->size = (size_t)file_size;
+    reader->pos = 0;
+    *owned_out = data;
+    return true;
+}
+
+static bool af_reader_read_u32(AfReader* r, uint32_t* out) {
+    if (r->pos + sizeof(uint32_t) > r->size) {
+        return false;
+    }
+    memcpy(out, r->data + r->pos, sizeof(uint32_t));
+    r->pos += sizeof(uint32_t);
+    return true;
+}
+
+static bool af_reader_read_u16(AfReader* r, uint16_t* out) {
+    if (r->pos + sizeof(uint16_t) > r->size) {
+        return false;
+    }
+    memcpy(out, r->data + r->pos, sizeof(uint16_t));
+    r->pos += sizeof(uint16_t);
+    return true;
+}
+
+static bool af_reader_read_f32(AfReader* r, float* out) {
+    if (r->pos + sizeof(float) > r->size) {
+        return false;
+    }
+    memcpy(out, r->data + r->pos, sizeof(float));
+    r->pos += sizeof(float);
+    return true;
+}
+
+static bool af_reader_read_ascii(AfReader* r, size_t len, char* out, size_t out_size) {
+    if (r->pos + len > r->size || out_size == 0) {
+        return false;
+    }
+    size_t copy = len < out_size - 1 ? len : out_size - 1;
+    memcpy(out, r->data + r->pos, copy);
+    out[copy] = '\0';
+    r->pos += len;
+    return true;
+}
+
+static bool af_reader_read_utf8_name(AfReader* r, char* out, size_t out_size) {
+    uint32_t len = 0;
+    if (!af_reader_read_u32(r, &len) || len == 0 || len >= out_size) {
+        return false;
+    }
+    return af_reader_read_ascii(r, len, out, out_size);
+}
+
+static bool af_parse_abgr_at(AfReader* r, size_t dloc_pos, unsigned char* red, unsigned char* green,
+                             unsigned char* blue) {
+    r->pos = dloc_pos + 5;
+    float rf = 0, gf = 0, bf = 0;
+    if (!af_reader_read_f32(r, &rf) || !af_reader_read_f32(r, &gf) || !af_reader_read_f32(r, &bf)) {
+        return false;
+    }
+    *red = ClampToByte((int)(rf * 255.0f + 0.5f));
+    *green = ClampToByte((int)(gf * 255.0f + 0.5f));
+    *blue = ClampToByte((int)(bf * 255.0f + 0.5f));
+    return true;
+}
+
+static size_t af_find_b1_vlap(const uint8_t* data, size_t size, size_t start) {
+    for (size_t i = start; i + 5 <= size; i++) {
+        if (data[i] == 0xB1 && memcmp(data + i + 1, "VlaP", 4) == 0) {
+            return i;
+        }
+    }
+    return size;
+}
+
+static bool af_find_color_type(const uint8_t* data, size_t size, size_t start, size_t window, size_t* type_pos,
+                               char type_out[5]) {
+    static const char* const k_types[] = {"ABGR", "ABAL", "KYMC", "ALSH", "YARG", NULL};
+    size_t end = start + window;
+    if (end > size) {
+        end = size;
+    }
+    for (size_t i = start; i + 4 <= end; i++) {
+        for (int t = 0; k_types[t] != NULL; t++) {
+            if (memcmp(data + i, k_types[t], 4) == 0) {
+                memcpy(type_out, k_types[t], 4);
+                type_out[4] = '\0';
+                *type_pos = i;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool af_parse_color_type(AfReader* r, size_t type_pos, const char* type, unsigned char* red,
+                                unsigned char* green, unsigned char* blue) {
+    if (memcmp(type, "ABGR", 4) == 0) {
+        size_t dloc = af_find_pattern(r->data, r->size, type_pos, "Dloc_");
+        if (dloc >= r->size) {
+            return false;
+        }
+        return af_parse_abgr_at(r, dloc, red, green, blue);
+    }
+
+    if (memcmp(type, "ABAL", 4) == 0) {
+        size_t loc = af_find_pattern(r->data, r->size, type_pos, "<loc_");
+        if (loc >= r->size) {
+            return false;
+        }
+        r->pos = loc + 5;
+        uint16_t l = 0, a = 0, b = 0;
+        if (!af_reader_read_u16(r, &l) || !af_reader_read_u16(r, &a) || !af_reader_read_u16(r, &b)) {
+            return false;
+        }
+        double L = (double)l / 65535.0 * 100.0;
+        double A = (double)a / 65535.0 * 256.0 - 128.0;
+        double B = (double)b / 65535.0 * 256.0 - 128.0;
+        lab2rgb(L, A, B, red, green, blue);
+        return true;
+    }
+
+    if (memcmp(type, "KYMC", 4) == 0) {
+        size_t loc = af_find_pattern(r->data, r->size, type_pos, "Hloc_");
+        if (loc >= r->size) {
+            return false;
+        }
+        r->pos = loc + 5;
+        float c = 0, m = 0, y = 0, k = 0;
+        if (!af_reader_read_f32(r, &c) || !af_reader_read_f32(r, &m) || !af_reader_read_f32(r, &y) ||
+            !af_reader_read_f32(r, &k)) {
+            return false;
+        }
+        cmyk2rgb(c, m, y, k, red, green, blue);
+        return true;
+    }
+
+    if (memcmp(type, "ALSH", 4) == 0) {
+        size_t dloc = af_find_pattern(r->data, r->size, type_pos, "Dloc_");
+        if (dloc >= r->size) {
+            return false;
+        }
+        r->pos = dloc + 5;
+        float h = 0, s = 0, l = 0;
+        if (!af_reader_read_f32(r, &h) || !af_reader_read_f32(r, &s) || !af_reader_read_f32(r, &l)) {
+            return false;
+        }
+        float rf = 0, gf = 0, bf = 0;
+        hsl2rgb(h, s, l, &rf, &gf, &bf);
+        *red = ClampToByte((int)rf);
+        *green = ClampToByte((int)gf);
+        *blue = ClampToByte((int)bf);
+        return true;
+    }
+
+    if (memcmp(type, "YARG", 4) == 0) {
+        size_t loc = af_find_pattern(r->data, r->size, type_pos, "<loc_");
+        if (loc >= r->size) {
+            return false;
+        }
+        r->pos = loc + 5;
+        float gray = 0;
+        if (!af_reader_read_f32(r, &gray)) {
+            return false;
+        }
+        unsigned char g = ClampToByte((int)(gray * 255.0f + 0.5f));
+        *red = *green = *blue = g;
+        return true;
+    }
+
+    return false;
+}
+
+OC_STATUS read_afpalette_palette(const char* filename, OcPalette* palette) {
+    if (!filename || !palette) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+
+    AfReader reader;
+    uint8_t* owned = NULL;
+    if (!af_reader_load(filename, &reader, &owned)) {
+        return OC_STATUS_ERR_FILENOTFOUND;
+    }
+
+    OC_STATUS status = OC_STATUS_OK;
+    if (reader.size < 8) {
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+        goto cleanup;
+    }
+
+    uint32_t magic = 0;
+    uint32_t version = 0;
+    memcpy(&magic, reader.data, sizeof(magic));
+    memcpy(&version, reader.data + 4, sizeof(version));
+    if (magic != AF_MAGIC || version < 8 || version > 20) {
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+        goto cleanup;
+    }
+
+    ocularFreePalette(palette);
+    palette->num_colors = 0;
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = (OcPaletteColor*)malloc((size_t)palette->capacity * sizeof(OcPaletteColor));
+    if (!palette->colors) {
+        status = OC_STATUS_ERR_OUTOFMEMORY;
+        goto cleanup;
+    }
+    palette->name[0] = '\0';
+
+    size_t nclp = af_find_pattern(reader.data, reader.size, 0, "NClP");
+    if (nclp < reader.size) {
+        reader.pos = nclp + 4;
+        uint32_t name_len = 0;
+        if (af_reader_read_u32(&reader, &name_len) && name_len > 0 && name_len < sizeof(palette->name)) {
+            af_reader_read_ascii(&reader, name_len, palette->name, sizeof(palette->name));
+        }
+    }
+    if (palette->name[0] == '\0') {
+        strncpy(palette->name, "Affinity Palette", sizeof(palette->name) - 1);
+        palette->name[sizeof(palette->name) - 1] = '\0';
+    }
+
+    size_t b1_vlap = af_find_b1_vlap(reader.data, reader.size, 0);
+    if (b1_vlap >= reader.size) {
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+        goto cleanup;
+    }
+
+    reader.pos = b1_vlap + 5;
+    uint32_t color_count = 0;
+    if (!af_reader_read_u32(&reader, &color_count) || color_count == 0) {
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+        goto cleanup;
+    }
+
+    size_t colors_end = af_find_pattern(reader.data, reader.size, reader.pos, "VNaP");
+    if (colors_end >= reader.size) {
+        colors_end = reader.size;
+    }
+
+    size_t search_from = reader.pos;
+    uint32_t parsed = 0;
+    while (parsed < color_count && search_from < colors_end) {
+        size_t color_marker = af_find_pattern(reader.data, reader.size, search_from, "rloC");
+        if (color_marker >= colors_end) {
+            break;
+        }
+
+        char type[5];
+        size_t type_pos = 0;
+        if (!af_find_color_type(reader.data, reader.size, color_marker + 4, 48, &type_pos, type)) {
+            search_from = color_marker + 4;
+            continue;
+        }
+
+        unsigned char r = 0, g = 0, b = 0;
+        if (!af_parse_color_type(&reader, type_pos, type, &r, &g, &b)) {
+            search_from = color_marker + 4;
+            continue;
+        }
+
+        if (!resize_palette(palette)) {
+            status = OC_STATUS_ERR_OUTOFMEMORY;
+            goto cleanup;
+        }
+
+        OcPaletteColor* entry = &palette->colors[palette->num_colors];
+        entry->r = r;
+        entry->g = g;
+        entry->b = b;
+        snprintf(entry->name, sizeof(entry->name), "Color %d", palette->num_colors + 1);
+        palette->num_colors++;
+        parsed++;
+        search_from = color_marker + 4;
+    }
+
+    size_t vnap = af_find_pattern(reader.data, reader.size, 0, "VNaP");
+    if (vnap < reader.size && palette->num_colors > 0) {
+        reader.pos = vnap + 4;
+        uint32_t skip = 0;
+        uint32_t name_count = 0;
+        if (af_reader_read_u32(&reader, &skip) && af_reader_read_u32(&reader, &name_count)) {
+            uint32_t limit = name_count < (uint32_t)palette->num_colors ? name_count : (uint32_t)palette->num_colors;
+            for (uint32_t i = 0; i < limit; i++) {
+                char name_buf[256];
+                if (!af_reader_read_utf8_name(&reader, name_buf, sizeof(name_buf))) {
+                    break;
+                }
+                strncpy(palette->colors[i].name, name_buf, sizeof(palette->colors[i].name) - 1);
+                palette->colors[i].name[sizeof(palette->colors[i].name) - 1] = '\0';
+            }
+        }
+    }
+
+    if (palette->num_colors == 0) {
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+cleanup:
+    free(owned);
+    if (status != OC_STATUS_OK) {
+        ocularFreePalette(palette);
+    }
+    return status;
+}
+
+static void af_rgb_to_lab16(unsigned char r, unsigned char g, unsigned char b, uint16_t* out_l, uint16_t* out_a,
+                            uint16_t* out_b) {
+    double L = 0, a = 0, bv = 0;
+    rgb2lab(r, g, b, &L, &a, &bv);
+    *out_l = (uint16_t)(L / 100.0 * 65535.0 + 0.5);
+    *out_a = (uint16_t)((a + 128.0) / 256.0 * 65535.0 + 0.5);
+    *out_b = (uint16_t)((bv + 128.0) / 256.0 * 65535.0 + 0.5);
+}
+
+static bool af_write_lab_suffix(AfBuffer* buf, uint16_t l, uint16_t a, uint16_t b) {
+    static const uint8_t loc_tag[] = {0x3C, 0x6C, 0x6F, 0x63, 0x5F};
+    static const uint8_t suffix[] = {0xFF, 0xFF, 0x00, 0x00};
+    if (!af_buffer_append(buf, loc_tag, sizeof(loc_tag)) || !af_buffer_append(buf, &l, sizeof(l)) ||
+        !af_buffer_append(buf, &a, sizeof(a)) || !af_buffer_append(buf, &b, sizeof(b)) ||
+        !af_buffer_append(buf, suffix, sizeof(suffix))) {
+        return false;
+    }
+    return true;
+}
+
+static bool af_write_color_first_abal(AfBuffer* buf, unsigned char r, unsigned char g, unsigned char b) {
+    /* Leading 01 00 00 00 00 00 is written by after_swatch_count before this block */
+    static const uint8_t prefix[] = {0x53, 0x6C, 0x69, 0x46, 0x01, 0x00, 0x00, 0x00, 0x6C, 0x6C, 0x69, 0x46,
+                                     0x00, 0x00, 0x00, 0x02, 0x31, 0x72, 0x6C, 0x6F, 0x43, 0x01, 0x01, 0x00,
+                                     0x00, 0x00, 0x00, 0x41, 0x42, 0x41, 0x4C, 0x01, 0x00, 0x00, 0x02};
+    uint16_t l = 0, a = 0, bv = 0;
+    af_rgb_to_lab16(r, g, b, &l, &a, &bv);
+    if (!af_buffer_append(buf, prefix, sizeof(prefix))) {
+        return false;
+    }
+    return af_write_lab_suffix(buf, l, a, bv);
+}
+
+static bool af_write_swatch_lead(AfBuffer* buf, int swatch_index) {
+    uint8_t lead[6] = {0x01, (uint8_t)(swatch_index * 2), 0x00, 0x00, 0x00, 0x01};
+    return af_buffer_append(buf, lead, sizeof(lead));
+}
+
+static bool af_write_color_next_abal(AfBuffer* buf, int color_index, unsigned char r, unsigned char g,
+                                     unsigned char b) {
+    static const uint8_t mid[] = {0x53, 0x6C, 0x69, 0x46, 0x31, 0x72, 0x6C, 0x6F, 0x43};
+    uint8_t id[6] = {0x01, (uint8_t)(color_index * 2 + 1), 0x00, 0x00, 0x00, 0x01};
+    static const uint8_t type[] = {0x41, 0x42, 0x41, 0x4C};
+    uint16_t l = 0, a = 0, bv = 0;
+    af_rgb_to_lab16(r, g, b, &l, &a, &bv);
+
+    if (!af_buffer_append(buf, mid, sizeof(mid)) || !af_buffer_append(buf, id, sizeof(id)) ||
+        !af_buffer_append(buf, type, sizeof(type))) {
+        return false;
+    }
+    return af_write_lab_suffix(buf, l, a, bv);
+}
+
+static void af_patch_u64(uint8_t* data, size_t offset, uint64_t value) {
+    if (data && offset + sizeof(uint64_t) <= SIZE_MAX) {
+        memcpy(data + offset, &value, sizeof(uint64_t));
+    }
+}
+
+static void af_patch_u32(uint8_t* data, size_t offset, uint32_t value) {
+    if (data && offset + sizeof(uint32_t) <= SIZE_MAX) {
+        memcpy(data + offset, &value, sizeof(uint32_t));
+    }
+}
+
+/* CRC-32 (polynomial 0xEDB88320) */
+static uint32_t af_compute_crc32(const uint8_t* data, size_t offset, size_t length) {
+    static uint32_t table[256];
+    static bool table_init = false;
+    if (!table_init) {
+        for (uint32_t i = 0; i < 256; i++) {
+            uint32_t c = i;
+            for (int j = 0; j < 8; j++) {
+                c = (c & 1u) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
+            }
+            table[i] = c;
+        }
+        table_init = true;
+    }
+
+    uint32_t crc = 0xFFFFFFFFu;
+    size_t end = offset + length;
+    for (size_t i = offset; i < end; i++) {
+        crc = table[(crc ^ data[i]) & 0xFFu] ^ (crc >> 8);
+    }
+    return crc ^ 0xFFFFFFFFu;
+}
+
+OC_STATUS save_afpalette_palette(const char* filename, const OcPalette* palette) {
+    if (!filename || !palette || palette->num_colors <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    /* Version 8 header/footer from Affinity-exported palettes */
+    static const uint8_t af_header_template[AF_HEADER_SIZE] = {
+        0x00, 0xFF, 0x4B, 0x41, 0x08, 0x00, 0x00, 0x00, 0x68, 0x74, 0x77, 0x53, 0x23, 0x49, 0x6E, 0x66,
+        0xFF, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xEB, 0x4D, 0x4E, 0x54, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+        0x50, 0x72, 0x6F, 0x74, 0x03, 0x00, 0x00, 0x00, 0x23, 0x46, 0x69, 0x6C, 0x00, 0xFF, 0x4B, 0x53};
+
+    static const uint8_t af_end_marker[AF_END_MARKER_SIZE] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF};
+    /* #FAT footer from Affinity-exported flatUI.afpalette; u64/CRC slots zeroed and patched after build */
+    static const uint8_t af_fat_template[AF_FAT_FOOTER_SIZE] = {
+        0x23, 0x46, 0x41, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEB, 0x4D, 0x4E, 0x54,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x53,
+        0x77, 0x61, 0x74, 0x63, 0x68, 0x65, 0x73, 0x2E, 0x64, 0x61, 0x74};
+
+    const char* palette_name =
+        (palette->name[0] != '\0') ? palette->name : "ColorSnatch Palette";
+    size_t name_len = strlen(palette_name);
+
+    AfBuffer buf = {0};
+    if (!af_buffer_append(&buf, af_header_template, AF_HEADER_SIZE)) {
+        free(buf.data);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    static const uint8_t vlap_open[] = {0x01, 0x00, 0x56, 0x6C, 0x61, 0x50, 0x01, 0x00};
+    static const uint8_t plcn_tag[] = {0x2B, 0x4E, 0x43, 0x6C, 0x50};
+    static const uint8_t b1vlap[] = {0xB1, 0x56, 0x6C, 0x61, 0x50};
+    /* After swatch count: 01 00 00 00 then 00 00 before first color block */
+    static const uint8_t after_swatch_count[] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    if (!af_buffer_append(&buf, vlap_open, sizeof(vlap_open)) || !af_buffer_append(&buf, plcn_tag, sizeof(plcn_tag)) ||
+        !af_buffer_append_u32(&buf, (uint32_t)name_len) || !af_buffer_append(&buf, palette_name, name_len) ||
+        !af_buffer_append(&buf, b1vlap, sizeof(b1vlap)) ||
+        !af_buffer_append_u32(&buf, (uint32_t)palette->num_colors) ||
+        !af_buffer_append(&buf, after_swatch_count, sizeof(after_swatch_count))) {
+        free(buf.data);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    for (int i = 0; i < palette->num_colors; i++) {
+        const OcPaletteColor* color = &palette->colors[i];
+        bool ok = (i == 0) ? af_write_color_first_abal(&buf, (unsigned char)color->r, (unsigned char)color->g,
+                                                       (unsigned char)color->b)
+                             : af_write_color_next_abal(&buf, i, (unsigned char)color->r, (unsigned char)color->g,
+                                                        (unsigned char)color->b);
+        if (!ok) {
+            free(buf.data);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        /* Affinity chains swatches: trailing lead after each color except the last. */
+        if (i + 1 < palette->num_colors) {
+            if (!af_write_swatch_lead(&buf, i + 1)) {
+                free(buf.data);
+                return OC_STATUS_ERR_OUTOFMEMORY;
+            }
+        }
+    }
+
+    static const uint8_t vnap_marker = 0xAB;
+    static const uint8_t vnap_tag[] = {0x56, 0x4E, 0x61, 0x50};
+    size_t names_block_size = 0;
+    for (int i = 0; i < palette->num_colors; i++) {
+        const char* nm = palette->colors[i].name[0] ? palette->colors[i].name : "Color";
+        names_block_size += 4 + strlen(nm);
+    }
+
+    if (!af_buffer_append(&buf, &vnap_marker, 1) || !af_buffer_append(&buf, vnap_tag, sizeof(vnap_tag)) ||
+        !af_buffer_append_u32(&buf, (uint32_t)names_block_size) ||
+        !af_buffer_append_u32(&buf, (uint32_t)palette->num_colors)) {
+        free(buf.data);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    for (int i = 0; i < palette->num_colors; i++) {
+        const char* nm = palette->colors[i].name[0] ? palette->colors[i].name : "Color";
+        uint32_t nm_len = (uint32_t)strlen(nm);
+        if (!af_buffer_append_u32(&buf, nm_len) || !af_buffer_append(&buf, nm, nm_len)) {
+            free(buf.data);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+    }
+
+    if (!af_buffer_append(&buf, af_end_marker, sizeof(af_end_marker)) ||
+        !af_buffer_append(&buf, af_fat_template, sizeof(af_fat_template))) {
+        free(buf.data);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    uint64_t file_size = (uint64_t)buf.size;
+    size_t fat_pos = buf.size - AF_FAT_FOOTER_SIZE;
+    uint64_t fat_offset = (uint64_t)fat_pos;
+    /* Bytes checksummed: last 4 header bytes + body through end marker (see flatUI.afpalette). */
+    uint64_t crc_length = file_size - AF_HEADER_SIZE - AF_FAT_FOOTER_SIZE;
+
+    af_patch_u64(buf.data, 0x10, fat_offset);
+    af_patch_u64(buf.data, 0x18, file_size);
+    af_patch_u64(buf.data, 0x20, crc_length);
+    af_patch_u64(buf.data, fat_pos + 20, file_size);
+    af_patch_u64(buf.data, fat_pos + 28, crc_length);
+    af_patch_u64(buf.data, fat_pos + 72, crc_length);
+    af_patch_u64(buf.data, fat_pos + 80, crc_length);
+
+    uint32_t crc = af_compute_crc32(buf.data, AF_CRC_START, (size_t)crc_length);
+    af_patch_u32(buf.data, fat_pos + 88, crc);
+
+    FILE* out = fopen(filename, "wb");
+    if (!out) {
+        free(buf.data);
+        return OC_STATUS_ERR_FILENOTFOUND;
+    }
+    size_t written = fwrite(buf.data, 1, buf.size, out);
+    fclose(out);
+    free(buf.data);
+
+    return (written == buf.size) ? OC_STATUS_OK : OC_STATUS_ERR_UNKNOWN;
+}
+
+/* Procreate .swatches (ZIP + Swatches.json) */
+
+#define SWATCHES_JSON_ENTRY "Swatches.json"
+
+static const char* procreate_skip_json_ws(const char* p) {
+    while (*p && isspace((unsigned char)*p)) {
+        p++;
+    }
+    return p;
+}
+
+static const char* procreate_parse_json_string(const char* p, char* out, size_t out_size) {
+    p = procreate_skip_json_ws(p);
+    if (*p != '"') {
+        return NULL;
+    }
+    p++;
+    size_t i = 0;
+    while (*p && *p != '"') {
+        if (*p == '\\' && p[1]) {
+            p++;
+            if (i + 1 < out_size) {
+                out[i++] = *p++;
+            } else {
+                p++;
+            }
+            continue;
+        }
+        if (i + 1 < out_size) {
+            out[i++] = *p++;
+        } else {
+            p++;
+        }
+    }
+    if (*p != '"') {
+        return NULL;
+    }
+    out[i] = '\0';
+    return p + 1;
+}
+
+static const char* procreate_parse_json_number(const char* p, double* value) {
+    p = procreate_skip_json_ws(p);
+    char* end = NULL;
+    *value = strtod(p, &end);
+    if (end == p) {
+        return NULL;
+    }
+    return end;
+}
+
+static const char* procreate_find_json_key(const char* json, const char* key) {
+    char pattern[128];
+    snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+    const char* hit = strstr(json, pattern);
+    if (!hit) {
+        return NULL;
+    }
+    const char* p = hit + strlen(pattern);
+    p = procreate_skip_json_ws(p);
+    if (*p != ':') {
+        return NULL;
+    }
+    return procreate_skip_json_ws(p + 1);
+}
+
+static void procreate_hsb_to_rgb(float hue, float saturation, float brightness, unsigned char* r,
+                                 unsigned char* g, unsigned char* b) {
+    float h_deg = hue * 360.0f;
+    float s_pct = saturation * 100.0f;
+    float v_pct = brightness * 100.0f;
+
+    unsigned char h = (unsigned char)(h_deg / 2.0f + 0.5f);
+    unsigned char s = (unsigned char)(s_pct * 255.0f / 100.0f + 0.5f);
+    unsigned char v = (unsigned char)(v_pct * 255.0f / 100.0f + 0.5f);
+    hsv2rgb(h, s, v, r, g, b);
+}
+
+static void procreate_rgb_to_hsb(unsigned char r, unsigned char g, unsigned char b, float* hue,
+                                 float* saturation, float* brightness) {
+    unsigned char h = 0, s = 0, v = 0;
+    rgb2hsv(r, g, b, &h, &s, &v);
+    *hue = (h * 2.0f) / 360.0f;
+    *saturation = s / 255.0f;
+    *brightness = v / 255.0f;
+}
+
+static bool procreate_parse_swatch_object(const char* obj, unsigned char* r, unsigned char* g,
+                                          unsigned char* b) {
+    const char* components = strstr(obj, "\"components\"");
+    if (components) {
+        const char* arr = strchr(components, '[');
+        if (arr) {
+            double c0 = 0, c1 = 0, c2 = 0;
+            const char* p = procreate_parse_json_number(arr + 1, &c0);
+            if (!p) {
+                return false;
+            }
+            p = procreate_skip_json_ws(p);
+            if (*p == ',') {
+                p = procreate_parse_json_number(p + 1, &c1);
+            }
+            if (!p) {
+                return false;
+            }
+            p = procreate_skip_json_ws(p);
+            if (*p == ',') {
+                p = procreate_parse_json_number(p + 1, &c2);
+            }
+            if (!p) {
+                return false;
+            }
+            *r = ClampToByte((int)(c0 * 255.0 + 0.5));
+            *g = ClampToByte((int)(c1 * 255.0 + 0.5));
+            *b = ClampToByte((int)(c2 * 255.0 + 0.5));
+            return true;
+        }
+    }
+
+    double hue = 0, sat = 0, bri = 0;
+    bool have_h = false, have_s = false, have_b = false;
+
+    const char* hkey = procreate_find_json_key(obj, "hue");
+    if (hkey && procreate_parse_json_number(hkey, &hue)) {
+        have_h = true;
+    }
+    const char* skey = procreate_find_json_key(obj, "saturation");
+    if (skey && procreate_parse_json_number(skey, &sat)) {
+        have_s = true;
+    }
+    const char* bkey = procreate_find_json_key(obj, "brightness");
+    if (bkey && procreate_parse_json_number(bkey, &bri)) {
+        have_b = true;
+    }
+
+    if (!have_h || !have_s || !have_b) {
+        return false;
+    }
+
+    procreate_hsb_to_rgb((float)hue, (float)sat, (float)bri, r, g, b);
+    return true;
+}
+
+static const char* procreate_unwrap_palette_object(const char* json) {
+    json = procreate_skip_json_ws(json);
+    if (*json == '[') {
+        json = procreate_skip_json_ws(json + 1);
+        if (*json == '{') {
+            return json;
+        }
+        return NULL;
+    }
+    if (*json == '{') {
+        return json;
+    }
+    return NULL;
+}
+
+static bool procreate_parse_swatches_json(const char* json, OcPalette* palette) {
+    const char* root = procreate_unwrap_palette_object(json);
+    if (!root) {
+        return false;
+    }
+
+    palette->num_colors = 0;
+    palette->capacity = DEFAULT_PALETTE_CAPACITY;
+    palette->colors = malloc(palette->capacity * sizeof(OcPaletteColor));
+    if (!palette->colors) {
+        return false;
+    }
+
+    const char* name_val = procreate_find_json_key(root, "name");
+    if (name_val) {
+        procreate_parse_json_string(name_val, palette->name, sizeof(palette->name));
+    } else {
+        strncpy(palette->name, "Procreate Palette", sizeof(palette->name) - 1);
+        palette->name[sizeof(palette->name) - 1] = '\0';
+    }
+
+    const char* swatches = procreate_find_json_key(root, "swatches");
+    if (!swatches || *swatches != '[') {
+        return palette->num_colors > 0;
+    }
+
+    swatches = procreate_skip_json_ws(swatches + 1);
+    while (*swatches && *swatches != ']') {
+        swatches = procreate_skip_json_ws(swatches);
+        if (*swatches == ',') {
+            swatches++;
+            continue;
+        }
+        if (*swatches == 'n' && strncmp(swatches, "null", 4) == 0) {
+            swatches += 4;
+            continue;
+        }
+        if (*swatches != '{') {
+            break;
+        }
+
+        const char* obj_start = swatches;
+        int depth = 0;
+        do {
+            if (*swatches == '{') {
+                depth++;
+            } else if (*swatches == '}') {
+                depth--;
+            }
+            swatches++;
+        } while (*swatches && depth > 0);
+
+        if (depth != 0) {
+            break;
+        }
+
+        size_t obj_len = (size_t)(swatches - obj_start);
+        char* obj_buf = malloc(obj_len + 1);
+        if (!obj_buf) {
+            return false;
+        }
+        memcpy(obj_buf, obj_start, obj_len);
+        obj_buf[obj_len] = '\0';
+
+        unsigned char r = 0, g = 0, b = 0;
+        if (procreate_parse_swatch_object(obj_buf, &r, &g, &b)) {
+            if (!resize_palette(palette)) {
+                free(obj_buf);
+                return false;
+            }
+            OcPaletteColor* color = &palette->colors[palette->num_colors];
+            color->r = r;
+            color->g = g;
+            color->b = b;
+            snprintf(color->name, sizeof(color->name), "Color %d", palette->num_colors + 1);
+            palette->num_colors++;
+        }
+        free(obj_buf);
+
+        swatches = procreate_skip_json_ws(swatches);
+        if (*swatches == ',') {
+            swatches++;
+        }
+    }
+
+    return palette->num_colors > 0;
+}
+
+static char* procreate_extract_swatches_json(const char* filename, size_t* out_size) {
+    size_t size = 0;
+    void* data = mz_zip_extract_archive_file_to_heap(filename, SWATCHES_JSON_ENTRY, &size, 0);
+    if (!data) {
+        data = mz_zip_extract_archive_file_to_heap(filename, "swatches.json", &size, 0);
+    }
+    if (!data) {
+        return NULL;
+    }
+    char* json = malloc(size + 1);
+    if (!json) {
+        mz_free(data);
+        return NULL;
+    }
+    memcpy(json, data, size);
+    json[size] = '\0';
+    mz_free(data);
+    if (out_size) {
+        *out_size = size;
+    }
+    return json;
+}
+
+OC_STATUS read_procreate_palette(const char* filename, OcPalette* palette) {
+    if (!filename || !palette) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+
+    size_t json_size = 0;
+    char* json = procreate_extract_swatches_json(filename, &json_size);
+    if (!json) {
+        return OC_STATUS_ERR_FILENOTFOUND;
+    }
+
+    OC_STATUS status = OC_STATUS_OK;
+    if (!procreate_parse_swatches_json(json, palette)) {
+        ocularFreePalette(palette);
+        status = OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    free(json);
+    return status;
+}
+
+static int procreate_json_append(char* buf, size_t cap, size_t* pos, const char* text) {
+    int n = snprintf(buf + *pos, cap - *pos, "%s", text);
+    if (n < 0 || (size_t)n >= cap - *pos) {
+        return -1;
+    }
+    *pos += (size_t)n;
+    return 0;
+}
+
+static int procreate_json_append_escaped_string(char* buf, size_t cap, size_t* pos, const char* str) {
+    if (procreate_json_append(buf, cap, pos, "\"") != 0) {
+        return -1;
+    }
+    for (const char* p = str; *p; p++) {
+        if (*p == '"' || *p == '\\') {
+            if (procreate_json_append(buf, cap, pos, "\\") != 0) {
+                return -1;
+            }
+        }
+        char ch[2] = { *p, '\0' };
+        if (procreate_json_append(buf, cap, pos, ch) != 0) {
+            return -1;
+        }
+    }
+    return procreate_json_append(buf, cap, pos, "\"");
+}
+
+static OC_STATUS procreate_write_swatches_zip(const char* filename, const void* json, size_t json_len) {
+    remove(filename);
+
+    if (!mz_zip_add_mem_to_archive_file_in_place(filename, SWATCHES_JSON_ENTRY, json, json_len, NULL, 0,
+                                                 MZ_NO_COMPRESSION)) {
+        remove(filename);
+        return OC_STATUS_ERR_UNKNOWN;
+    }
+
+    return OC_STATUS_OK;
+}
+
+OC_STATUS save_procreate_palette(const char* filename, const OcPalette* palette) {
+    if (!filename || !palette) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+
+    int count = palette->num_colors > PROCREATE_MAX_SWATCHES ? PROCREATE_MAX_SWATCHES : palette->num_colors;
+    if (count <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const char* palette_name =
+        (palette->name[0] != '\0') ? palette->name : "ColorSnatch Palette";
+
+    size_t cap = 4096 + (size_t)count * 256;
+    char* json = malloc(cap);
+    if (!json) {
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    size_t pos = 0;
+    if (procreate_json_append(json, cap, &pos, "{\"name\":") != 0 ||
+        procreate_json_append_escaped_string(json, cap, &pos, palette_name) != 0 ||
+        procreate_json_append(json, cap, &pos, ",\"swatches\":[") != 0) {
+        free(json);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    for (int i = 0; i < count; i++) {
+        const OcPaletteColor* color = &palette->colors[i];
+        float hue = 0, sat = 0, bri = 0;
+        procreate_rgb_to_hsb((unsigned char)color->r, (unsigned char)color->g, (unsigned char)color->b,
+                             &hue, &sat, &bri);
+
+        char entry[256];
+        snprintf(entry, sizeof(entry),
+                 "%s{\"hue\":%.17g,\"saturation\":%.17g,\"brightness\":%.17g,\"alpha\":1,\"colorSpace\":0}",
+                 (i > 0) ? "," : "", hue, sat, bri);
+        if (procreate_json_append(json, cap, &pos, entry) != 0) {
+            free(json);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+    }
+
+    if (procreate_json_append(json, cap, &pos, "]}") != 0) {
+        free(json);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    remove(filename);
+    OC_STATUS status = procreate_write_swatches_zip(filename, json, pos);
+    free(json);
+    return status;
+}
+
 PaletteFormat detect_palette_format(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -894,6 +1908,32 @@ PaletteFormat detect_palette_format(const char* filename) {
     char header[32];
     size_t bytes_read = fread(header, 1, sizeof(header), file);
     fclose(file);
+
+    if (bytes_read < 4) {
+        return FORMAT_UNKNOWN;
+    }
+
+    const char* ext = strrchr(filename, '.');
+    const bool is_swatches_ext = (ext && strcasecmp(ext, ".swatches") == 0);
+    const bool is_zip =
+        (header[0] == 'P' && header[1] == 'K' && header[2] == 3 && header[3] == 4);
+
+    /* .swatches must be a ZIP archive; a text file with this extension is not Procreate. */
+    if (is_swatches_ext) {
+        return is_zip ? FORMAT_PROCREATE : FORMAT_UNKNOWN;
+    }
+
+    if (is_zip) {
+        return FORMAT_PROCREATE;
+    }
+
+    {
+        uint32_t magic = 0;
+        memcpy(&magic, header, sizeof(magic));
+        if (magic == AF_MAGIC) {
+            return FORMAT_AFPALETTE;
+        }
+    }
 
     if (bytes_read < 8) {
         return FORMAT_UNKNOWN;

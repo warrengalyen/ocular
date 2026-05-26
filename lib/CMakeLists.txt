@@ -17,6 +17,8 @@ endif ()
 
 # Call the function to get the current VERSION_BUILD
 # get_version_build()
+set(OCULAR_MINIZ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/miniz")
+
 set(MODULE_FILES
     auxiliary.c
     core.c
@@ -42,6 +44,10 @@ set(MODULE_FILES
     ocular.c
 )
 
+if(EXISTS "${OCULAR_MINIZ_DIR}/miniz.h")
+    list(APPEND MODULE_FILES "${OCULAR_MINIZ_DIR}/miniz.c")
+endif()
+
 add_library(ocular STATIC ${MODULE_FILES})
 
 # Set archive output directory for static library to bin folder
@@ -61,6 +67,9 @@ endif ()
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to it
 target_include_directories(ocular PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+if(EXISTS "${OCULAR_MINIZ_DIR}/miniz.h")
+    target_include_directories(ocular PUBLIC "${OCULAR_MINIZ_DIR}")
+endif()
 
 # List files that install and/or package should provide.
 # Each library should know what it want to distribute,

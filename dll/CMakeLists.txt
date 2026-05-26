@@ -15,6 +15,8 @@ if (NOT DEFINED CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 17)
     message(FATAL_ERROR "ERROR: CMAKE_CXX_STANDARD is not set or it is too low. Minimum C v17 is required to compile \"Ocular\" library.")
 endif ()
 
+set(OCULAR_MINIZ_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../3rd-party/miniz")
+
 set(MODULE_FILES
     ../lib/auxiliary.c
     ../lib/core.c
@@ -40,6 +42,9 @@ set(MODULE_FILES
     ../lib/ocular.c
     dlib_export.h
 )
+if(EXISTS "${OCULAR_MINIZ_DIR}/miniz.h")
+    list(APPEND MODULE_FILES "${OCULAR_MINIZ_DIR}/miniz.c")
+endif()
 if (WIN32)
     # prevent exporting all symbols
     set (MODULE_FILES ${MODULE_FILES} ocular.def) 
@@ -64,6 +69,10 @@ set_target_properties(ocular_dll PROPERTIES
 # Make sure the compiler can find include files for our library
 # when other libraries or executables link to
 target_include_directories(ocular_dll PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(ocular_dll PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../lib")
+if(EXISTS "${OCULAR_MINIZ_DIR}/miniz.h")
+    target_include_directories(ocular_dll PUBLIC "${OCULAR_MINIZ_DIR}")
+endif()
 
 # List files that install and/or package should provide.
 # Each library should know what it want to distribute,

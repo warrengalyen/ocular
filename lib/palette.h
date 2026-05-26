@@ -26,6 +26,7 @@
 #define BIG_ENDIAN_32(x) ((((x) >> 24) & 0xFF) | (((x) >> 8) & 0xFF00) | (((x) << 8) & 0xFF0000) | (((x) << 24) & 0xFF000000))
 
 #define DEFAULT_PALETTE_CAPACITY 16
+#define PROCREATE_MAX_SWATCHES 30
 
 typedef enum
 {
@@ -35,7 +36,9 @@ typedef enum
     FORMAT_ACO,
     FORMAT_PAINTNET,
     FORMAT_ACT,
-    FORMAT_ASE
+    FORMAT_ASE,
+    FORMAT_PROCREATE,
+    FORMAT_AFPALETTE
 } PaletteFormat;
 
 typedef struct {
@@ -193,6 +196,38 @@ OC_STATUS save_act_palette(const char* filename, const OcPalette* palette);
  * @param palette The palette to load the data into.
  */
 OC_STATUS read_ase_palette(const char* filename, OcPalette* palette);
+
+/**
+ * Read a Procreate swatches (.swatches) file.
+ * @ingroup group_palette
+ * @param filename The path to the .swatches file.
+ * @param palette The palette to load the data into.
+ */
+OC_STATUS read_procreate_palette(const char* filename, OcPalette* palette);
+
+/**
+ * Save palette data to a Procreate swatches (.swatches) file.
+ * @ingroup group_palette
+ * @param filename The path to the file to write to.
+ * @param palette The palette to save (at most 30 colors).
+ */
+OC_STATUS save_procreate_palette(const char* filename, const OcPalette* palette);
+
+/**
+ * Read an Affinity Designer palette (.afpalette) file.
+ * @ingroup group_palette
+ * @param filename The path to the .afpalette file.
+ * @param palette The palette to load the data into.
+ */
+OC_STATUS read_afpalette_palette(const char* filename, OcPalette* palette);
+
+/**
+ * Save palette data to an Affinity Designer palette (.afpalette) file.
+ * @ingroup group_palette
+ * @param filename The path to the file to write to.
+ * @param palette The palette to save.
+ */
+OC_STATUS save_afpalette_palette(const char* filename, const OcPalette* palette);
 
 /**
  * Detect the format of a palette file.

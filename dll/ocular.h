@@ -387,6 +387,14 @@ DLIB_EXPORT void save_act_palette(const char* filename, const OcPalette* palette
 
 DLIB_EXPORT void read_ase_palette(const char* filename, OcPalette* palette);
 
+DLIB_EXPORT void read_procreate_palette(const char* filename, OcPalette* palette);
+
+DLIB_EXPORT void save_procreate_palette(const char* filename, const OcPalette* palette);
+
+DLIB_EXPORT void read_afpalette_palette(const char* filename, OcPalette* palette);
+
+DLIB_EXPORT void save_afpalette_palette(const char* filename, const OcPalette* palette);
+
 //---------------------------------------------------------------------
 
 //---------------------------General functions--------------------------

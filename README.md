@@ -213,8 +213,14 @@ Note: These are primarly used for included filters and added on as needed basis.
 | `.pal, .psppalette` | Paint Shop Pro Palette            |   ✓     |    ✓    |
 | `.pal`              | Microsoft RIFF Palette            |   ✓     |    ✓    |
 | `.txt`              | Paint.NET Palette                 |   ✓     |    ✓    |
+| `.swatches`         | Procreate Swatches                |   ✓     |    ✓    |
+| `.afpalette`        | Affinity Suite Palette            |   ✓     |    ✓    |
 
 > **_NOTE:_**  *RGB only.
+
+Procreate swatches are stored as a ZIP archive and requires the included miniz library.
+
+Affinity `.afpalette` format notes: [afpalette-format.md](afpalette-format.md).
 
 ## Running
 
