@@ -35,11 +35,18 @@ extern "C" {
  * @param PencilWidth     Stroke width. Range [1 - 24]. Suggested default: 4.
  * @param StrokePressure  Stroke pressure. Range [0 - 15]. Suggested default: 8.
  * @param PaperBrightness Paper brightness. Range [0 - 50]. Suggested default: 24.
+ * @param ForegroundR/G/B Foreground (pencil) color, 0-255 each. The pencil strokes are the image
+ *                        colors screened with this color, so black (default 0,0,0) leaves them
+ *                        unchanged and lighter colors tint them lighter.
+ * @param BackgroundR/G/B Background (paper) color, 0-255 each. Scaled by PaperBrightness.
+ *                        Suggested default: white (255,255,255).
  * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
  */
 OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* Output,
                                     int Width, int Height, int Stride,
-                                    int PencilWidth, int StrokePressure, int PaperBrightness);
+                                    int PencilWidth, int StrokePressure, int PaperBrightness,
+                                    unsigned char ForegroundR, unsigned char ForegroundG, unsigned char ForegroundB,
+                                    unsigned char BackgroundR, unsigned char BackgroundG, unsigned char BackgroundB);
 
 /**
  * @brief Cutout filter

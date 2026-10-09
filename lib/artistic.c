@@ -65,7 +65,9 @@ static inline float ocPencilLuma(const unsigned char* Input, int x, int y,
 
 OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* Output,
                                     int Width, int Height, int Stride,
-                                    int PencilWidth, int StrokePressure, int PaperBrightness) {
+                                    int PencilWidth, int StrokePressure, int PaperBrightness,
+                                    unsigned char ForegroundR, unsigned char ForegroundG, unsigned char ForegroundB,
+                                    unsigned char BackgroundR, unsigned char BackgroundG, unsigned char BackgroundB) {
 
     if (Input == NULL || Output == NULL) {
         return OC_STATUS_ERR_NULLREFERENCE;
@@ -88,7 +90,19 @@ OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* O
     /* Derived constants (all per-image, hoisted out of the pixel loop) */
     const float pw       = (float)PencilWidth;
     const float pressure = (float)StrokePressure / 15.0f;
-    const float paper    = 255.0f * (0.7f + 0.3f * (float)PaperBrightness / 50.0f); /* white paper */
+    const float paperGain = 0.7f + 0.3f * (float)PaperBrightness / 50.0f;
+
+    /* Per-channel paper (background) and pencil tint (foreground). Grayscale input uses their luma. */
+    float paper[3], tint[3];
+    if (channels == 1) {
+        paper[0] = (0.299f * BackgroundR + 0.587f * BackgroundG + 0.114f * BackgroundB) * paperGain;
+        tint[0]  = 0.299f * ForegroundR + 0.587f * ForegroundG + 0.114f * ForegroundB;
+    } else {
+        paper[0] = BackgroundR * paperGain;  tint[0] = (float)ForegroundR;
+        paper[1] = BackgroundG * paperGain;  tint[1] = (float)ForegroundG;
+        paper[2] = BackgroundB * paperGain;  tint[2] = (float)ForegroundB;
+    }
+
     const float strokeLen = 5.0f + pw * 3.0f;
     const float strokeWid = 0.5f + pw * 0.45f;
     const float invLen = 1.0f / (strokeLen > 0.5f ? strokeLen : 0.5f);
@@ -129,7 +143,8 @@ OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* O
             int pPos = x * channels + y * Stride;
             for (int c = 0; c < channels; c++) {
                 float ink = (float)Input[pPos + c] * 0.88f;      /* slightly darkened source color */
-                float v = paper + (ink - paper) * cov;           /* mix(paper, ink, cov) */
+                ink = ink + tint[c] - ink * tint[c] * (1.0f / 255.0f); /* screen with foreground (black = no change) */
+                float v = paper[c] + (ink - paper[c]) * cov;     /* mix(paper, ink, cov) */
                 Output[pPos + c] = (unsigned char)(v < 0.0f ? 0.0f : (v > 255.0f ? 255.0f : v + 0.5f));
             }
         }

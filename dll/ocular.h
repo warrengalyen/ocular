@@ -349,7 +349,9 @@ DLIB_EXPORT OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned ch
 //--------------------------Artistic----------------------------------
 
 DLIB_EXPORT OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
-                                                int PencilWidth, int StrokePressure, int PaperBrightness);
+                                                int PencilWidth, int StrokePressure, int PaperBrightness,
+                                                unsigned char ForegroundR, unsigned char ForegroundG, unsigned char ForegroundB,
+                                                unsigned char BackgroundR, unsigned char BackgroundG, unsigned char BackgroundB);
 
 DLIB_EXPORT OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                          int NumberOfLevels, int EdgeSimplicity, int EdgeFidelity);
