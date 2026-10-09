@@ -162,6 +162,12 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
     } else if (strcmp(config.function, "ocularPaintDaubsFilter") == 0) {
         ocularPaintDaubsFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                                (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularPaletteKnifeFilter") == 0) {
+        ocularPaletteKnifeFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                                 (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularPlasticWrapFilter") == 0) {
+        ocularPlasticWrapFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                                (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else {
         return -1;
     }

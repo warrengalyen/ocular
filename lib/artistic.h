@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added paint daubs filter
+ * Last update: added plastic wrap filter
  *
  * @brief Artistic filter definitions
  */
@@ -142,6 +142,49 @@ OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
 OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Output,
                                  int Width, int Height, int Stride,
                                  int BrushSize, int Sharpness, int BrushType);
+
+/**
+ * @brief Palette knife filter
+ *
+ * Repaints the image as broad, flat knife strokes: Kuwahara smoothing,
+ * partial tone quantization, then a soft blur between the patches.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input        Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output       Output image buffer (must not overlap Input).
+ * @param Width        Image width in pixels.
+ * @param Height       Image height in pixels.
+ * @param Stride       Row stride in bytes (typically Width * channels).
+ * @param StrokeSize   Stroke size. Range [1 - 50]. Suggested default: 25.
+ * @param StrokeDetail Stroke detail. Range [1 - 3]. Suggested default: 3.
+ * @param Softness     Softness. Range [0 - 10]. Suggested default: 0.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Output,
+                                   int Width, int Height, int Stride,
+                                   int StrokeSize, int StrokeDetail, int Softness);
+
+/**
+ * @brief Plastic wrap filter
+ *
+ * Shades the image as if covered in glossy plastic wrap: the smoothed
+ * luminance acts as a height map, lit by a fixed light with a specular
+ * highlight.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input             Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output            Output image buffer (must not overlap Input).
+ * @param Width             Image width in pixels.
+ * @param Height            Image height in pixels.
+ * @param Stride            Row stride in bytes (typically Width * channels).
+ * @param HighlightStrength Highlight strength. Range [0 - 20]. Suggested default: 15.
+ * @param Detail            Detail. Range [1 - 15]. Suggested default: 9.
+ * @param Smoothness        Smoothness. Range [1 - 15]. Suggested default: 7.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output,
+                                  int Width, int Height, int Stride,
+                                  int HighlightStrength, int Detail, int Smoothness);
 
 #ifdef __cplusplus
 }

@@ -145,3 +145,5 @@ EXPORTS
     ocularDryBrushFilter @143
     ocularFrescoFilter @144
     ocularPaintDaubsFilter @145
+    ocularPaletteKnifeFilter @146
+    ocularPlasticWrapFilter @147

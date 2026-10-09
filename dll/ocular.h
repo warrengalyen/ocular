@@ -374,6 +374,12 @@ DLIB_EXPORT OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned ch
 DLIB_EXPORT OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                              int BrushSize, int Sharpness, int BrushType);
 
+DLIB_EXPORT OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                               int StrokeSize, int StrokeDetail, int Softness);
+
+DLIB_EXPORT OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                              int HighlightStrength, int Detail, int Smoothness);
+
 //--------------------------Artistic----------------------------------
 
 //--------------------------Render------------------------------------

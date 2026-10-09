@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added paint daubs filter
+ * Last update: added plastic wrap filter
  *
  * @brief Artistic filter implementations
  */
@@ -730,6 +730,212 @@ OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Outp
 
     free(means);
     free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the palette knife filter --------------------------------- */
+/* Clamp, posterize, the box blur pass and the Kuwahara pass are shared with the other artistic filters
+ * (ocArtisticClamp01, ocCutoutPosterize, ocDryBrushBoxBlur, ocDryBrushKuwahara). */
+
+/* Box radii whose three successive passes approximate a Gaussian of `sigma` (after Kutskir). */
+static inline void ocPaletteKnifeBoxRadii(float sigma, int radii[3]) {
+    const int n = 3;
+    float wIdeal = sqrtf(12.0f * sigma * sigma / (float)n + 1.0f);
+    int wl = (int)floorf(wIdeal);
+    if (wl % 2 == 0) wl--;
+    if (wl < 1) wl = 1;
+    int wu = wl + 2;
+    float mIdeal = (12.0f * sigma * sigma - (float)(n * wl * wl) - (float)(4 * n * wl) - (float)(3 * n))
+                   / (float)(-4 * wl - 4);
+    int m = (int)floorf(mIdeal + 0.5f);
+    for (int i = 0; i < n; i++) radii[i] = ((i < m ? wl : wu) - 1) / 2;
+}
+
+OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Output,
+                                   int Width, int Height, int Stride,
+                                   int StrokeSize, int StrokeDetail, int Softness) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (StrokeSize < 1 || StrokeSize > 50 ||
+        StrokeDetail < 1 || StrokeDetail > 3 ||
+        Softness < 0 || Softness > 10) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+    const size_t values = pixels * (size_t)channels;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(values * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    /* 1. Kuwahara smoothing with radius strokeSize / 3 (minimum 1) */
+    float rf = (float)StrokeSize / 3.0f;
+    int radius = (int)(rf < 1.0f ? 1.0f : rf);
+    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+
+    /* 2. Half-strength posterize */
+    const float levels = 2.0f + (float)StrokeDetail * 3.0f;
+    size_t i;
+    for (i = 0; i < values; i++) {
+        work[i] = ocCutoutPosterize(work[i], levels) * 0.5f + work[i] * 0.5f;
+    }
+
+    /* 3. Softness blur (sigma = softness * 0.5, skipped below 0.3) */
+    float sigma = (float)Softness * 0.5f;
+    if (sigma >= 0.3f) {
+        int radii[3], k;
+        ocPaletteKnifeBoxRadii(sigma, radii);
+        for (k = 0; k < 3; k++) {
+            if (radii[k] > 0) ocDryBrushBoxBlur(work, Width, Height, channels, radii[k], scratch);
+        }
+    }
+
+    /* 4. Output */
+    int x, y, c;
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            for (c = 0; c < channels; c++) {
+                dst[x * channels + c] =
+                    (unsigned char)(ocArtisticClamp01(w[(size_t)x * channels + c]) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the plastic wrap filter ---------------------------------- */
+/* Clamp, smoothstep, plane sampling, the box blur pass and the box-radius helper are shared with the
+ * other artistic filters (ocArtisticClamp01, ocPencilSmoothstep, ocFrescoPlaneAt, ocDryBrushBoxBlur,
+ * ocPaletteKnifeBoxRadii). */
+
+OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output,
+                                  int Width, int Height, int Stride,
+                                  int HighlightStrength, int Detail, int Smoothness) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (HighlightStrength < 0 || HighlightStrength > 20 ||
+        Detail < 1 || Detail > 15 ||
+        Smoothness < 1 || Smoothness > 15) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* L       = (float*)malloc(pixels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (L == NULL || scratch == NULL) {
+        free(L);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c;
+
+    /* 1. Luma plane, then smooth it (three box passes approximating a Gaussian) */
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        float* row = L + (size_t)y * Width;
+        for (x = 0; x < Width; x++) {
+            const unsigned char* p = src + x * channels;
+            row[x] = (channels == 1) ? p[0] * (1.0f / 255.0f)
+                                     : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]) * (1.0f / 255.0f);
+        }
+    }
+
+    float sigma = 0.5f + (float)Smoothness * 0.5f + (15.0f - (float)Detail) * 0.2f;
+    int radii[3], k;
+    ocPaletteKnifeBoxRadii(sigma, radii);
+    for (k = 0; k < 3; k++) {
+        if (radii[k] > 0) ocDryBrushBoxBlur(L, Width, Height, 1, radii[k], scratch);
+    }
+
+    /* 2. Light and half-vector (view direction is straight on) */
+    float lx = -0.45f, ly = -0.65f, lz = 1.0f;
+    float ll = sqrtf(lx * lx + ly * ly + lz * lz);
+    lx /= ll; ly /= ll; lz /= ll;
+    float hx = lx, hy = ly, hz = lz + 1.0f;
+    float hl = sqrtf(hx * hx + hy * hy + hz * hz);
+    hx /= hl; hy /= hl; hz /= hl;
+
+    const float hs = (float)HighlightStrength / 20.0f;
+    const float slope = 14.0f;
+
+    /* 3. Shade each pixel */
+    for (y = 0; y < Height; y++) {
+        unsigned char* dst = Output + (size_t)y * Stride;
+        const unsigned char* src = Input + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
+            float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
+
+            /* Surface normal normalize(-k*gx, -k*gy, 1) */
+            float nx = -slope * gx, ny = -slope * gy;
+            float inv = 1.0f / sqrtf(nx * nx + ny * ny + 1.0f);
+            nx *= inv; ny *= inv;
+            float nz = inv;
+
+            float ndh = nx * hx + ny * hy + nz * hz;
+            if (ndh < 0.0f) ndh = 0.0f;
+            float tilt = 1.0f - nz;
+            float spec = powf(ndh, 30.0f) * ocPencilSmoothstep(0.01f, 0.12f, tilt)
+                       + ocPencilSmoothstep(0.25f, 0.6f, tilt) * 0.25f;
+
+            float add = spec * hs * 1.3f;
+            for (c = 0; c < channels; c++) {
+                float v = src[x * channels + c] * (1.0f / 255.0f);
+                dst[x * channels + c] =
+                    (unsigned char)(ocArtisticClamp01(v * 0.88f + add) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(L);
     free(scratch);
     return OC_STATUS_OK;
 }
