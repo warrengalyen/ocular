@@ -34,6 +34,7 @@ extern "C" {
 #include "distort_filters.h"
 #include "render_filters.h"
 #include "stylize_filters.h"
+#include "artistic.h"
 #include "pixelate_filters.h"
 #include "hazeremoval.h"
 #include "curves.h"

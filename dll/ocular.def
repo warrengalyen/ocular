@@ -140,3 +140,5 @@ EXPORTS
     save_procreate_palette @138
     read_afpalette_palette @139
     save_afpalette_palette @140
+    ocularColoredPencilFilter @141
+    ocularCutoutFilter @142

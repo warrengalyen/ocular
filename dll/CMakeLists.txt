@@ -36,6 +36,7 @@ set(MODULE_FILES
     ../lib/pixelate_filters.c
     ../lib/render_filters.c
     ../lib/stylize_filters.c
+    ../lib/artistic.c
     ../lib/curves.c
     ../lib/hazeremoval.c
     ../lib/fft.c
