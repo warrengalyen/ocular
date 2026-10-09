@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added fresco filter
+ * Last update: added paint daubs filter
  *
  * @brief Artistic filter implementations
  */
@@ -14,6 +14,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* ---- shared helpers ------------------------------------------------------ */
 
@@ -549,6 +550,180 @@ OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
                 float q = ocArtisticClamp01((p - 0.5f) * 1.3f + 0.45f);
                 q = powf(q, 1.15f) * dark;
                 dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(q) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the paint daubs filter ----------------------------------- */
+/* Clamp, hash, smoothstep, value noise, plane sampling and the Kuwahara pass are shared with the other
+ * artistic filters (ocArtisticClamp01, ocPencilHash01, ocPencilSmoothstep, ocPencilValueNoise,
+ * ocFrescoPlaneAt, ocDryBrushKuwahara). */
+
+/* Three-octave value noise -> [0,1] */
+static inline float ocPaintDaubsFbm(float x, float y, unsigned int seed) {
+    return ocPencilValueNoise(x, y, seed) * 0.57f
+         + ocPencilValueNoise(x * 2.03f, y * 2.03f, seed ^ 0x51u) * 0.29f
+         + ocPencilValueNoise(x * 4.1f,  y * 4.1f,  seed ^ 0xa3u) * 0.14f;
+}
+
+/* Separable Gaussian of any sigma (radius ceil(3*sigma), max 8, edge-clamped).
+ * src -> dst; the vertical pass runs in place on dst via a scratch line. */
+static inline void ocPaintDaubsGauss(const float* src, float* dst, int Width, int Height,
+                                     int channels, float sigma, float* scratch) {
+    enum { MAXR = 8 };
+    float k[MAXR + 1], sum;
+    int R = (int)ceilf(3.0f * sigma);
+    int i, x, y, c;
+    if (R < 1) R = 1;
+    if (R > MAXR) R = MAXR;
+
+    sum = 1.0f;
+    k[0] = 1.0f;
+    for (i = 1; i <= R; i++) {
+        k[i] = expf(-0.5f * (float)(i * i) / (sigma * sigma));
+        sum += 2.0f * k[i];
+    }
+    for (i = 0; i <= R; i++) k[i] /= sum;
+
+    for (y = 0; y < Height; y++) {
+        const float* s = src + (size_t)y * Width * channels;
+        float* d = dst + (size_t)y * Width * channels;
+        for (x = 0; x < Width; x++) {
+            for (c = 0; c < channels; c++) {
+                float acc = k[0] * s[x * channels + c];
+                for (i = 1; i <= R; i++) {
+                    int xl = x - i < 0 ? 0 : x - i;
+                    int xr = x + i >= Width ? Width - 1 : x + i;
+                    acc += k[i] * (s[xl * channels + c] + s[xr * channels + c]);
+                }
+                d[x * channels + c] = acc;
+            }
+        }
+    }
+    for (x = 0; x < Width; x++) {
+        for (c = 0; c < channels; c++) {
+            float* base = dst + (size_t)x * channels + c;
+            const size_t step = (size_t)Width * channels;
+            for (y = 0; y < Height; y++) scratch[y] = base[y * step];
+            for (y = 0; y < Height; y++) {
+                float acc = k[0] * scratch[y];
+                for (i = 1; i <= R; i++) {
+                    int yu = y - i < 0 ? 0 : y - i;
+                    int yd = y + i >= Height ? Height - 1 : y + i;
+                    acc += k[i] * (scratch[yu] + scratch[yd]);
+                }
+                base[y * step] = acc;
+            }
+        }
+    }
+}
+
+OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Output,
+                                 int Width, int Height, int Stride,
+                                 int BrushSize, int Sharpness, int BrushType) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushSize < 1 || BrushSize > 50 ||
+        Sharpness < 0 || Sharpness > 40 ||
+        BrushType < OC_PAINTDAUBS_SIMPLE || BrushType > OC_PAINTDAUBS_SPARKLE) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+    const size_t values = pixels * (size_t)channels;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(values * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c;
+    size_t i;
+
+    /* 1. Kuwahara smoothing; wide brushes use a 1.5x larger radius */
+    const int wide = (BrushType == OC_PAINTDAUBS_WIDE_SHARP || BrushType == OC_PAINTDAUBS_WIDE_BLURRY);
+    float rf = (float)BrushSize / 2.0f * (wide ? 1.5f : 1.0f);
+    int radius = (int)(rf < 1.0f ? 1.0f : rf);
+    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+
+    /* 2. Sharpen or blur (`means` is large enough to hold the blurred copy) */
+    const float sharp = (float)Sharpness / 40.0f;
+    float* buf = means;
+
+    if (BrushType == OC_PAINTDAUBS_WIDE_BLURRY) {
+        ocPaintDaubsGauss(work, buf, Width, Height, channels, 1.5f, scratch);
+        memcpy(work, buf, values * sizeof(float));
+    } else {
+        float sigma  = (BrushType == OC_PAINTDAUBS_WIDE_SHARP) ? 1.5f : 1.2f;
+        float amount = sharp * ((BrushType == OC_PAINTDAUBS_WIDE_SHARP) ? 4.0f : 2.5f);
+        ocPaintDaubsGauss(work, buf, Width, Height, channels, sigma, scratch);
+        for (i = 0; i < values; i++) work[i] += (work[i] - buf[i]) * amount;   /* not clamped yet */
+    }
+
+    /* 3. Sparkle needs the luma plane of the sharpened image (reuses `means`) */
+    float* L = means;
+    if (BrushType == OC_PAINTDAUBS_SPARKLE) {
+        for (i = 0; i < pixels; i++) {
+            const float* p = work + i * channels;
+            L[i] = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
+        }
+    }
+
+    /* 4. Per-brush finish and output */
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float n = 0.0f, add = 0.0f, mul = 1.0f;
+
+            if (BrushType == OC_PAINTDAUBS_LIGHT_ROUGH || BrushType == OC_PAINTDAUBS_DARK_ROUGH) {
+                n = ocPaintDaubsFbm((float)x / 2.0f, (float)y / 2.0f, 41u) - 0.5f;
+                if (n < 0.0f) n = 0.0f;
+                if (BrushType == OC_PAINTDAUBS_LIGHT_ROUGH) add = n * 0.35f;
+                else                                        mul = 1.0f - n * 0.7f;
+            } else if (BrushType == OC_PAINTDAUBS_SPARKLE) {
+                float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
+                float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
+                float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
+                float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
+                float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
+                float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
+                float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
+                float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+                float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
+                float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
+                float edge = sqrtf(gx * gx + gy * gy);
+                add = ocArtisticClamp01(edge * 4.0f)
+                    * ocPencilSmoothstep(0.75f, 0.95f, ocPencilHash01(x, y, 42u)) * 0.8f;
+            }
+
+            for (c = 0; c < channels; c++) {
+                float v = w[(size_t)x * channels + c];
+                v = (v + add) * mul;
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(v) * 255.0f + 0.5f);
             }
         }
     }

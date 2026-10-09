@@ -49,6 +49,15 @@ typedef enum {
 } OcEdgeMode;
 
 typedef enum {
+    OC_PAINTDAUBS_SIMPLE = 0,   // plain daubs
+    OC_PAINTDAUBS_LIGHT_ROUGH,  // rough, lightened texture
+    OC_PAINTDAUBS_DARK_ROUGH,   // rough, darkened texture
+    OC_PAINTDAUBS_WIDE_SHARP,   // larger daubs, sharp
+    OC_PAINTDAUBS_WIDE_BLURRY,  // larger daubs, blurred
+    OC_PAINTDAUBS_SPARKLE       // plain daubs with bright speckles along edges
+} OcPaintDaubsBrush;
+
+typedef enum {
     CannyGaus3x3,
     CannyGaus5x5
 } CannyNoiseFilter;
@@ -361,6 +370,9 @@ DLIB_EXPORT OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned 
 
 DLIB_EXPORT OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                          int BrushSize, int BrushDetail, int Texture);
+
+DLIB_EXPORT OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                             int BrushSize, int Sharpness, int BrushType);
 
 //--------------------------Artistic----------------------------------
 
