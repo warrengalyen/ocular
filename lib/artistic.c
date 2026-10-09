@@ -3,13 +3,14 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added cutout filter
+ * Last update: added dry brush filter
  *
  * @brief Artistic filter implementations
  */
 
 #include "artistic.h"
 #include "core.h"
+#include <float.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -254,6 +255,181 @@ OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output,
         }
     }
 
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the dry brush filter ------------------------------------ */
+/* Clamp, posterize, hash and the box-line blur are shared with the colored pencil / cutout filters
+ * (ocArtisticClamp01, ocCutoutPosterize, ocPencilHash01, ocCutoutBoxLine). */
+
+/* One box blur pass (radius r) over an interleaved n-channel float buffer. */
+static inline void ocDryBrushBoxBlur(float* buf, int Width, int Height, int n, int r, float* scratch) {
+    int x, y, c;
+    for (y = 0; y < Height; y++)
+        for (c = 0; c < n; c++)
+            ocCutoutBoxLine(buf + (size_t)y * Width * n + c, Width, n, r, scratch);
+    for (x = 0; x < Width; x++)
+        for (c = 0; c < n; c++)
+            ocCutoutBoxLine(buf + (size_t)x * n + c, Height, Width * n, r, scratch);
+}
+
+/* Kuwahara: each pixel takes the mean color of the lowest-variance quadrant.
+ * `means` holds, per pixel, `channels` color means followed by mean(l) and mean(l^2). */
+static inline void ocDryBrushKuwahara(const unsigned char* Input, int Width, int Height, int Stride,
+                                      int channels, int radius, float* means, float* out, float* scratch) {
+    const int n = channels + 2;
+    int h2 = (radius + 1) / 2;
+    if (h2 < 1) h2 = 1;
+    int x, y, c, q;
+
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        float* m = means + (size_t)y * Width * n;
+        for (x = 0; x < Width; x++) {
+            const unsigned char* p = src + x * channels;
+            float l;
+            for (c = 0; c < channels; c++) m[x * n + c] = p[c] * (1.0f / 255.0f);
+            if (channels == 1) l = m[x * n];
+            else l = 0.299f * m[x * n] + 0.587f * m[x * n + 1] + 0.114f * m[x * n + 2];
+            m[x * n + channels]     = l;
+            m[x * n + channels + 1] = l * l;
+        }
+    }
+
+    ocDryBrushBoxBlur(means, Width, Height, n, h2, scratch);
+
+    static const int quad[4][2] = { {-1, -1}, {1, -1}, {-1, 1}, {1, 1} };
+    for (y = 0; y < Height; y++) {
+        for (x = 0; x < Width; x++) {
+            float best = FLT_MAX;
+            float col[3] = { 0.0f, 0.0f, 0.0f };
+            for (q = 0; q < 4; q++) {
+                int qx = x + quad[q][0] * h2;
+                int qy = y + quad[q][1] * h2;
+                qx = qx < 0 ? 0 : (qx >= Width  ? Width  - 1 : qx);
+                qy = qy < 0 ? 0 : (qy >= Height ? Height - 1 : qy);
+                const float* m = means + ((size_t)qy * Width + qx) * n;
+                float var = m[channels + 1] - m[channels] * m[channels];
+                if (var < best) {
+                    best = var;
+                    for (c = 0; c < channels; c++) col[c] = m[c];
+                }
+            }
+            for (c = 0; c < channels; c++) out[((size_t)y * Width + x) * channels + c] = col[c];
+        }
+    }
+}
+
+/* Separable Gaussian (sigma = 1, 7 taps, edge-clamped): src -> dst, vertical pass in place. */
+static inline void ocDryBrushGauss1(const float* src, float* dst, int Width, int Height,
+                                    int channels, float* scratch) {
+    enum { R = 3 };
+    float k[R + 1], sum;
+    int i, x, y, c;
+
+    sum = 1.0f;
+    k[0] = 1.0f;
+    for (i = 1; i <= R; i++) { k[i] = expf(-0.5f * (float)(i * i)); sum += 2.0f * k[i]; }
+    for (i = 0; i <= R; i++) k[i] /= sum;
+
+    for (y = 0; y < Height; y++) {                      /* horizontal: src -> dst */
+        const float* s = src + (size_t)y * Width * channels;
+        float* d = dst + (size_t)y * Width * channels;
+        for (x = 0; x < Width; x++) {
+            for (c = 0; c < channels; c++) {
+                float acc = k[0] * s[x * channels + c];
+                for (i = 1; i <= R; i++) {
+                    int xl = x - i < 0 ? 0 : x - i;
+                    int xr = x + i >= Width ? Width - 1 : x + i;
+                    acc += k[i] * (s[xl * channels + c] + s[xr * channels + c]);
+                }
+                d[x * channels + c] = acc;
+            }
+        }
+    }
+    for (x = 0; x < Width; x++) {                       /* vertical: in place via scratch */
+        for (c = 0; c < channels; c++) {
+            float* base = dst + (size_t)x * channels + c;
+            const size_t step = (size_t)Width * channels;
+            for (y = 0; y < Height; y++) scratch[y] = base[y * step];
+            for (y = 0; y < Height; y++) {
+                float acc = k[0] * scratch[y];
+                for (i = 1; i <= R; i++) {
+                    int yu = y - i < 0 ? 0 : y - i;
+                    int yd = y + i >= Height ? Height - 1 : y + i;
+                    acc += k[i] * (scratch[yu] + scratch[yd]);
+                }
+                base[y * step] = acc;
+            }
+        }
+    }
+}
+
+OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output,
+                               int Width, int Height, int Stride,
+                               int BrushSize, int BrushDetail, int Texture) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushSize < 0 || BrushSize > 10 ||
+        BrushDetail < 0 || BrushDetail > 10 ||
+        Texture < 1 || Texture > 3) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(pixels * (size_t)channels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    /* 1. Kuwahara smoothing -> work (float, 0..1) */
+    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
+
+    /* 2. Unsharp mask (sigma 1.0, amount 0.5); `means` is large enough to hold the blur */
+    float* blurred = means;
+    ocDryBrushGauss1(work, blurred, Width, Height, channels, scratch);
+
+    const float amount = 0.5f;
+    const float levels = 3.0f + (float)BrushDetail;
+    const float amp    = 0.02f + ((float)Texture - 1.0f) * 0.05f;
+
+    int x, y, c;
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        const float* b = blurred + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float noise = (ocPencilHash01(x, y, 21u) - 0.5f) * amp;
+            for (c = 0; c < channels; c++) {
+                size_t o = (size_t)x * channels + c;
+                float v = w[o] + (w[o] - b[o]) * amount;                       /* unsharp */
+                float p = ocCutoutPosterize(v, levels) * 0.6f + v * 0.4f + noise;
+                dst[o] = (unsigned char)(ocArtisticClamp01(p) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
     free(work);
     free(scratch);
     return OC_STATUS_OK;

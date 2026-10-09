@@ -354,6 +354,9 @@ DLIB_EXPORT OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsi
 DLIB_EXPORT OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                          int NumberOfLevels, int EdgeSimplicity, int EdgeFidelity);
 
+DLIB_EXPORT OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                           int BrushSize, int BrushDetail, int Texture);
+
 //--------------------------Artistic----------------------------------
 
 //--------------------------Render------------------------------------

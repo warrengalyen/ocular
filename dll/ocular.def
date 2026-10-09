@@ -142,3 +142,4 @@ EXPORTS
     save_afpalette_palette @140
     ocularColoredPencilFilter @141
     ocularCutoutFilter @142
+    ocularDryBrushFilter @143

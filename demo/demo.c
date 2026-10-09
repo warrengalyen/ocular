@@ -147,6 +147,9 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
         ocularSharpenFilter(input, output, width, height, stride, config.params[0].value.float_val);
     } else if (strcmp(config.function, "ocularUnsharpMaskFilter") == 0) {
         ocularUnsharpMaskFilter(input, output, width, height, stride, config.params[0].value.float_val, config.params[1].value.float_val, config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularDryBrushFilter") == 0) {
+        ocularDryBrushFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                             (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else {
         return -1;
     }
