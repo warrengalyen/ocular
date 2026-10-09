@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added dry brush filter
+ * Last update: added fresco filter
  *
  * @brief Artistic filter definitions
  */
@@ -89,6 +89,28 @@ OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output,
 OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output,
                                int Width, int Height, int Stride,
                                int BrushSize, int BrushDetail, int Texture);
+
+/**
+ * @brief Fresco filter
+ *
+ * Paints the image in rough, high-contrast patches with dark edges, like a
+ * fresco: Kuwahara smoothing, strong sharpening, partial posterization with
+ * grain, then a contrast curve and edge darkening.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input       Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output      Output image buffer (must not overlap Input).
+ * @param Width       Image width in pixels.
+ * @param Height      Image height in pixels.
+ * @param Stride      Row stride in bytes (typically Width * channels).
+ * @param BrushSize   Brush size. Range [0 - 10]. Suggested default: 2.
+ * @param BrushDetail Brush detail. Range [0 - 10]. Suggested default: 8.
+ * @param Texture     Texture amount. Range [1 - 3]. Suggested default: 1.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
+                             int Width, int Height, int Stride,
+                             int BrushSize, int BrushDetail, int Texture);
 
 #ifdef __cplusplus
 }

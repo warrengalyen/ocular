@@ -143,3 +143,4 @@ EXPORTS
     ocularColoredPencilFilter @141
     ocularCutoutFilter @142
     ocularDryBrushFilter @143
+    ocularFrescoFilter @144

@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-9-2026
- * Last update: added dry brush filter
+ * Last update: added fresco filter
  *
  * @brief Artistic filter implementations
  */
@@ -440,6 +440,115 @@ OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output
                 float v = w[o] + (w[o] - b[o]) * amount;                       /* unsharp */
                 float p = ocCutoutPosterize(v, levels) * 0.6f + v * 0.4f + noise;
                 dst[o] = (unsigned char)(ocArtisticClamp01(p) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the fresco filter ---------------------------------------- */
+/* Clamp, posterize, hash, Kuwahara and the 7-tap Gaussian are shared with the other artistic filters
+ * (ocArtisticClamp01, ocCutoutPosterize, ocPencilHash01, ocDryBrushKuwahara, ocDryBrushGauss1). */
+
+/* Luma sample from a float plane with clamped borders */
+static inline float ocFrescoPlaneAt(const float* L, int x, int y, int Width, int Height) {
+    if (x < 0) x = 0; else if (x >= Width)  x = Width - 1;
+    if (y < 0) y = 0; else if (y >= Height) y = Height - 1;
+    return L[(size_t)y * Width + x];
+}
+
+OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
+                             int Width, int Height, int Stride,
+                             int BrushSize, int BrushDetail, int Texture) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushSize < 0 || BrushSize > 10 ||
+        BrushDetail < 0 || BrushDetail > 10 ||
+        Texture < 1 || Texture > 3) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(pixels * (size_t)channels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c;
+
+    /* 1. Kuwahara smoothing -> work */
+    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
+
+    /* 2. Unsharp mask (sigma 1.0, amount 0.9), applied in place on `work`.
+     *    `means` is large enough to hold the blurred copy. */
+    float* buf = means;
+    ocDryBrushGauss1(work, buf, Width, Height, channels, scratch);
+
+    const float amount = 0.9f;
+    for (size_t i = 0; i < pixels * (size_t)channels; i++) {
+        work[i] += (work[i] - buf[i]) * amount;      /* intentionally not clamped yet */
+    }
+
+    /* 3. Luma plane of the sharpened image (reuses `means`, blur no longer needed) */
+    float* L = means;
+    for (size_t i = 0; i < pixels; i++) {
+        const float* p = work + i * channels;
+        L[i] = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
+    }
+
+    /* 4. Posterize + grain, then contrast curve and edge darkening */
+    const float levels = 3.0f + (float)BrushDetail;
+    const float amp    = 0.02f + ((float)Texture - 1.0f) * 0.05f;
+
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+
+            /* Sobel gradient magnitude of the luma plane (clamped borders) */
+            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
+            float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
+            float edge = sqrtf(gx * gx + gy * gy);
+            float dark = 1.0f - ocArtisticClamp01(edge * 2.5f) * 0.6f;
+
+            float noise = (ocPencilHash01(x, y, 21u) - 0.5f) * amp;
+
+            for (c = 0; c < channels; c++) {
+                float v = w[(size_t)x * channels + c];
+                float p = ocCutoutPosterize(v, levels) * 0.6f + v * 0.4f + noise;
+                float q = ocArtisticClamp01((p - 0.5f) * 1.3f + 0.45f);
+                q = powf(q, 1.15f) * dark;
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(q) * 255.0f + 0.5f);
             }
         }
     }
