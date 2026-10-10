@@ -412,6 +412,9 @@ DLIB_EXPORT OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsi
                                                 int BrushSize, int TextureCoverage, int Texture, int Scaling, int Relief,
                                                 int Light, int Invert);
 
+DLIB_EXPORT OC_STATUS ocularSpongeFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                         int BrushSize, int Definition, int Smoothness);
+
 //--------------------------Artistic----------------------------------
 
 //--------------------------Render------------------------------------

@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added underpainting filter
+ * Last update: added sponge filter
  *
  * @brief Artistic filter definitions
  */
@@ -302,6 +302,28 @@ OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* O
                                     int BrushSize, int TextureCoverage,
                                     int Texture, int Scaling, int Relief,
                                     int Light, int Invert);
+
+/**
+ * @brief Sponge filter
+ *
+ * Paints with a sponge: Kuwahara smoothing, a contrast boost, and darker
+ * mottled blotches whose size and strength follow the smoothness and
+ * definition settings.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input      Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output     Output image buffer (must not overlap Input).
+ * @param Width      Image width in pixels.
+ * @param Height     Image height in pixels.
+ * @param Stride     Row stride in bytes (typically Width * channels).
+ * @param BrushSize  Brush size. Range [0 - 10]. Suggested default: 2.
+ * @param Definition Definition. Range [0 - 25]. Suggested default: 12.
+ * @param Smoothness Smoothness. Range [1 - 15]. Suggested default: 5.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularSpongeFilter(const unsigned char* Input, unsigned char* Output,
+                             int Width, int Height, int Stride,
+                             int BrushSize, int Definition, int Smoothness);
 
 #ifdef __cplusplus
 }

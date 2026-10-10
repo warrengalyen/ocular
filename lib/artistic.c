@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: renamed shared helpers to the ocArtistic prefix
+ * Last update: added sponge filter
  *
  * @brief Artistic filter implementations
  */
@@ -1438,6 +1438,76 @@ OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* O
         }
     }
 
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the sponge filter ---------------------------------------- */
+/* Clamp, smoothstep, fbm noise and the Kuwahara pass are shared with the other artistic filters
+ * (ocArtisticClamp01, ocArtisticSmoothstep, ocArtisticFbm, ocArtisticKuwahara). */
+
+OC_STATUS ocularSpongeFilter(const unsigned char* Input, unsigned char* Output,
+                             int Width, int Height, int Stride,
+                             int BrushSize, int Definition, int Smoothness) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushSize < 0 || BrushSize > 10 ||
+        Definition < 0 || Definition > 25 ||
+        Smoothness < 1 || Smoothness > 15) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(pixels * (size_t)channels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    /* 1. Kuwahara smoothing */
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
+
+    /* 2. Sponge blotches and contrast */
+    const float def = (float)Definition / 25.0f;
+    const float sc  = 1.5f + (float)Smoothness * 0.5f;
+    const float contrast = 1.0f + def * 0.6f;
+
+    int x, y, c;
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float s    = ocArtisticFbm((float)x / sc, (float)y / sc, 61u);
+            float hole = ocArtisticSmoothstep(0.58f, 0.75f, s);
+            float dark = 1.0f - hole * def * 0.4f;
+
+            for (c = 0; c < channels; c++) {
+                float v = w[(size_t)x * channels + c];
+                v = ocArtisticClamp01((v - 0.5f) * contrast + 0.5f) * dark;
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(v) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
     free(work);
     free(scratch);
     return OC_STATUS_OK;
