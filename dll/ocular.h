@@ -380,6 +380,9 @@ DLIB_EXPORT OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsig
 DLIB_EXPORT OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                               int HighlightStrength, int Detail, int Smoothness);
 
+DLIB_EXPORT OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                              int EdgeThickness, int EdgeIntensity, int Posterization);
+
 //--------------------------Artistic----------------------------------
 
 //--------------------------Render------------------------------------

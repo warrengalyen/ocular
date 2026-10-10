@@ -2,8 +2,8 @@
  * @file: artistic.h
  * @author Warren Galyen
  * Created: 10-9-2026
- * Last Updated: 10-9-2026
- * Last update: added plastic wrap filter
+ * Last Updated: 10-10-2026
+ * Last update: added poster edges filter
  *
  * @brief Artistic filter definitions
  */
@@ -185,6 +185,27 @@ OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Ou
 OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output,
                                   int Width, int Height, int Stride,
                                   int HighlightStrength, int Detail, int Smoothness);
+
+/**
+ * @brief Poster edges filter
+ *
+ * Reduces the image to a few tone levels and draws dark outlines along
+ * detected edges, like a posterized print with inked contours.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input         Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output        Output image buffer (must not overlap Input).
+ * @param Width         Image width in pixels.
+ * @param Height        Image height in pixels.
+ * @param Stride        Row stride in bytes (typically Width * channels).
+ * @param EdgeThickness Edge thickness. Range [0 - 10]. Suggested default: 2.
+ * @param EdgeIntensity Edge intensity. Range [0 - 10]. Suggested default: 1.
+ * @param Posterization Posterization. Range [0 - 6]. Suggested default: 2.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output,
+                                  int Width, int Height, int Stride,
+                                  int EdgeThickness, int EdgeIntensity, int Posterization);
 
 #ifdef __cplusplus
 }

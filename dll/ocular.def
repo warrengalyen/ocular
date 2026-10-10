@@ -147,3 +147,4 @@ EXPORTS
     ocularPaintDaubsFilter @145
     ocularPaletteKnifeFilter @146
     ocularPlasticWrapFilter @147
+    ocularPosterEdgesFilter @148

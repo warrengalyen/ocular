@@ -2,8 +2,8 @@
  * @file: artistic.c
  * @author Warren Galyen
  * Created: 10-9-2026
- * Last Updated: 10-9-2026
- * Last update: added plastic wrap filter
+ * Last Updated: 10-10-2026
+ * Last update: added poster edges filter
  *
  * @brief Artistic filter implementations
  */
@@ -931,6 +931,100 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
                 float v = src[x * channels + c] * (1.0f / 255.0f);
                 dst[x * channels + c] =
                     (unsigned char)(ocArtisticClamp01(v * 0.88f + add) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(L);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the poster edges filter ---------------------------------- */
+/* Clamp, posterize, smoothstep, plane sampling, the box blur pass and the box-radius helper are shared
+ * with the other artistic filters (ocArtisticClamp01, ocCutoutPosterize, ocPencilSmoothstep,
+ * ocFrescoPlaneAt, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii). */
+
+OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output,
+                                  int Width, int Height, int Stride,
+                                  int EdgeThickness, int EdgeIntensity, int Posterization) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (EdgeThickness < 0 || EdgeThickness > 10 ||
+        EdgeIntensity < 0 || EdgeIntensity > 10 ||
+        Posterization < 0 || Posterization > 6) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* L       = (float*)malloc(pixels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (L == NULL || scratch == NULL) {
+        free(L);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c, k;
+
+    /* 1. Luma plane, blurred (three box passes approximating a Gaussian) */
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        float* row = L + (size_t)y * Width;
+        for (x = 0; x < Width; x++) {
+            const unsigned char* p = src + x * channels;
+            row[x] = (channels == 1) ? p[0] * (1.0f / 255.0f)
+                                     : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]) * (1.0f / 255.0f);
+        }
+    }
+
+    float sigma = 0.6f + (float)EdgeThickness * 0.6f;
+    int radii[3];
+    ocPaletteKnifeBoxRadii(sigma, radii);
+    for (k = 0; k < 3; k++) {
+        if (radii[k] > 0) ocDryBrushBoxBlur(L, Width, Height, 1, radii[k], scratch);
+    }
+
+    /* 2. Edge ink and posterize */
+    const float inten  = (float)EdgeIntensity / 10.0f;
+    const float levels = (float)Posterization + 2.0f;
+
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
+            float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
+            float edge = sqrtf(gx * gx + gy * gy);
+
+            float ink = ocPencilSmoothstep(0.015f, 0.06f, edge * (1.0f + inten * 3.0f))
+                      * (0.55f + inten * 0.45f);
+
+            for (c = 0; c < channels; c++) {
+                float v = src[x * channels + c] * (1.0f / 255.0f);
+                float o = ocCutoutPosterize(v, levels) * (1.0f - ink);
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(o) * 255.0f + 0.5f);
             }
         }
     }
