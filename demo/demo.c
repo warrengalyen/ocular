@@ -179,6 +179,9 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
                                  (int)config.params[1].value.float_val, (int)config.params[2].value.float_val,
                                  (int)config.params[3].value.float_val, (int)config.params[4].value.float_val,
                                  (int)config.params[5].value.float_val, invert);
+    } else if (strcmp(config.function, "ocularWatercolorFilter") == 0) {
+        ocularWatercolorFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                               (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else {
         return -1;
     }

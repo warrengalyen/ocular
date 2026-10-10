@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added rough pastels filter
+ * Last update: added watercolor filter
  *
  * @brief Artistic filter definitions
  */
@@ -254,6 +254,27 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
                                    int StrokeLength, int StrokeDetail,
                                    int Texture, int Scaling, int Relief,
                                    int Light, int Invert);
+
+/**
+ * @brief Watercolor filter
+ *
+ * Paints the image as translucent washes: Kuwahara smoothing, slightly
+ * boosted saturation, darkened edges where pigment pools, and paper grain.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input           Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output          Output image buffer (must not overlap Input).
+ * @param Width           Image width in pixels.
+ * @param Height          Image height in pixels.
+ * @param Stride          Row stride in bytes (typically Width * channels).
+ * @param BrushDetail     Brush detail. Range [1 - 14]. Suggested default: 9.
+ * @param ShadowIntensity Shadow intensity. Range [0 - 10]. Suggested default: 1.
+ * @param Texture         Paper texture. Range [1 - 3]. Suggested default: 1.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Output,
+                                 int Width, int Height, int Stride,
+                                 int BrushDetail, int ShadowIntensity, int Texture);
 
 #ifdef __cplusplus
 }

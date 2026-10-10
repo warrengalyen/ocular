@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added rough pastels filter
+ * Last update: added watercolor filter
  *
  * @brief Artistic filter implementations
  */
@@ -1230,6 +1230,100 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
     }
 
     free(soft);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the watercolor filter ------------------------------------ */
+/* Clamp, plane sampling, fbm noise and the Kuwahara pass are shared with the other artistic filters
+ * (ocArtisticClamp01, ocFrescoPlaneAt, ocPaintDaubsFbm, ocDryBrushKuwahara). */
+
+OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Output,
+                                 int Width, int Height, int Stride,
+                                 int BrushDetail, int ShadowIntensity, int Texture) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushDetail < 1 || BrushDetail > 14 ||
+        ShadowIntensity < 0 || ShadowIntensity > 10 ||
+        Texture < 1 || Texture > 3) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t pixels = (size_t)Width * (size_t)Height;
+
+    float* means   = (float*)malloc(pixels * (size_t)(channels + 2) * sizeof(float));
+    float* work    = (float*)malloc(pixels * (size_t)channels * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (means == NULL || work == NULL || scratch == NULL) {
+        free(means);
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    /* 1. Kuwahara smoothing; lower detail = larger radius */
+    int radius = 1 + (int)((float)(15 - BrushDetail) / 2.5f);
+    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+
+    /* 2. Luma plane of the smoothed image (reuses `means`) */
+    float* L = means;
+    size_t i;
+    for (i = 0; i < pixels; i++) {
+        const float* p = work + i * channels;
+        L[i] = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
+    }
+
+    /* 3. Edge darkening, saturation, grain and gamma */
+    const float sh    = (float)ShadowIntensity / 10.0f;
+    const float amp   = ((float)Texture - 1.0f) * 0.04f;
+    const float gamma = 1.1f + sh * 0.6f;
+    const float edgeK = 3.0f + sh * 8.0f;
+
+    int x, y, c;
+    for (y = 0; y < Height; y++) {
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
+            float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
+            float edge = sqrtf(gx * gx + gy * gy);
+
+            float n = (ocPaintDaubsFbm((float)x / 3.0f, (float)y / 3.0f, 71u) - 0.5f) * amp;
+            float k = 1.0f - ocArtisticClamp01(edge * edgeK) * 0.6f;
+
+            const float* p = w + (size_t)x * channels;
+            float l = L[(size_t)y * Width + x];
+
+            for (c = 0; c < channels; c++) {
+                float s = l + (p[c] - l) * 1.2f;                    /* saturation boost */
+                float v = ocArtisticClamp01(s * k + n);
+                dst[x * channels + c] = (unsigned char)(powf(v, gamma) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(means);
+    free(work);
     free(scratch);
     return OC_STATUS_OK;
 }
