@@ -58,6 +58,24 @@ typedef enum {
 } OcPaintDaubsBrush;
 
 typedef enum {
+    OC_PASTEL_TEXTURE_BRICK = 0,
+    OC_PASTEL_TEXTURE_BURLAP,
+    OC_PASTEL_TEXTURE_CANVAS,
+    OC_PASTEL_TEXTURE_SANDSTONE
+} OcPastelTexture;
+
+typedef enum {
+    OC_PASTEL_LIGHT_TOP = 0,
+    OC_PASTEL_LIGHT_TOP_RIGHT,
+    OC_PASTEL_LIGHT_RIGHT,
+    OC_PASTEL_LIGHT_BOTTOM_RIGHT,
+    OC_PASTEL_LIGHT_BOTTOM,
+    OC_PASTEL_LIGHT_BOTTOM_LEFT,
+    OC_PASTEL_LIGHT_LEFT,
+    OC_PASTEL_LIGHT_TOP_LEFT
+} OcPastelLight;
+
+typedef enum {
     CannyGaus3x3,
     CannyGaus5x5
 } CannyNoiseFilter;
@@ -382,6 +400,10 @@ DLIB_EXPORT OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsign
 
 DLIB_EXPORT OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                               int EdgeThickness, int EdgeIntensity, int Posterization);
+
+DLIB_EXPORT OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                               int StrokeLength, int StrokeDetail, int Texture, int Scaling, int Relief,
+                                               int Light, int Invert);
 
 //--------------------------Artistic----------------------------------
 

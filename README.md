@@ -128,14 +128,23 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 
 #### Stylize/Artistic
 
+- Colored Pencil
+- Cutout
+- Dry Brush
+- Fresco
 - Frosted Glass
 - Film Grain
 - Glass Tiles
-- Marble
 - Kuwahara
+- Marble
 - Oil Paint
+- Paint Daubs
+- Palette Knife
+- Plastic Wrap
 - Portrait Glow
+- Poster Edges
 - Relief (Emboss)
+- Rough Pastels
 
 #### Pixelate
 

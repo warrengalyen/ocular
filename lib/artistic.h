@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added poster edges filter
+ * Last update: added rough pastels filter
  *
  * @brief Artistic filter definitions
  */
@@ -28,6 +28,26 @@ typedef enum {
     OC_PAINTDAUBS_WIDE_BLURRY,  /**< Larger daubs, blurred */
     OC_PAINTDAUBS_SPARKLE       /**< Plain daubs with bright speckles along edges */
 } OcPaintDaubsBrush;
+
+/** @brief Surface textures for the rough pastels filter */
+typedef enum {
+    OC_PASTEL_TEXTURE_BRICK = 0,
+    OC_PASTEL_TEXTURE_BURLAP,
+    OC_PASTEL_TEXTURE_CANVAS,
+    OC_PASTEL_TEXTURE_SANDSTONE
+} OcPastelTexture;
+
+/** @brief Light directions for the rough pastels filter (where the light comes from) */
+typedef enum {
+    OC_PASTEL_LIGHT_TOP = 0,
+    OC_PASTEL_LIGHT_TOP_RIGHT,
+    OC_PASTEL_LIGHT_RIGHT,
+    OC_PASTEL_LIGHT_BOTTOM_RIGHT,
+    OC_PASTEL_LIGHT_BOTTOM,
+    OC_PASTEL_LIGHT_BOTTOM_LEFT,
+    OC_PASTEL_LIGHT_LEFT,
+    OC_PASTEL_LIGHT_TOP_LEFT
+} OcPastelLight;
 
 /**
  * @brief Colored pencil filter
@@ -206,6 +226,34 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
 OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output,
                                   int Width, int Height, int Stride,
                                   int EdgeThickness, int EdgeIntensity, int Posterization);
+
+/**
+ * @brief Rough pastels filter
+ *
+ * Repaints the image as diagonal chalk strokes on a textured surface (brick,
+ * burlap, canvas or sandstone); bright areas stay thick chalk while dark
+ * areas show more of the texture.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input        Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output       Output image buffer (must not overlap Input).
+ * @param Width        Image width in pixels.
+ * @param Height       Image height in pixels.
+ * @param Stride       Row stride in bytes (typically Width * channels).
+ * @param StrokeLength Stroke length. Range [0 - 40], 0 disables strokes. Suggested default: 6.
+ * @param StrokeDetail Stroke detail. Range [1 - 20]. Suggested default: 4.
+ * @param Texture      One of OcPastelTexture. Suggested default: OC_PASTEL_TEXTURE_CANVAS.
+ * @param Scaling      Texture scaling in percent. Range [50 - 200]. Suggested default: 100.
+ * @param Relief       Texture relief. Range [0 - 50], 0 disables the texture. Suggested default: 20.
+ * @param Light        One of OcPastelLight. Suggested default: OC_PASTEL_LIGHT_TOP.
+ * @param Invert       Nonzero inverts the texture relief. Suggested default: 0.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Output,
+                                   int Width, int Height, int Stride,
+                                   int StrokeLength, int StrokeDetail,
+                                   int Texture, int Scaling, int Relief,
+                                   int Light, int Invert);
 
 #ifdef __cplusplus
 }

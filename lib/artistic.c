@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added poster edges filter
+ * Last update: added rough pastels filter
  *
  * @brief Artistic filter implementations
  */
@@ -1030,6 +1030,206 @@ OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Out
     }
 
     free(L);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the rough pastels filter --------------------------------- */
+/* Clamp, hash, smoothstep, value noise, fbm, the box blur pass and the box-radius helper are shared with the
+ * other artistic filters (ocArtisticClamp01, ocPencilHash01, ocPencilSmoothstep, ocPencilValueNoise,
+ * ocPaintDaubsFbm, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii). */
+
+static inline float ocPastelRemEuclid(float a, float m) {
+    float r = fmodf(a, m);
+    return r < 0.0f ? r + m : r;
+}
+
+/* Basket weave of threads p px wide with `noise` irregularity */
+static inline float ocPastelWeave(float x, float y, float p, float noise) {
+    int cx = (int)floorf(x / p), cy = (int)floorf(y / p);
+    int overH = ((((cx + cy) % 2) + 2) % 2) == 0;
+    float u = ocPastelRemEuclid(x, p) / p;
+    float v = ocPastelRemEuclid(y, p) / p;
+    float ridge = overH ? sinf(v * 3.14159265f) : sinf(u * 3.14159265f);
+    float n = ocPencilValueNoise(x / (p * 0.7f), y / (p * 2.0f), 97u);
+    return ridge * (1.0f - noise) + n * noise;
+}
+
+/* Procedural texture height (0..1) at pixel coordinates; s scales it (1 = 100 %) */
+static inline float ocPastelTexture(int kind, float x, float y, float s) {
+    x /= s;
+    y /= s;
+    switch (kind) {
+    case OC_PASTEL_TEXTURE_BRICK: {
+        const float bw = 24.0f, bh = 12.0f;
+        float row = floorf(y / bh);
+        float xo = x + (((int)row % 2 == 0) ? 0.0f : bw / 2.0f);
+        float u = ocPastelRemEuclid(xo, bw), v = ocPastelRemEuclid(y, bh);
+        float d = fminf(fminf(u, bw - u), fminf(v, bh - v));
+        return ocPencilSmoothstep(0.6f, 2.2f, d) * (0.85f + 0.15f * ocPencilValueNoise(x / 3.0f, y / 3.0f, 91u));
+    }
+    case OC_PASTEL_TEXTURE_BURLAP:
+        return ocPastelWeave(x, y, 7.0f, 0.35f);
+    case OC_PASTEL_TEXTURE_CANVAS:
+        return ocPastelWeave(x, y, 3.5f, 0.18f);
+    case OC_PASTEL_TEXTURE_SANDSTONE:
+        return ocPaintDaubsFbm(x / 7.0f, y / 7.0f, 93u) * 0.7f
+             + ocPencilHash01((int)x, (int)y, 94u) * 0.3f;
+    default:
+        return 0.5f;
+    }
+}
+
+/* Bilinear sample of an interleaved float image at pixel coordinates (centres at .5), clamped. */
+static inline void ocPastelSample(const float* buf, int Width, int Height, int ch,
+                                  float x, float y, float* out) {
+    float fx = x - 0.5f, fy = y - 0.5f;
+    fx = fx < 0.0f ? 0.0f : (fx > (float)(Width - 1) ? (float)(Width - 1) : fx);
+    fy = fy < 0.0f ? 0.0f : (fy > (float)(Height - 1) ? (float)(Height - 1) : fy);
+    int x0 = (int)floorf(fx), y0 = (int)floorf(fy);
+    int x1 = x0 + 1 < Width ? x0 + 1 : Width - 1;
+    int y1 = y0 + 1 < Height ? y0 + 1 : Height - 1;
+    float ax = fx - (float)x0, ay = fy - (float)y0;
+    for (int c = 0; c < ch; c++) {
+        float p00 = buf[((size_t)y0 * Width + x0) * ch + c];
+        float p10 = buf[((size_t)y0 * Width + x1) * ch + c];
+        float p01 = buf[((size_t)y1 * Width + x0) * ch + c];
+        float p11 = buf[((size_t)y1 * Width + x1) * ch + c];
+        float top = p00 + (p10 - p00) * ax;
+        float bot = p01 + (p11 - p01) * ax;
+        out[c] = top + (bot - top) * ay;
+    }
+}
+
+OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Output,
+                                   int Width, int Height, int Stride,
+                                   int StrokeLength, int StrokeDetail,
+                                   int Texture, int Scaling, int Relief,
+                                   int Light, int Invert) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (StrokeLength < 0 || StrokeLength > 40 ||
+        StrokeDetail < 1 || StrokeDetail > 20 ||
+        Texture < OC_PASTEL_TEXTURE_BRICK || Texture > OC_PASTEL_TEXTURE_SANDSTONE ||
+        Scaling < 50 || Scaling > 200 ||
+        Relief < 0 || Relief > 50 ||
+        Light < OC_PASTEL_LIGHT_TOP || Light > OC_PASTEL_LIGHT_TOP_LEFT) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t values = (size_t)Width * (size_t)Height * (size_t)channels;
+    const int doStrokes = StrokeLength >= 1;
+
+    /* 1. Blurred copy used as the colour source for the strokes */
+    float* soft    = NULL;
+    float* scratch = NULL;
+    if (doStrokes) {
+        soft    = (float*)malloc(values * sizeof(float));
+        scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+        if (soft == NULL || scratch == NULL) {
+            free(soft);
+            free(scratch);
+            return OC_STATUS_ERR_OUTOFMEMORY;
+        }
+        int x, y;
+        for (y = 0; y < Height; y++) {
+            const unsigned char* src = Input + (size_t)y * Stride;
+            float* dst = soft + (size_t)y * Width * channels;
+            for (x = 0; x < Width * channels; x++) dst[x] = src[x] * (1.0f / 255.0f);
+        }
+        float det0  = (float)(StrokeDetail - 1) / 19.0f;
+        float sigma = 0.6f + (1.0f - det0) * 1.2f;
+        int radii[3], pass;
+        ocPaletteKnifeBoxRadii(sigma, radii);
+        for (pass = 0; pass < 3; pass++) {
+            if (radii[pass] > 0) ocDryBrushBoxBlur(soft, Width, Height, channels, radii[pass], scratch);
+        }
+    }
+
+    /* Constants */
+    const float det      = (float)(StrokeDetail - 1) / 19.0f;
+    const float len      = 2.0f + (float)StrokeLength;
+    const float wid      = 1.5f;
+    const float ux       = 0.70710678f, uy = -0.70710678f;           /* stroke direction (1,-1) */
+    const float grainLen = 2.0f + (float)StrokeLength * 0.5f;
+
+    const float s          = (float)Scaling / 100.0f;
+    const float reliefGain = (float)Relief / 50.0f * 3.0f;
+    const float sg         = Invert ? -1.0f : 1.0f;
+    /* Unit light direction per OcPastelLight (literals: a static initializer must be a constant expression) */
+    static const float lightX[8] = { 0.0f,  0.70710678f, 1.0f,  0.70710678f, 0.0f, -0.70710678f, -1.0f, -0.70710678f };
+    static const float lightY[8] = { -1.0f, -0.70710678f, 0.0f,  0.70710678f, 1.0f,  0.70710678f,  0.0f, -0.70710678f };
+    const float lx = lightX[Light], ly = lightY[Light];
+
+    int x, y, c;
+    float cs[3], p[3];
+
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+
+            for (c = 0; c < channels; c++) p[c] = src[x * channels + c] * (1.0f / 255.0f);
+
+            /* 2. Chalk strokes */
+            if (doStrokes) {
+                float fx = (float)x + 0.5f, fy = (float)y + 0.5f;
+                float u = fx * ux + fy * uy;
+                float v = -fx * uy + fy * ux;
+                int lane = (int)floorf(v / wid);
+                float off = ocPencilHash01(lane, 0, 51u) * len;
+                float t = ocPastelRemEuclid((u + off) / len, 1.0f);
+                float du = (0.5f - t) * len;
+                ocPastelSample(soft, Width, Height, channels, fx + du * ux, fy + du * uy, cs);
+
+                float xf = (float)x, yf = (float)y;
+                float gu = xf * ux + yf * uy;
+                float gv = -xf * uy + yf * ux;
+                float n = (ocPencilValueNoise(gu / grainLen, gv / 0.8f, 52u) - 0.5f) * 0.12f
+                        + (0.5f - fabsf(t - 0.5f)) * 0.06f;
+
+                for (c = 0; c < channels; c++) {
+                    float m = cs[c] + (p[c] - cs[c]) * det * 0.6f;   /* mix(stroke, original) */
+                    p[c] = m + n;
+                }
+            }
+
+            /* 3. Texture relief, strongest in dark areas */
+            if (Relief > 0) {
+                float l = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
+                float weight = 0.15f + 0.85f * (1.0f - ocArtisticClamp01(l));
+
+                float fx = (float)x, fy = (float)y;
+                float gx = (ocPastelTexture(Texture, fx + 1.0f, fy, s) - ocPastelTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
+                float gy = (ocPastelTexture(Texture, fx, fy + 1.0f, s) - ocPastelTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
+
+                /* Lambert shading of the height field, relative to a flat surface */
+                float nx = -reliefGain * gx, ny = -reliefGain * gy;
+                float sh = (nx * lx + ny * ly + 1.0f) / sqrtf(nx * nx + ny * ny + 1.0f);
+                sh = sh < 0.0f ? 0.0f : (sh > 2.0f ? 2.0f : sh);
+                float f = 1.0f + (sh - 1.0f) * weight;
+                for (c = 0; c < channels; c++) p[c] *= f;
+            }
+
+            for (c = 0; c < channels; c++) {
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(p[c]) * 255.0f + 0.5f);
+            }
+        }
+    }
+
+    free(soft);
     free(scratch);
     return OC_STATUS_OK;
 }
