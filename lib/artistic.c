@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added underpainting filter
+ * Last update: renamed shared helpers to the ocArtistic prefix
  *
  * @brief Artistic filter implementations
  */
@@ -25,13 +25,13 @@ static inline float ocArtisticClamp01(float v) {
 
 /* ---- helpers for the colored pencil filter ------------------------------- */
 
-static inline float ocPencilSmoothstep(float e0, float e1, float x) {
+static inline float ocArtisticSmoothstep(float e0, float e1, float x) {
     float t = ocArtisticClamp01((x - e0) / (e1 - e0));
     return t * t * (3.0f - 2.0f * t);
 }
 
 /* Deterministic lattice hash -> [0,1) */
-static inline float ocPencilHash01(int x, int y, unsigned int seed) {
+static inline float ocArtisticHash01(int x, int y, unsigned int seed) {
     unsigned int h = (unsigned int)x * 374761393u + (unsigned int)y * 668265263u + seed * 2246822519u;
     h = (h ^ (h >> 13)) * 1274126177u;
     h ^= h >> 16;
@@ -39,16 +39,16 @@ static inline float ocPencilHash01(int x, int y, unsigned int seed) {
 }
 
 /* Smooth value noise on a unit lattice -> [0,1] */
-static inline float ocPencilValueNoise(float x, float y, unsigned int seed) {
+static inline float ocArtisticValueNoise(float x, float y, unsigned int seed) {
     float fx = floorf(x), fy = floorf(y);
     int ix = (int)fx, iy = (int)fy;
     float tx = x - fx, ty = y - fy;
     float sx = tx * tx * (3.0f - 2.0f * tx);
     float sy = ty * ty * (3.0f - 2.0f * ty);
-    float a = ocPencilHash01(ix,     iy,     seed);
-    float b = ocPencilHash01(ix + 1, iy,     seed);
-    float c = ocPencilHash01(ix,     iy + 1, seed);
-    float d = ocPencilHash01(ix + 1, iy + 1, seed);
+    float a = ocArtisticHash01(ix,     iy,     seed);
+    float b = ocArtisticHash01(ix + 1, iy,     seed);
+    float c = ocArtisticHash01(ix,     iy + 1, seed);
+    float d = ocArtisticHash01(ix + 1, iy + 1, seed);
     float top = a + (b - a) * sx;
     float bot = c + (d - c) * sx;
     return top + (bot - top) * sy;
@@ -129,11 +129,11 @@ OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* O
             float fx = (float)x, fy = (float)y;
             float u1 = (fx + fy) * invSqrt2, v1 = (fy - fx) * invSqrt2;
             float u2 = (fx - fy) * invSqrt2, v2 = (fx + fy) * invSqrt2;
-            float h1 = ocPencilValueNoise(u1 * invLen, v1 * invWid, 11u);
-            float h2 = ocPencilValueNoise(u2 * invLen, v2 * invWid, 12u);
+            float h1 = ocArtisticValueNoise(u1 * invLen, v1 * invWid, 11u);
+            float h2 = ocArtisticValueNoise(u2 * invLen, v2 * invWid, 12u);
 
             /* Second direction only appears in darker areas -> cross-hatching in shadows */
-            float hatch = h2 * ocPencilSmoothstep(0.3f, 0.8f, darkness);
+            float hatch = h2 * ocArtisticSmoothstep(0.3f, 0.8f, darkness);
             if (h1 > hatch) hatch = h1;
 
             float cov = ocArtisticClamp01(darkness * (0.55f + pressure)
@@ -157,7 +157,7 @@ OC_STATUS ocularColoredPencilFilter(const unsigned char* Input, unsigned char* O
 /* ---- helpers for the cutout filter --------------------------------------- */
 
 /* Snap v (0..1) to `levels` evenly spaced tones */
-static inline float ocCutoutPosterize(float v, float levels) {
+static inline float ocArtisticPosterize(float v, float levels) {
     float l = levels - 1.0f;
     if (l < 1.0f) l = 1.0f;
     return floorf(ocArtisticClamp01(v) * l + 0.5f) / l;
@@ -263,9 +263,9 @@ OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output,
             const float* p = src + (size_t)x * channels;
             float l = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
             if (l < 1e-4f) l = 1e-4f;
-            float k = ocCutoutPosterize(l, levels) / l;
+            float k = ocArtisticPosterize(l, levels) / l;
             for (c = 0; c < channels; c++) {
-                float v = ocCutoutPosterize(ocArtisticClamp01(p[c] * k), levels * 2.0f);
+                float v = ocArtisticPosterize(ocArtisticClamp01(p[c] * k), levels * 2.0f);
                 dst[x * channels + c] = (unsigned char)(v * 255.0f + 0.5f);
             }
         }
@@ -278,10 +278,10 @@ OC_STATUS ocularCutoutFilter(const unsigned char* Input, unsigned char* Output,
 
 /* ---- helpers for the dry brush filter ------------------------------------ */
 /* Clamp, posterize, hash and the box-line blur are shared with the colored pencil / cutout filters
- * (ocArtisticClamp01, ocCutoutPosterize, ocPencilHash01, ocCutoutBoxLine). */
+ * (ocArtisticClamp01, ocArtisticPosterize, ocArtisticHash01, ocCutoutBoxLine). */
 
 /* One box blur pass (radius r) over an interleaved n-channel float buffer. */
-static inline void ocDryBrushBoxBlur(float* buf, int Width, int Height, int n, int r, float* scratch) {
+static inline void ocArtisticBoxBlur(float* buf, int Width, int Height, int n, int r, float* scratch) {
     int x, y, c;
     for (y = 0; y < Height; y++)
         for (c = 0; c < n; c++)
@@ -293,7 +293,7 @@ static inline void ocDryBrushBoxBlur(float* buf, int Width, int Height, int n, i
 
 /* Kuwahara: each pixel takes the mean color of the lowest-variance quadrant.
  * `means` holds, per pixel, `channels` color means followed by mean(l) and mean(l^2). */
-static inline void ocDryBrushKuwahara(const unsigned char* Input, int Width, int Height, int Stride,
+static inline void ocArtisticKuwahara(const unsigned char* Input, int Width, int Height, int Stride,
                                       int channels, int radius, float* means, float* out, float* scratch) {
     const int n = channels + 2;
     int h2 = (radius + 1) / 2;
@@ -314,7 +314,7 @@ static inline void ocDryBrushKuwahara(const unsigned char* Input, int Width, int
         }
     }
 
-    ocDryBrushBoxBlur(means, Width, Height, n, h2, scratch);
+    ocArtisticBoxBlur(means, Width, Height, n, h2, scratch);
 
     static const int quad[4][2] = { {-1, -1}, {1, -1}, {-1, 1}, {1, 1} };
     for (y = 0; y < Height; y++) {
@@ -339,7 +339,7 @@ static inline void ocDryBrushKuwahara(const unsigned char* Input, int Width, int
 }
 
 /* Separable Gaussian (sigma = 1, 7 taps, edge-clamped): src -> dst, vertical pass in place. */
-static inline void ocDryBrushGauss1(const float* src, float* dst, int Width, int Height,
+static inline void ocArtisticGauss1(const float* src, float* dst, int Width, int Height,
                                     int channels, float* scratch) {
     enum { R = 3 };
     float k[R + 1], sum;
@@ -419,11 +419,11 @@ OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output
     }
 
     /* 1. Kuwahara smoothing -> work (float, 0..1) */
-    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
 
     /* 2. Unsharp mask (sigma 1.0, amount 0.5); `means` is large enough to hold the blur */
     float* blurred = means;
-    ocDryBrushGauss1(work, blurred, Width, Height, channels, scratch);
+    ocArtisticGauss1(work, blurred, Width, Height, channels, scratch);
 
     const float amount = 0.5f;
     const float levels = 3.0f + (float)BrushDetail;
@@ -435,11 +435,11 @@ OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output
         const float* b = blurred + (size_t)y * Width * channels;
         unsigned char* dst = Output + (size_t)y * Stride;
         for (x = 0; x < Width; x++) {
-            float noise = (ocPencilHash01(x, y, 21u) - 0.5f) * amp;
+            float noise = (ocArtisticHash01(x, y, 21u) - 0.5f) * amp;
             for (c = 0; c < channels; c++) {
                 size_t o = (size_t)x * channels + c;
                 float v = w[o] + (w[o] - b[o]) * amount;                       /* unsharp */
-                float p = ocCutoutPosterize(v, levels) * 0.6f + v * 0.4f + noise;
+                float p = ocArtisticPosterize(v, levels) * 0.6f + v * 0.4f + noise;
                 dst[o] = (unsigned char)(ocArtisticClamp01(p) * 255.0f + 0.5f);
             }
         }
@@ -453,10 +453,10 @@ OC_STATUS ocularDryBrushFilter(const unsigned char* Input, unsigned char* Output
 
 /* ---- helpers for the fresco filter ---------------------------------------- */
 /* Clamp, posterize, hash, Kuwahara and the 7-tap Gaussian are shared with the other artistic filters
- * (ocArtisticClamp01, ocCutoutPosterize, ocPencilHash01, ocDryBrushKuwahara, ocDryBrushGauss1). */
+ * (ocArtisticClamp01, ocArtisticPosterize, ocArtisticHash01, ocArtisticKuwahara, ocArtisticGauss1). */
 
 /* Luma sample from a float plane with clamped borders */
-static inline float ocFrescoPlaneAt(const float* L, int x, int y, int Width, int Height) {
+static inline float ocArtisticPlaneAt(const float* L, int x, int y, int Width, int Height) {
     if (x < 0) x = 0; else if (x >= Width)  x = Width - 1;
     if (y < 0) y = 0; else if (y >= Height) y = Height - 1;
     return L[(size_t)y * Width + x];
@@ -500,12 +500,12 @@ OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
     int x, y, c;
 
     /* 1. Kuwahara smoothing -> work */
-    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, 1 + BrushSize, means, work, scratch);
 
     /* 2. Unsharp mask (sigma 1.0, amount 0.9), applied in place on `work`.
      *    `means` is large enough to hold the blurred copy. */
     float* buf = means;
-    ocDryBrushGauss1(work, buf, Width, Height, channels, scratch);
+    ocArtisticGauss1(work, buf, Width, Height, channels, scratch);
 
     const float amount = 0.9f;
     for (size_t i = 0; i < pixels * (size_t)channels; i++) {
@@ -529,24 +529,24 @@ OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
         for (x = 0; x < Width; x++) {
 
             /* Sobel gradient magnitude of the luma plane (clamped borders) */
-            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
-            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
-            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
-            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
-            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
-            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
-            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
-            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float a00 = ocArtisticPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocArtisticPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocArtisticPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocArtisticPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocArtisticPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocArtisticPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocArtisticPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocArtisticPlaneAt(L, x + 1, y + 1, Width, Height);
             float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
             float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
             float edge = sqrtf(gx * gx + gy * gy);
             float dark = 1.0f - ocArtisticClamp01(edge * 2.5f) * 0.6f;
 
-            float noise = (ocPencilHash01(x, y, 21u) - 0.5f) * amp;
+            float noise = (ocArtisticHash01(x, y, 21u) - 0.5f) * amp;
 
             for (c = 0; c < channels; c++) {
                 float v = w[(size_t)x * channels + c];
-                float p = ocCutoutPosterize(v, levels) * 0.6f + v * 0.4f + noise;
+                float p = ocArtisticPosterize(v, levels) * 0.6f + v * 0.4f + noise;
                 float q = ocArtisticClamp01((p - 0.5f) * 1.3f + 0.45f);
                 q = powf(q, 1.15f) * dark;
                 dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(q) * 255.0f + 0.5f);
@@ -562,14 +562,14 @@ OC_STATUS ocularFrescoFilter(const unsigned char* Input, unsigned char* Output,
 
 /* ---- helpers for the paint daubs filter ----------------------------------- */
 /* Clamp, hash, smoothstep, value noise, plane sampling and the Kuwahara pass are shared with the other
- * artistic filters (ocArtisticClamp01, ocPencilHash01, ocPencilSmoothstep, ocPencilValueNoise,
- * ocFrescoPlaneAt, ocDryBrushKuwahara). */
+ * artistic filters (ocArtisticClamp01, ocArtisticHash01, ocArtisticSmoothstep, ocArtisticValueNoise,
+ * ocArtisticPlaneAt, ocArtisticKuwahara). */
 
 /* Three-octave value noise -> [0,1] */
-static inline float ocPaintDaubsFbm(float x, float y, unsigned int seed) {
-    return ocPencilValueNoise(x, y, seed) * 0.57f
-         + ocPencilValueNoise(x * 2.03f, y * 2.03f, seed ^ 0x51u) * 0.29f
-         + ocPencilValueNoise(x * 4.1f,  y * 4.1f,  seed ^ 0xa3u) * 0.14f;
+static inline float ocArtisticFbm(float x, float y, unsigned int seed) {
+    return ocArtisticValueNoise(x, y, seed) * 0.57f
+         + ocArtisticValueNoise(x * 2.03f, y * 2.03f, seed ^ 0x51u) * 0.29f
+         + ocArtisticValueNoise(x * 4.1f,  y * 4.1f,  seed ^ 0xa3u) * 0.14f;
 }
 
 /* Separable Gaussian of any sigma (radius ceil(3*sigma), max 8, edge-clamped).
@@ -667,7 +667,7 @@ OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Outp
     const int wide = (BrushType == OC_PAINTDAUBS_WIDE_SHARP || BrushType == OC_PAINTDAUBS_WIDE_BLURRY);
     float rf = (float)BrushSize / 2.0f * (wide ? 1.5f : 1.0f);
     int radius = (int)(rf < 1.0f ? 1.0f : rf);
-    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
 
     /* 2. Sharpen or blur (`means` is large enough to hold the blurred copy) */
     const float sharp = (float)Sharpness / 40.0f;
@@ -700,24 +700,24 @@ OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Outp
             float n = 0.0f, add = 0.0f, mul = 1.0f;
 
             if (BrushType == OC_PAINTDAUBS_LIGHT_ROUGH || BrushType == OC_PAINTDAUBS_DARK_ROUGH) {
-                n = ocPaintDaubsFbm((float)x / 2.0f, (float)y / 2.0f, 41u) - 0.5f;
+                n = ocArtisticFbm((float)x / 2.0f, (float)y / 2.0f, 41u) - 0.5f;
                 if (n < 0.0f) n = 0.0f;
                 if (BrushType == OC_PAINTDAUBS_LIGHT_ROUGH) add = n * 0.35f;
                 else                                        mul = 1.0f - n * 0.7f;
             } else if (BrushType == OC_PAINTDAUBS_SPARKLE) {
-                float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
-                float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
-                float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
-                float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
-                float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
-                float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
-                float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
-                float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+                float a00 = ocArtisticPlaneAt(L, x - 1, y - 1, Width, Height);
+                float a10 = ocArtisticPlaneAt(L, x,     y - 1, Width, Height);
+                float a20 = ocArtisticPlaneAt(L, x + 1, y - 1, Width, Height);
+                float a01 = ocArtisticPlaneAt(L, x - 1, y,     Width, Height);
+                float a21 = ocArtisticPlaneAt(L, x + 1, y,     Width, Height);
+                float a02 = ocArtisticPlaneAt(L, x - 1, y + 1, Width, Height);
+                float a12 = ocArtisticPlaneAt(L, x,     y + 1, Width, Height);
+                float a22 = ocArtisticPlaneAt(L, x + 1, y + 1, Width, Height);
                 float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
                 float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
                 float edge = sqrtf(gx * gx + gy * gy);
                 add = ocArtisticClamp01(edge * 4.0f)
-                    * ocPencilSmoothstep(0.75f, 0.95f, ocPencilHash01(x, y, 42u)) * 0.8f;
+                    * ocArtisticSmoothstep(0.75f, 0.95f, ocArtisticHash01(x, y, 42u)) * 0.8f;
             }
 
             for (c = 0; c < channels; c++) {
@@ -736,10 +736,10 @@ OC_STATUS ocularPaintDaubsFilter(const unsigned char* Input, unsigned char* Outp
 
 /* ---- helpers for the palette knife filter --------------------------------- */
 /* Clamp, posterize, the box blur pass and the Kuwahara pass are shared with the other artistic filters
- * (ocArtisticClamp01, ocCutoutPosterize, ocDryBrushBoxBlur, ocDryBrushKuwahara). */
+ * (ocArtisticClamp01, ocArtisticPosterize, ocArtisticBoxBlur, ocArtisticKuwahara). */
 
 /* Box radii whose three successive passes approximate a Gaussian of `sigma` (after Kutskir). */
-static inline void ocPaletteKnifeBoxRadii(float sigma, int radii[3]) {
+static inline void ocArtisticBoxRadii(float sigma, int radii[3]) {
     const int n = 3;
     float wIdeal = sqrtf(12.0f * sigma * sigma / (float)n + 1.0f);
     int wl = (int)floorf(wIdeal);
@@ -791,22 +791,22 @@ OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Ou
     /* 1. Kuwahara smoothing with radius strokeSize / 3 (minimum 1) */
     float rf = (float)StrokeSize / 3.0f;
     int radius = (int)(rf < 1.0f ? 1.0f : rf);
-    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
 
     /* 2. Half-strength posterize */
     const float levels = 2.0f + (float)StrokeDetail * 3.0f;
     size_t i;
     for (i = 0; i < values; i++) {
-        work[i] = ocCutoutPosterize(work[i], levels) * 0.5f + work[i] * 0.5f;
+        work[i] = ocArtisticPosterize(work[i], levels) * 0.5f + work[i] * 0.5f;
     }
 
     /* 3. Softness blur (sigma = softness * 0.5, skipped below 0.3) */
     float sigma = (float)Softness * 0.5f;
     if (sigma >= 0.3f) {
         int radii[3], k;
-        ocPaletteKnifeBoxRadii(sigma, radii);
+        ocArtisticBoxRadii(sigma, radii);
         for (k = 0; k < 3; k++) {
-            if (radii[k] > 0) ocDryBrushBoxBlur(work, Width, Height, channels, radii[k], scratch);
+            if (radii[k] > 0) ocArtisticBoxBlur(work, Width, Height, channels, radii[k], scratch);
         }
     }
 
@@ -831,8 +831,8 @@ OC_STATUS ocularPaletteKnifeFilter(const unsigned char* Input, unsigned char* Ou
 
 /* ---- helpers for the plastic wrap filter ---------------------------------- */
 /* Clamp, smoothstep, plane sampling, the box blur pass and the box-radius helper are shared with the
- * other artistic filters (ocArtisticClamp01, ocPencilSmoothstep, ocFrescoPlaneAt, ocDryBrushBoxBlur,
- * ocPaletteKnifeBoxRadii). */
+ * other artistic filters (ocArtisticClamp01, ocArtisticSmoothstep, ocArtisticPlaneAt, ocArtisticBoxBlur,
+ * ocArtisticBoxRadii). */
 
 OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Output,
                                   int Width, int Height, int Stride,
@@ -882,9 +882,9 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
 
     float sigma = 0.5f + (float)Smoothness * 0.5f + (15.0f - (float)Detail) * 0.2f;
     int radii[3], k;
-    ocPaletteKnifeBoxRadii(sigma, radii);
+    ocArtisticBoxRadii(sigma, radii);
     for (k = 0; k < 3; k++) {
-        if (radii[k] > 0) ocDryBrushBoxBlur(L, Width, Height, 1, radii[k], scratch);
+        if (radii[k] > 0) ocArtisticBoxBlur(L, Width, Height, 1, radii[k], scratch);
     }
 
     /* 2. Light and half-vector (view direction is straight on) */
@@ -903,14 +903,14 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
         unsigned char* dst = Output + (size_t)y * Stride;
         const unsigned char* src = Input + (size_t)y * Stride;
         for (x = 0; x < Width; x++) {
-            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
-            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
-            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
-            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
-            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
-            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
-            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
-            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float a00 = ocArtisticPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocArtisticPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocArtisticPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocArtisticPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocArtisticPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocArtisticPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocArtisticPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocArtisticPlaneAt(L, x + 1, y + 1, Width, Height);
             float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
             float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
 
@@ -923,8 +923,8 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
             float ndh = nx * hx + ny * hy + nz * hz;
             if (ndh < 0.0f) ndh = 0.0f;
             float tilt = 1.0f - nz;
-            float spec = powf(ndh, 30.0f) * ocPencilSmoothstep(0.01f, 0.12f, tilt)
-                       + ocPencilSmoothstep(0.25f, 0.6f, tilt) * 0.25f;
+            float spec = powf(ndh, 30.0f) * ocArtisticSmoothstep(0.01f, 0.12f, tilt)
+                       + ocArtisticSmoothstep(0.25f, 0.6f, tilt) * 0.25f;
 
             float add = spec * hs * 1.3f;
             for (c = 0; c < channels; c++) {
@@ -942,8 +942,8 @@ OC_STATUS ocularPlasticWrapFilter(const unsigned char* Input, unsigned char* Out
 
 /* ---- helpers for the poster edges filter ---------------------------------- */
 /* Clamp, posterize, smoothstep, plane sampling, the box blur pass and the box-radius helper are shared
- * with the other artistic filters (ocArtisticClamp01, ocCutoutPosterize, ocPencilSmoothstep,
- * ocFrescoPlaneAt, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii). */
+ * with the other artistic filters (ocArtisticClamp01, ocArtisticPosterize, ocArtisticSmoothstep,
+ * ocArtisticPlaneAt, ocArtisticBoxBlur, ocArtisticBoxRadii). */
 
 OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Output,
                                   int Width, int Height, int Stride,
@@ -993,9 +993,9 @@ OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Out
 
     float sigma = 0.6f + (float)EdgeThickness * 0.6f;
     int radii[3];
-    ocPaletteKnifeBoxRadii(sigma, radii);
+    ocArtisticBoxRadii(sigma, radii);
     for (k = 0; k < 3; k++) {
-        if (radii[k] > 0) ocDryBrushBoxBlur(L, Width, Height, 1, radii[k], scratch);
+        if (radii[k] > 0) ocArtisticBoxBlur(L, Width, Height, 1, radii[k], scratch);
     }
 
     /* 2. Edge ink and posterize */
@@ -1006,24 +1006,24 @@ OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Out
         const unsigned char* src = Input + (size_t)y * Stride;
         unsigned char* dst = Output + (size_t)y * Stride;
         for (x = 0; x < Width; x++) {
-            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
-            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
-            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
-            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
-            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
-            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
-            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
-            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float a00 = ocArtisticPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocArtisticPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocArtisticPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocArtisticPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocArtisticPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocArtisticPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocArtisticPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocArtisticPlaneAt(L, x + 1, y + 1, Width, Height);
             float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
             float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
             float edge = sqrtf(gx * gx + gy * gy);
 
-            float ink = ocPencilSmoothstep(0.015f, 0.06f, edge * (1.0f + inten * 3.0f))
+            float ink = ocArtisticSmoothstep(0.015f, 0.06f, edge * (1.0f + inten * 3.0f))
                       * (0.55f + inten * 0.45f);
 
             for (c = 0; c < channels; c++) {
                 float v = src[x * channels + c] * (1.0f / 255.0f);
-                float o = ocCutoutPosterize(v, levels) * (1.0f - ink);
+                float o = ocArtisticPosterize(v, levels) * (1.0f - ink);
                 dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(o) * 255.0f + 0.5f);
             }
         }
@@ -1036,8 +1036,8 @@ OC_STATUS ocularPosterEdgesFilter(const unsigned char* Input, unsigned char* Out
 
 /* ---- helpers for the rough pastels filter --------------------------------- */
 /* Clamp, hash, smoothstep, value noise, fbm, the box blur pass and the box-radius helper are shared with the
- * other artistic filters (ocArtisticClamp01, ocPencilHash01, ocPencilSmoothstep, ocPencilValueNoise,
- * ocPaintDaubsFbm, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii). */
+ * other artistic filters (ocArtisticClamp01, ocArtisticHash01, ocArtisticSmoothstep, ocArtisticValueNoise,
+ * ocArtisticFbm, ocArtisticBoxBlur, ocArtisticBoxRadii). */
 
 static inline float ocPastelRemEuclid(float a, float m) {
     float r = fmodf(a, m);
@@ -1051,12 +1051,12 @@ static inline float ocPastelWeave(float x, float y, float p, float noise) {
     float u = ocPastelRemEuclid(x, p) / p;
     float v = ocPastelRemEuclid(y, p) / p;
     float ridge = overH ? sinf(v * 3.14159265f) : sinf(u * 3.14159265f);
-    float n = ocPencilValueNoise(x / (p * 0.7f), y / (p * 2.0f), 97u);
+    float n = ocArtisticValueNoise(x / (p * 0.7f), y / (p * 2.0f), 97u);
     return ridge * (1.0f - noise) + n * noise;
 }
 
 /* Procedural texture height (0..1) at pixel coordinates; s scales it (1 = 100 %) */
-static inline float ocPastelTexture(int kind, float x, float y, float s) {
+static inline float ocArtisticSurfaceTexture(int kind, float x, float y, float s) {
     x /= s;
     y /= s;
     switch (kind) {
@@ -1066,15 +1066,15 @@ static inline float ocPastelTexture(int kind, float x, float y, float s) {
         float xo = x + (((int)row % 2 == 0) ? 0.0f : bw / 2.0f);
         float u = ocPastelRemEuclid(xo, bw), v = ocPastelRemEuclid(y, bh);
         float d = fminf(fminf(u, bw - u), fminf(v, bh - v));
-        return ocPencilSmoothstep(0.6f, 2.2f, d) * (0.85f + 0.15f * ocPencilValueNoise(x / 3.0f, y / 3.0f, 91u));
+        return ocArtisticSmoothstep(0.6f, 2.2f, d) * (0.85f + 0.15f * ocArtisticValueNoise(x / 3.0f, y / 3.0f, 91u));
     }
     case OC_PASTEL_TEXTURE_BURLAP:
         return ocPastelWeave(x, y, 7.0f, 0.35f);
     case OC_PASTEL_TEXTURE_CANVAS:
         return ocPastelWeave(x, y, 3.5f, 0.18f);
     case OC_PASTEL_TEXTURE_SANDSTONE:
-        return ocPaintDaubsFbm(x / 7.0f, y / 7.0f, 93u) * 0.7f
-             + ocPencilHash01((int)x, (int)y, 94u) * 0.3f;
+        return ocArtisticFbm(x / 7.0f, y / 7.0f, 93u) * 0.7f
+             + ocArtisticHash01((int)x, (int)y, 94u) * 0.3f;
     default:
         return 0.5f;
     }
@@ -1152,9 +1152,9 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
         float det0  = (float)(StrokeDetail - 1) / 19.0f;
         float sigma = 0.6f + (1.0f - det0) * 1.2f;
         int radii[3], pass;
-        ocPaletteKnifeBoxRadii(sigma, radii);
+        ocArtisticBoxRadii(sigma, radii);
         for (pass = 0; pass < 3; pass++) {
-            if (radii[pass] > 0) ocDryBrushBoxBlur(soft, Width, Height, channels, radii[pass], scratch);
+            if (radii[pass] > 0) ocArtisticBoxBlur(soft, Width, Height, channels, radii[pass], scratch);
         }
     }
 
@@ -1189,7 +1189,7 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
                 float u = fx * ux + fy * uy;
                 float v = -fx * uy + fy * ux;
                 int lane = (int)floorf(v / wid);
-                float off = ocPencilHash01(lane, 0, 51u) * len;
+                float off = ocArtisticHash01(lane, 0, 51u) * len;
                 float t = ocPastelRemEuclid((u + off) / len, 1.0f);
                 float du = (0.5f - t) * len;
                 ocPastelSample(soft, Width, Height, channels, fx + du * ux, fy + du * uy, cs);
@@ -1197,7 +1197,7 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
                 float xf = (float)x, yf = (float)y;
                 float gu = xf * ux + yf * uy;
                 float gv = -xf * uy + yf * ux;
-                float n = (ocPencilValueNoise(gu / grainLen, gv / 0.8f, 52u) - 0.5f) * 0.12f
+                float n = (ocArtisticValueNoise(gu / grainLen, gv / 0.8f, 52u) - 0.5f) * 0.12f
                         + (0.5f - fabsf(t - 0.5f)) * 0.06f;
 
                 for (c = 0; c < channels; c++) {
@@ -1212,8 +1212,8 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
                 float weight = 0.15f + 0.85f * (1.0f - ocArtisticClamp01(l));
 
                 float fx = (float)x, fy = (float)y;
-                float gx = (ocPastelTexture(Texture, fx + 1.0f, fy, s) - ocPastelTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
-                float gy = (ocPastelTexture(Texture, fx, fy + 1.0f, s) - ocPastelTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
+                float gx = (ocArtisticSurfaceTexture(Texture, fx + 1.0f, fy, s) - ocArtisticSurfaceTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
+                float gy = (ocArtisticSurfaceTexture(Texture, fx, fy + 1.0f, s) - ocArtisticSurfaceTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
 
                 /* Lambert shading of the height field, relative to a flat surface */
                 float nx = -reliefGain * gx, ny = -reliefGain * gy;
@@ -1236,7 +1236,7 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
 
 /* ---- helpers for the watercolor filter ------------------------------------ */
 /* Clamp, plane sampling, fbm noise and the Kuwahara pass are shared with the other artistic filters
- * (ocArtisticClamp01, ocFrescoPlaneAt, ocPaintDaubsFbm, ocDryBrushKuwahara). */
+ * (ocArtisticClamp01, ocArtisticPlaneAt, ocArtisticFbm, ocArtisticKuwahara). */
 
 OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Output,
                                  int Width, int Height, int Stride,
@@ -1275,7 +1275,7 @@ OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Outp
 
     /* 1. Kuwahara smoothing; lower detail = larger radius */
     int radius = 1 + (int)((float)(15 - BrushDetail) / 2.5f);
-    ocDryBrushKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
+    ocArtisticKuwahara(Input, Width, Height, Stride, channels, radius, means, work, scratch);
 
     /* 2. Luma plane of the smoothed image (reuses `means`) */
     float* L = means;
@@ -1296,19 +1296,19 @@ OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Outp
         const float* w = work + (size_t)y * Width * channels;
         unsigned char* dst = Output + (size_t)y * Stride;
         for (x = 0; x < Width; x++) {
-            float a00 = ocFrescoPlaneAt(L, x - 1, y - 1, Width, Height);
-            float a10 = ocFrescoPlaneAt(L, x,     y - 1, Width, Height);
-            float a20 = ocFrescoPlaneAt(L, x + 1, y - 1, Width, Height);
-            float a01 = ocFrescoPlaneAt(L, x - 1, y,     Width, Height);
-            float a21 = ocFrescoPlaneAt(L, x + 1, y,     Width, Height);
-            float a02 = ocFrescoPlaneAt(L, x - 1, y + 1, Width, Height);
-            float a12 = ocFrescoPlaneAt(L, x,     y + 1, Width, Height);
-            float a22 = ocFrescoPlaneAt(L, x + 1, y + 1, Width, Height);
+            float a00 = ocArtisticPlaneAt(L, x - 1, y - 1, Width, Height);
+            float a10 = ocArtisticPlaneAt(L, x,     y - 1, Width, Height);
+            float a20 = ocArtisticPlaneAt(L, x + 1, y - 1, Width, Height);
+            float a01 = ocArtisticPlaneAt(L, x - 1, y,     Width, Height);
+            float a21 = ocArtisticPlaneAt(L, x + 1, y,     Width, Height);
+            float a02 = ocArtisticPlaneAt(L, x - 1, y + 1, Width, Height);
+            float a12 = ocArtisticPlaneAt(L, x,     y + 1, Width, Height);
+            float a22 = ocArtisticPlaneAt(L, x + 1, y + 1, Width, Height);
             float gx = ((a20 + 2.0f * a21 + a22) - (a00 + 2.0f * a01 + a02)) * 0.125f;
             float gy = ((a02 + 2.0f * a12 + a22) - (a00 + 2.0f * a10 + a20)) * 0.125f;
             float edge = sqrtf(gx * gx + gy * gy);
 
-            float n = (ocPaintDaubsFbm((float)x / 3.0f, (float)y / 3.0f, 71u) - 0.5f) * amp;
+            float n = (ocArtisticFbm((float)x / 3.0f, (float)y / 3.0f, 71u) - 0.5f) * amp;
             float k = 1.0f - ocArtisticClamp01(edge * edgeK) * 0.6f;
 
             const float* p = w + (size_t)x * channels;
@@ -1330,7 +1330,7 @@ OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Outp
 
 /* ---- helpers for the underpainting filter --------------------------------- */
 /* Clamp, the box blur pass, the box-radius helper and the pastel surface textures are shared with the other
- * artistic filters (ocArtisticClamp01, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii, ocPastelTexture). */
+ * artistic filters (ocArtisticClamp01, ocArtisticBoxBlur, ocArtisticBoxRadii, ocArtisticSurfaceTexture). */
 
 /* Unit vector toward the light in image coordinates (y down); matches OcPastelLight order.
  * Literals are used because a static initializer must be a constant expression in C. */
@@ -1389,9 +1389,9 @@ OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* O
     }
     float sigma = 0.5f + (float)BrushSize * 0.4f;
     int radii[3];
-    ocPaletteKnifeBoxRadii(sigma, radii);
+    ocArtisticBoxRadii(sigma, radii);
     for (k = 0; k < 3; k++) {
-        if (radii[k] > 0) ocDryBrushBoxBlur(work, Width, Height, channels, radii[k], scratch);
+        if (radii[k] > 0) ocArtisticBoxBlur(work, Width, Height, channels, radii[k], scratch);
     }
 
     /* 2. Texture constants */
@@ -1423,8 +1423,8 @@ OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* O
             /* Texture relief shading (uniform weight) */
             if (relief > 0.0f) {
                 float fx = (float)x, fy = (float)y;
-                float gx = (ocPastelTexture(Texture, fx + 1.0f, fy, s) - ocPastelTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
-                float gy = (ocPastelTexture(Texture, fx, fy + 1.0f, s) - ocPastelTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
+                float gx = (ocArtisticSurfaceTexture(Texture, fx + 1.0f, fy, s) - ocArtisticSurfaceTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
+                float gy = (ocArtisticSurfaceTexture(Texture, fx, fy + 1.0f, s) - ocArtisticSurfaceTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
 
                 float nx = -kk * gx, ny = -kk * gy;
                 float sh = (nx * lx + ny * ly + 1.0f) / sqrtf(nx * nx + ny * ny + 1.0f);
