@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added watercolor filter
+ * Last update: added underpainting filter
  *
  * @brief Artistic filter definitions
  */
@@ -275,6 +275,33 @@ OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsigned char* Ou
 OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Output,
                                  int Width, int Height, int Stride,
                                  int BrushDetail, int ShadowIntensity, int Texture);
+
+/**
+ * @brief Underpainting filter
+ *
+ * Softens the image like a thin underpainting, slightly enriches the colors,
+ * then lays a textured surface (brick, burlap, canvas or sandstone) over it.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input           Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output          Output image buffer (must not overlap Input).
+ * @param Width           Image width in pixels.
+ * @param Height          Image height in pixels.
+ * @param Stride          Row stride in bytes (typically Width * channels).
+ * @param BrushSize       Brush size. Range [0 - 40]. Suggested default: 6.
+ * @param TextureCoverage Texture coverage. Range [0 - 40]. Suggested default: 16.
+ * @param Texture         One of OcPastelTexture. Suggested default: OC_PASTEL_TEXTURE_CANVAS.
+ * @param Scaling         Texture scaling in percent. Range [50 - 200]. Suggested default: 100.
+ * @param Relief          Texture relief. Range [0 - 50], 0 disables the texture. Suggested default: 4.
+ * @param Light           One of OcPastelLight. Suggested default: OC_PASTEL_LIGHT_TOP.
+ * @param Invert          Nonzero inverts the texture relief. Suggested default: 0.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* Output,
+                                    int Width, int Height, int Stride,
+                                    int BrushSize, int TextureCoverage,
+                                    int Texture, int Scaling, int Relief,
+                                    int Light, int Invert);
 
 #ifdef __cplusplus
 }

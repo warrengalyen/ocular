@@ -182,6 +182,14 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
     } else if (strcmp(config.function, "ocularWatercolorFilter") == 0) {
         ocularWatercolorFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                                (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularUnderpaintingFilter") == 0) {
+        // invert may be written as a boolean (true/false) or as a number (0/1)
+        int invert = (config.params[6].type == PARAM_BOOL) ? (int)config.params[6].value.bool_val
+                                                           : (config.params[6].value.float_val != 0.0f);
+        ocularUnderpaintingFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                                  (int)config.params[1].value.float_val, (int)config.params[2].value.float_val,
+                                  (int)config.params[3].value.float_val, (int)config.params[4].value.float_val,
+                                  (int)config.params[5].value.float_val, invert);
     } else {
         return -1;
     }

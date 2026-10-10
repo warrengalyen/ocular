@@ -408,6 +408,10 @@ DLIB_EXPORT OC_STATUS ocularRoughPastelsFilter(const unsigned char* Input, unsig
 DLIB_EXPORT OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                              int BrushDetail, int ShadowIntensity, int Texture);
 
+DLIB_EXPORT OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                                int BrushSize, int TextureCoverage, int Texture, int Scaling, int Relief,
+                                                int Light, int Invert);
+
 //--------------------------Artistic----------------------------------
 
 //--------------------------Render------------------------------------

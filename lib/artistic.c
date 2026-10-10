@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-9-2026
  * Last Updated: 10-10-2026
- * Last update: added watercolor filter
+ * Last update: added underpainting filter
  *
  * @brief Artistic filter implementations
  */
@@ -1323,6 +1323,121 @@ OC_STATUS ocularWatercolorFilter(const unsigned char* Input, unsigned char* Outp
     }
 
     free(means);
+    free(work);
+    free(scratch);
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the underpainting filter --------------------------------- */
+/* Clamp, the box blur pass, the box-radius helper and the pastel surface textures are shared with the other
+ * artistic filters (ocArtisticClamp01, ocDryBrushBoxBlur, ocPaletteKnifeBoxRadii, ocPastelTexture). */
+
+/* Unit vector toward the light in image coordinates (y down); matches OcPastelLight order.
+ * Literals are used because a static initializer must be a constant expression in C. */
+static inline void ocUnderpaintingLightDir(int light, float* lx, float* ly) {
+    static const float xs[8] = { 0.0f,  0.70710678f, 1.0f,  0.70710678f, 0.0f, -0.70710678f, -1.0f, -0.70710678f };
+    static const float ys[8] = { -1.0f, -0.70710678f, 0.0f,  0.70710678f, 1.0f,  0.70710678f,  0.0f, -0.70710678f };
+    *lx = xs[light];
+    *ly = ys[light];
+}
+
+OC_STATUS ocularUnderpaintingFilter(const unsigned char* Input, unsigned char* Output,
+                                    int Width, int Height, int Stride,
+                                    int BrushSize, int TextureCoverage,
+                                    int Texture, int Scaling, int Relief,
+                                    int Light, int Invert) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (BrushSize < 0 || BrushSize > 40 ||
+        TextureCoverage < 0 || TextureCoverage > 40 ||
+        Texture < OC_PASTEL_TEXTURE_BRICK || Texture > OC_PASTEL_TEXTURE_SANDSTONE ||
+        Scaling < 50 || Scaling > 200 ||
+        Relief < 0 || Relief > 50 ||
+        Light < OC_PASTEL_LIGHT_TOP || Light > OC_PASTEL_LIGHT_TOP_LEFT) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int maxDim = Width > Height ? Width : Height;
+    const size_t values = (size_t)Width * (size_t)Height * (size_t)channels;
+
+    float* work    = (float*)malloc(values * sizeof(float));
+    float* scratch = (float*)malloc((size_t)maxDim * sizeof(float));
+    if (work == NULL || scratch == NULL) {
+        free(work);
+        free(scratch);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c, k;
+
+    /* 1. Blurred copy (three box passes approximating a Gaussian) */
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        float* dst = work + (size_t)y * Width * channels;
+        for (x = 0; x < Width * channels; x++) dst[x] = src[x] * (1.0f / 255.0f);
+    }
+    float sigma = 0.5f + (float)BrushSize * 0.4f;
+    int radii[3];
+    ocPaletteKnifeBoxRadii(sigma, radii);
+    for (k = 0; k < 3; k++) {
+        if (radii[k] > 0) ocDryBrushBoxBlur(work, Width, Height, channels, radii[k], scratch);
+    }
+
+    /* 2. Texture constants */
+    const float cov    = (float)TextureCoverage / 40.0f;
+    const float relief = (float)Relief * (0.5f + cov * 1.5f);
+    const float s      = (float)Scaling / 100.0f;
+    const float kk     = relief / 50.0f * 3.0f;
+    const float sg     = Invert ? -1.0f : 1.0f;
+    float lx, ly;
+    ocUnderpaintingLightDir(Light, &lx, &ly);
+
+    float p[3];
+    for (y = 0; y < Height; y++) {
+        const unsigned char* src = Input + (size_t)y * Stride;
+        const float* w = work + (size_t)y * Width * channels;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+
+            /* mix(original, blurred, 0.8), then saturation 1.15 */
+            float l = 0.0f;
+            for (c = 0; c < channels; c++) {
+                float o = src[x * channels + c] * (1.0f / 255.0f);
+                float b = w[(size_t)x * channels + c];
+                p[c] = o + (b - o) * 0.8f;
+            }
+            l = (channels == 1) ? p[0] : (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]);
+            for (c = 0; c < channels; c++) p[c] = l + (p[c] - l) * 1.15f;
+
+            /* Texture relief shading (uniform weight) */
+            if (relief > 0.0f) {
+                float fx = (float)x, fy = (float)y;
+                float gx = (ocPastelTexture(Texture, fx + 1.0f, fy, s) - ocPastelTexture(Texture, fx - 1.0f, fy, s)) * 0.5f * sg;
+                float gy = (ocPastelTexture(Texture, fx, fy + 1.0f, s) - ocPastelTexture(Texture, fx, fy - 1.0f, s)) * 0.5f * sg;
+
+                float nx = -kk * gx, ny = -kk * gy;
+                float sh = (nx * lx + ny * ly + 1.0f) / sqrtf(nx * nx + ny * ny + 1.0f);
+                sh = sh < 0.0f ? 0.0f : (sh > 2.0f ? 2.0f : sh);
+                for (c = 0; c < channels; c++) p[c] *= sh;      /* 1 + (shade - 1) * 1.0 */
+            }
+
+            for (c = 0; c < channels; c++) {
+                dst[x * channels + c] = (unsigned char)(ocArtisticClamp01(p[c]) * 255.0f + 0.5f);
+            }
+        }
+    }
+
     free(work);
     free(scratch);
     return OC_STATUS_OK;
