@@ -193,6 +193,12 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
     } else if (strcmp(config.function, "ocularSpongeFilter") == 0) {
         ocularSpongeFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                            (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularWindFilter") == 0) {
+        // from_right may be written as a boolean (true/false) or as a number (0/1)
+        int fromRight = (config.params[1].type == PARAM_BOOL) ? (int)config.params[1].value.bool_val
+                                                              : (config.params[1].value.float_val != 0.0f);
+        ocularWindFilter(input, output, width, height, stride, (int)config.params[0].value.float_val, fromRight,
+                         (unsigned int)config.params[2].value.float_val);
     } else {
         return -1;
     }

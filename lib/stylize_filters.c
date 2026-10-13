@@ -2,9 +2,8 @@
  * @file: stylize_filters.c
  * @author Warren Galyen
  * Created: 10-4-2025
- * Last Updated: 10-4-2025
- * Last update: migrated oil paint, frosted glass, film grain,
- *              relief filters from ocular.c
+ * Last Updated: 10-13-2026
+ * Last update: added wind filter
  *
  * @brief Stylize filter implementations
  */
@@ -797,6 +796,112 @@ OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned char* Output, 
                 Output[pPos + 0] = (unsigned char)(accumR * invSamples + 0.5f);
                 Output[pPos + 1] = (unsigned char)(accumG * invSamples + 0.5f);
                 Output[pPos + 2] = (unsigned char)(accumB * invSamples + 0.5f);
+            }
+        }
+    }
+
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the wind filter ----------------------------------------- */
+
+/* Salted deterministic hash -> [0,1) */
+static inline float ocWindHash01(int x, int y, unsigned int stream, unsigned int seed) {
+    unsigned int h = (unsigned int)x * 374761393u + (unsigned int)y * 668265263u
+                   + stream * 2246822519u + seed * 3266489917u;
+    h = (h ^ (h >> 13)) * 1274126177u;
+    h ^= h >> 16;
+    return (float)(h & 0xFFFFFFu) * (1.0f / 16777216.0f);
+}
+
+static inline int ocWindClampX(int x, int Width) {
+    return x < 0 ? 0 : (x >= Width ? Width - 1 : x);
+}
+
+/* Luma in [0,1] of pixel x in a row, with clamped borders. Assumes R,G,B order. */
+static inline float ocWindLuma(const unsigned char* row, int x, int Width, int channels) {
+    const unsigned char* p = row + (size_t)ocWindClampX(x, Width) * channels;
+    if (channels == 1) return p[0] * (1.0f / 255.0f);
+    return (0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2]) * (1.0f / 255.0f);
+}
+
+OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output,
+                           int Width, int Height, int Stride,
+                           int Method, int FromRight, unsigned int Seed) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (Method < OC_WIND_METHOD_WIND || Method > OC_WIND_METHOD_STAGGER ||
+        FromRight < 0 || FromRight > 1) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    /* Longest streak or stagger shift in pixels */
+    const int lmax = (Method == OC_WIND_METHOD_WIND)  ? 16 :
+                     (Method == OC_WIND_METHOD_BLAST) ? 40 : 12;
+    const int d = FromRight ? -1 : 1;                  /* downwind step: left wind -> +x */
+    const float strength = (Method == OC_WIND_METHOD_BLAST) ? 8.0f : 4.0f;
+
+    int x, y, c, k;
+    for (y = 0; y < Height; y++) {
+        const unsigned char* row = Input + (size_t)y * Stride;
+        unsigned char* dst = Output + (size_t)y * Stride;
+
+        for (x = 0; x < Width; x++) {
+            const unsigned char* px = row + (size_t)x * channels;
+            unsigned char* out = dst + (size_t)x * channels;
+
+            if (Method == OC_WIND_METHOD_STAGGER) {
+                /* Row split into segments of 8..40 px, each shifted downwind by 0..lmax px */
+                int segLen = 8 + (int)(ocWindHash01(0, y, 41u, Seed) * 32.0f);
+                int phase  = (int)(ocWindHash01(1, y, 42u, Seed) * (float)segLen);
+                int a = x * d + phase;
+                int seg = a / segLen;
+                if (a % segLen < 0) seg--;                                  /* floor division */
+                float r = ocWindHash01(seg, y, 43u, Seed);
+                int shift = (int)(r * r * (float)lmax);
+                const unsigned char* sp = row + (size_t)ocWindClampX(x - d * shift, Width) * channels;
+                for (c = 0; c < channels; c++) out[c] = sp[c];
+                continue;
+            }
+
+            /* Wind / Blast: find the strongest streak reaching this pixel from upwind */
+            float bestW = 0.0f;
+            int bestS = x;
+            for (k = 1; k <= lmax; k++) {
+                int s = x - d * k;
+                float r = ocWindHash01(s, y, 44u, Seed);
+                float len = r * r * (float)lmax;
+                if (len < 1.0f) len = 1.0f;
+                if ((float)k > len) continue;
+
+                float edge = fabsf(ocWindLuma(row, s, Width, channels) - ocWindLuma(row, s - d, Width, channels)) * strength;
+                if (edge > 1.0f) edge = 1.0f;
+                float wgt = edge * (1.0f - (float)k / (len + 1.0f));
+                if (wgt > bestW) {
+                    bestW = wgt;
+                    bestS = s;
+                }
+            }
+
+            if (bestW > 0.0f) {
+                const unsigned char* sp = row + (size_t)ocWindClampX(bestS, Width) * channels;
+                for (c = 0; c < channels; c++) {
+                    float v = (float)px[c] + ((float)sp[c] - (float)px[c]) * bestW;
+                    out[c] = (unsigned char)(v < 0.0f ? 0.0f : (v > 255.0f ? 255.0f : v + 0.5f));
+                }
+            } else {
+                for (c = 0; c < channels; c++) out[c] = px[c];
             }
         }
     }

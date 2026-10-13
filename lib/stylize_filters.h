@@ -2,8 +2,8 @@
  * @file: stylize_filters.h
  * @author Warren Galyen
  * Created: 10-4-2025
- * Last Updated: 2-12-2026
- * Last update: added marble filter
+ * Last Updated: 10-13-2026
+ * Last update: added wind filter
  *
  * @brief Stylize filter definitions
 
@@ -169,5 +169,35 @@ OC_STATUS ocularGlassTilesFilter(unsigned char* Input, unsigned char* Output, in
  */
 OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                              float scale, float turbulence, int quality, OcEdgeMode edgeMode, unsigned int seed);
+
+/**
+ * @brief Methods for the wind filter
+ */
+typedef enum {
+    OC_WIND_METHOD_WIND = 0,  /**< Short streaks trailing from edges */
+    OC_WIND_METHOD_BLAST,     /**< Longer, stronger streaks */
+    OC_WIND_METHOD_STAGGER    /**< Random row segments shifted along the wind */
+} OcWindMethod;
+
+/**
+ * @brief Wind filter
+ *
+ * Streaks trail horizontally from edges as if blown by wind (Wind, Blast), or
+ * random row segments are shifted along the wind (Stagger).
+ *
+ * @ingroup group_stylize_filters
+ * @param Input     Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output    Output image buffer (must not overlap Input).
+ * @param Width     Image width in pixels.
+ * @param Height    Image height in pixels.
+ * @param Stride    Row stride in bytes (typically Width * channels).
+ * @param Method    One of OcWindMethod. Suggested default: OC_WIND_METHOD_WIND.
+ * @param FromRight 0 = wind blows from the left (streaks go right), 1 = from the right.
+ * @param Seed      Random seed; the same seed gives the same streaks.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output,
+                           int Width, int Height, int Stride,
+                           int Method, int FromRight, unsigned int Seed);
 
 #endif /* STYLIZE_FILTERS_H */

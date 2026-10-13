@@ -76,6 +76,12 @@ typedef enum {
 } OcPastelLight;
 
 typedef enum {
+    OC_WIND_METHOD_WIND = 0,  // short streaks trailing from edges
+    OC_WIND_METHOD_BLAST,     // longer, stronger streaks
+    OC_WIND_METHOD_STAGGER    // random row segments shifted along the wind
+} OcWindMethod;
+
+typedef enum {
     CannyGaus3x3,
     CannyGaus5x5
 } CannyNoiseFilter;
@@ -370,6 +376,9 @@ DLIB_EXPORT OC_STATUS ocularGlassTilesFilter(unsigned char* Input, unsigned char
 
 DLIB_EXPORT OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                         float scale, float turbulence, int quality, OcEdgeMode edgeMode, unsigned int seed);
+
+DLIB_EXPORT OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                       int Method, int FromRight, unsigned int Seed);
 
 //--------------------------Distort-----------------------------------
 

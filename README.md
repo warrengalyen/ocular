@@ -145,8 +145,10 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Poster Edges
 - Relief (Emboss)
 - Rough Pastels
+- Sponge
 - Underpainting
 - Watercolor
+- Wind
 
 #### Pixelate
 
