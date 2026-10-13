@@ -153,3 +153,4 @@ EXPORTS
     ocularUnderpaintingFilter @151
     ocularSpongeFilter @152
     ocularWindFilter @153
+    ocularExtrudeFilter @154

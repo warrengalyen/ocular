@@ -172,7 +172,6 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
         ocularPosterEdgesFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                                 (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else if (strcmp(config.function, "ocularRoughPastelsFilter") == 0) {
-        // invert may be written as a boolean (true/false) or as a number (0/1)
         int invert = (config.params[6].type == PARAM_BOOL) ? (int)config.params[6].value.bool_val
                                                            : (config.params[6].value.float_val != 0.0f);
         ocularRoughPastelsFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
@@ -183,7 +182,6 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
         ocularWatercolorFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                                (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else if (strcmp(config.function, "ocularUnderpaintingFilter") == 0) {
-        // invert may be written as a boolean (true/false) or as a number (0/1)
         int invert = (config.params[6].type == PARAM_BOOL) ? (int)config.params[6].value.bool_val
                                                            : (config.params[6].value.float_val != 0.0f);
         ocularUnderpaintingFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
@@ -194,11 +192,20 @@ int applyFilterFromConfig(const char* configFile, unsigned char *input, unsigned
         ocularSpongeFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
                            (int)config.params[1].value.float_val, (int)config.params[2].value.float_val);
     } else if (strcmp(config.function, "ocularWindFilter") == 0) {
-        // from_right may be written as a boolean (true/false) or as a number (0/1)
         int fromRight = (config.params[1].type == PARAM_BOOL) ? (int)config.params[1].value.bool_val
                                                               : (config.params[1].value.float_val != 0.0f);
         ocularWindFilter(input, output, width, height, stride, (int)config.params[0].value.float_val, fromRight,
                          (unsigned int)config.params[2].value.float_val);
+    } else if (strcmp(config.function, "ocularExtrudeFilter") == 0) {
+        int flags[2];
+        for (int i = 0; i < 2; i++) {
+            const Param* fp = &config.params[4 + i];
+            flags[i] = (fp->type == PARAM_BOOL) ? (int)fp->value.bool_val : (fp->value.float_val != 0.0f);
+        }
+        ocularExtrudeFilter(input, output, width, height, stride, (int)config.params[0].value.float_val,
+                            (int)config.params[1].value.float_val, (int)config.params[2].value.float_val,
+                            (int)config.params[3].value.float_val, flags[0], flags[1],
+                            (unsigned int)config.params[6].value.float_val);
     } else {
         return -1;
     }

@@ -82,6 +82,16 @@ typedef enum {
 } OcWindMethod;
 
 typedef enum {
+    OC_EXTRUDE_BLOCKS = 0,  // square blocks with side faces
+    OC_EXTRUDE_PYRAMIDS     // four-sided pyramids
+} OcExtrudeType;
+
+typedef enum {
+    OC_EXTRUDE_DEPTH_RANDOM = 0,  // random height per cell
+    OC_EXTRUDE_DEPTH_LEVEL_BASED  // height follows the brightness of each cell
+} OcExtrudeDepthMode;
+
+typedef enum {
     CannyGaus3x3,
     CannyGaus5x5
 } CannyNoiseFilter;
@@ -379,6 +389,10 @@ DLIB_EXPORT OC_STATUS ocularMarbleFilter(const unsigned char* Input, unsigned ch
 
 DLIB_EXPORT OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
                                        int Method, int FromRight, unsigned int Seed);
+
+DLIB_EXPORT OC_STATUS ocularExtrudeFilter(const unsigned char* Input, unsigned char* Output, int Width, int Height, int Stride,
+                                          int Type, int Size, int Depth, int DepthMode, int SolidFront, int MaskIncomplete,
+                                          unsigned int Seed);
 
 //--------------------------Distort-----------------------------------
 

@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-4-2025
  * Last Updated: 10-13-2026
- * Last update: added wind filter
+ * Last update: added extrude filter
  *
  * @brief Stylize filter definitions
 
@@ -199,5 +199,48 @@ typedef enum {
 OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output,
                            int Width, int Height, int Stride,
                            int Method, int FromRight, unsigned int Seed);
+
+/**
+ * @brief Shapes for the extrude filter
+ */
+typedef enum {
+    OC_EXTRUDE_BLOCKS = 0,  /**< Square blocks with side faces */
+    OC_EXTRUDE_PYRAMIDS     /**< Four-sided pyramids */
+} OcExtrudeType;
+
+/**
+ * @brief How the extrusion depth of each cell is chosen
+ */
+typedef enum {
+    OC_EXTRUDE_DEPTH_RANDOM = 0,  /**< Random height per cell (see Seed) */
+    OC_EXTRUDE_DEPTH_LEVEL_BASED  /**< Height follows the brightness of each cell */
+} OcExtrudeDepthMode;
+
+/**
+ * @brief Extrude filter
+ *
+ * Turns the image into a field of 3D blocks or pyramids whose heights are
+ * random or follow the brightness of each cell.
+ *
+ * @ingroup group_stylize_filters
+ * @param Input          Input image buffer (read-only). Supports 1 or 3 channels (R,G,B order).
+ * @param Output         Output image buffer (must not overlap Input).
+ * @param Width          Image width in pixels.
+ * @param Height         Image height in pixels.
+ * @param Stride         Row stride in bytes (typically Width * channels).
+ * @param Type           One of OcExtrudeType. Suggested default: OC_EXTRUDE_BLOCKS.
+ * @param Size           Cell size in pixels. Range [2 - 255]. Suggested default: 30.
+ * @param Depth          Extrusion depth. Range [1 - 255]. Suggested default: 30.
+ * @param DepthMode      One of OcExtrudeDepthMode. Suggested default: OC_EXTRUDE_DEPTH_RANDOM.
+ * @param SolidFront     Nonzero: block front faces are flat color (blocks only).
+ * @param MaskIncomplete Nonzero: leave cells cut off by the image edge unmodified.
+ * @param Seed           Seed for random heights; the same seed gives the same heights.
+ * @return OC_STATUS_OK on success, otherwise an error code (see core.h).
+ */
+OC_STATUS ocularExtrudeFilter(const unsigned char* Input, unsigned char* Output,
+                              int Width, int Height, int Stride,
+                              int Type, int Size, int Depth,
+                              int DepthMode, int SolidFront, int MaskIncomplete,
+                              unsigned int Seed);
 
 #endif /* STYLIZE_FILTERS_H */

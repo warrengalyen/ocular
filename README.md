@@ -131,6 +131,7 @@ at [Library Documentation](https://www.mechanikadesign.com/docs/ocular/1.0).
 - Colored Pencil
 - Cutout
 - Dry Brush
+- Extrude
 - Fresco
 - Frosted Glass
 - Film Grain

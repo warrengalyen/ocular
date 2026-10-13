@@ -3,7 +3,7 @@
  * @author Warren Galyen
  * Created: 10-4-2025
  * Last Updated: 10-13-2026
- * Last update: added wind filter
+ * Last update: added extrude filter
  *
  * @brief Stylize filter implementations
  */
@@ -906,5 +906,206 @@ OC_STATUS ocularWindFilter(const unsigned char* Input, unsigned char* Output,
         }
     }
 
+    return OC_STATUS_OK;
+}
+
+/* ---- helpers for the extrude filter -------------------------------------- */
+/* ocWindHash01 (wind filter helpers above) is reused for the random cell heights. */
+
+static inline float ocExtrudeClamp01(float v) {
+    return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+}
+
+/* Parameter interval t in [0,1] for which |p - (m + o*t)| <= half; returns 0 if none. */
+static inline int ocExtrudeInterval(float p, float m, float o, float half, float* lo, float* hi) {
+    if (fabsf(o) < 1e-6f) {
+        if (fabsf(p - m) <= half) { *lo = 0.0f; *hi = 1.0f; return 1; }
+        return 0;
+    }
+    float a = (p - m - half) / o, b = (p - m + half) / o;
+    float l = fmaxf(fminf(a, b), 0.0f);
+    float h = fminf(fmaxf(a, b), 1.0f);
+    if (l <= h) { *lo = l; *hi = h; return 1; }
+    return 0;
+}
+
+static inline void ocExtrudeStore(unsigned char* out, const float* col, float k, int channels) {
+    for (int c = 0; c < channels; c++) {
+        out[c] = (unsigned char)(ocExtrudeClamp01(col[c] * k) * 255.0f + 0.5f);
+    }
+}
+
+OC_STATUS ocularExtrudeFilter(const unsigned char* Input, unsigned char* Output,
+                              int Width, int Height, int Stride,
+                              int Type, int Size, int Depth,
+                              int DepthMode, int SolidFront, int MaskIncomplete,
+                              unsigned int Seed) {
+
+    if (Input == NULL || Output == NULL) {
+        return OC_STATUS_ERR_NULLREFERENCE;
+    }
+    if (Width <= 0 || Height <= 0 || Stride <= 0) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    int channels = Stride / Width;
+    if (channels != 1 && channels != 3) {
+        return OC_STATUS_ERR_NOTSUPPORTED;
+    }
+
+    if (Type < OC_EXTRUDE_BLOCKS || Type > OC_EXTRUDE_PYRAMIDS ||
+        DepthMode < OC_EXTRUDE_DEPTH_RANDOM || DepthMode > OC_EXTRUDE_DEPTH_LEVEL_BASED ||
+        Size < 2 || Size > 255 ||
+        Depth < 1 || Depth > 255) {
+        return OC_STATUS_ERR_INVALIDPARAMETER;
+    }
+
+    const int cs = Size;
+    const int gw = (Width + cs - 1) / cs;
+    const int gh = (Height + cs - 1) / cs;
+    const size_t cells = (size_t)gw * (size_t)gh;
+
+    float* colors  = (float*)malloc(cells * (size_t)channels * sizeof(float));
+    float* heights = (float*)malloc(cells * sizeof(float));
+    if (colors == NULL || heights == NULL) {
+        free(colors);
+        free(heights);
+        return OC_STATUS_ERR_OUTOFMEMORY;
+    }
+
+    int x, y, c, gx, gy;
+
+    /* 1. Per-cell average color (sparse sampling) and height */
+    const int step = (cs / 8) > 1 ? (cs / 8) : 1;
+    for (gy = 0; gy < gh; gy++) {
+        for (gx = 0; gx < gw; gx++) {
+            int x0 = gx * cs, x1 = x0 + cs < Width ? x0 + cs : Width;
+            int y0 = gy * cs, y1 = y0 + cs < Height ? y0 + cs : Height;
+            float acc[3] = { 0.0f, 0.0f, 0.0f };
+            float cnt = 0.0f;
+            for (y = y0; y < y1; y += step) {
+                const unsigned char* row = Input + (size_t)y * Stride;
+                for (x = x0; x < x1; x += step) {
+                    for (c = 0; c < channels; c++) acc[c] += row[x * channels + c] * (1.0f / 255.0f);
+                    cnt += 1.0f;
+                }
+            }
+            size_t ci = (size_t)gy * gw + gx;
+            for (c = 0; c < channels; c++) colors[ci * channels + c] = cnt > 0.0f ? acc[c] / cnt : 0.0f;
+
+            if (DepthMode == OC_EXTRUDE_DEPTH_LEVEL_BASED) {
+                const float* a = colors + ci * channels;
+                float l = (channels == 1) ? a[0] : (0.299f * a[0] + 0.587f * a[1] + 0.114f * a[2]);
+                heights[ci] = ocExtrudeClamp01(l);
+            } else {
+                heights[ci] = ocWindHash01(gx, gy, 21u, Seed);
+            }
+        }
+    }
+
+    /* 2. Geometry constants */
+    const float bcx = (float)Width / 2.0f, bcy = (float)Height / 2.0f;
+    float halfDiag = hypotf((float)Width, (float)Height) / 2.0f;
+    if (halfDiag < 1.0f) halfDiag = 1.0f;
+    const float reach = (float)Depth * 0.25f;
+    const int kRange = (int)ceilf(reach / (float)cs) + 1;
+    const float half = (float)cs / 2.0f;
+
+    /* 3. Render */
+    for (y = 0; y < Height; y++) {
+        const unsigned char* row = Input + (size_t)y * Stride;
+        unsigned char* dst = Output + (size_t)y * Stride;
+        for (x = 0; x < Width; x++) {
+            const unsigned char* px = row + (size_t)x * channels;
+            unsigned char* out = dst + (size_t)x * channels;
+            for (c = 0; c < channels; c++) out[c] = px[c];       /* default: unchanged */
+
+            const float fx = (float)x + 0.5f, fy = (float)y + 0.5f;
+            gx = x / cs;
+            gy = y / cs;
+
+            if (Type == OC_EXTRUDE_PYRAMIDS) {
+                int incomplete = ((gx + 1) * cs > Width) || ((gy + 1) * cs > Height);
+                if (MaskIncomplete && incomplete) continue;
+
+                size_t ci = (size_t)gy * gw + gx;
+                const float* col = colors + ci * channels;
+                float h = heights[ci];
+
+                float u = fx - ((float)(gx * cs) + half);
+                float v = fy - ((float)(gy * cs) + half);
+                float hgt = h * (float)Depth / 255.0f * (float)cs;
+                float nx, ny;
+                if (fabsf(u) >= fabsf(v)) { nx = (u >= 0.0f ? 1.0f : -1.0f) * hgt; ny = 0.0f; }
+                else                      { nx = 0.0f; ny = (v >= 0.0f ? 1.0f : -1.0f) * hgt; }
+                float norm = sqrtf(nx * nx + ny * ny + half * half);
+                float lambert = (nx * -0.5f + ny * -0.5f + half * 0.70710678f) / norm;
+                if (lambert < 0.0f) lambert = 0.0f;
+                ocExtrudeStore(out, col, 0.35f + 0.9f * lambert, channels);
+                continue;
+            }
+
+            /* Blocks: find the tallest candidate block covering this pixel */
+            float bestH = 0.0f;
+            int bestCx = 0, bestCy = 0, bestFace = -1;
+            int dx, dy;
+            for (dy = -kRange; dy <= kRange; dy++) {
+                int cy = gy + dy;
+                if (cy < 0 || cy >= gh) continue;
+                for (dx = -kRange; dx <= kRange; dx++) {
+                    int cx = gx + dx;
+                    if (cx < 0 || cx >= gw) continue;
+                    if (MaskIncomplete && (((cx + 1) * cs > Width) || ((cy + 1) * cs > Height))) continue;
+
+                    float h = heights[(size_t)cy * gw + cx];
+                    if (bestFace >= 0 && bestH >= h) continue;
+
+                    float mx = (float)(cx * cs) + half, my = (float)(cy * cs) + half;
+                    float off = reach * h / halfDiag;
+                    float ox = (mx - bcx) * off, oy = (my - bcy) * off;
+
+                    float ixl, ixh, iyl, iyh;
+                    if (!ocExtrudeInterval(fx, mx, ox, half, &ixl, &ixh)) continue;
+                    if (!ocExtrudeInterval(fy, my, oy, half, &iyl, &iyh)) continue;
+                    float lo = fmaxf(ixl, iyl), hi = fminf(ixh, iyh);
+                    if (lo > hi) continue;
+
+                    int face;
+                    if (hi >= 1.0f)       face = 0;                          /* front */
+                    else if (ixh < iyh)   face = (ox > 0.0f) ? 1 : 2;        /* left / right side */
+                    else                  face = (oy > 0.0f) ? 3 : 4;        /* top / bottom side */
+
+                    bestH = h; bestCx = cx; bestCy = cy; bestFace = face;
+                }
+            }
+            if (bestFace < 0) continue;
+
+            size_t ci = (size_t)bestCy * gw + bestCx;
+            const float* col = colors + ci * channels;
+            if (bestFace == 0) {
+                if (SolidFront) {
+                    ocExtrudeStore(out, col, 1.0f, channels);
+                } else {
+                    float mx = (float)(bestCx * cs) + half, my = (float)(bestCy * cs) + half;
+                    float off = reach * bestH / halfDiag;
+                    int sx = (int)floorf(fx - (mx - bcx) * off);
+                    int sy = (int)floorf(fy - (my - bcy) * off);
+                    int rx0 = bestCx * cs, ry0 = bestCy * cs;
+                    sx = sx < rx0 ? rx0 : (sx > rx0 + cs - 1 ? rx0 + cs - 1 : sx);
+                    sy = sy < ry0 ? ry0 : (sy > ry0 + cs - 1 ? ry0 + cs - 1 : sy);
+                    sx = sx < 0 ? 0 : (sx > Width  - 1 ? Width  - 1 : sx);   /* partial cells at the edge */
+                    sy = sy < 0 ? 0 : (sy > Height - 1 ? Height - 1 : sy);
+                    const unsigned char* sp = Input + (size_t)sy * Stride + (size_t)sx * channels;
+                    for (c = 0; c < channels; c++) out[c] = sp[c];
+                }
+            } else {
+                float k = (bestFace == 1) ? 0.85f : (bestFace == 2) ? 0.55f : (bestFace == 3) ? 0.95f : 0.45f;
+                ocExtrudeStore(out, col, k, channels);
+            }
+        }
+    }
+
+    free(colors);
+    free(heights);
     return OC_STATUS_OK;
 }
